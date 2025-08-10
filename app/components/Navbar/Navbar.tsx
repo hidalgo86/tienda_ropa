@@ -11,15 +11,6 @@ import {
 import { MdOutlineMenu } from "react-icons/md";
 import { useRouter } from "next/navigation";
 
-const opcionesMenu = [
-  "Bebé",
-  "Niño",
-  "Niña",
-  "Complementos",
-  "Marca",
-  "Mi cuenta",
-];
-
 const imagenes = [
   { src: "/menuCategoria/bebe.png", alt: "Bebé" },
   { src: "/menuCategoria/nino.png", alt: "Niño" },
@@ -79,7 +70,7 @@ export default function Navbar() {
       </div>
 
       <Image
-        src="/logo2.png"
+        src="/logo.png"
         alt="Logo"
         width={150}
         height={150}
