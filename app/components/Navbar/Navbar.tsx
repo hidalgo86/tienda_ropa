@@ -15,7 +15,7 @@ const imagenes = [
   { src: "/menuCategoria/bebe.png", alt: "Bebé" },
   { src: "/menuCategoria/nino.png", alt: "Niño" },
   { src: "/menuCategoria/nina.png", alt: "Niña" },
-  { src: "/menuCategoria/complementos.png", alt: "Complementos" },
+  { src: "/menuCategoria/extra.png", alt: "Complementos" },
   { src: "/menuCategoria/marca.png", alt: "Marca" },
   { src: "/menuCategoria/cuenta.png", alt: "Mi cuenta" },
 ];
