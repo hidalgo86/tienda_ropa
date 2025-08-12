@@ -1,0 +1,57 @@
+import { useEffect, useState } from "react";
+
+export interface Producto {
+  id: number;
+  name: string;
+  category: string;
+  price: string;
+  stock: number;
+  imageUrl?: string;
+  imagePublicId?: string;
+}
+
+export function useProductos() {
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchProductos = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("https://chikitoslandia.up.railway.app/graphql", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: `{
+            products {
+              id
+              name
+              category
+              price
+              stock
+              imageUrl
+              imagePublicId
+            }
+          }`,
+        }),
+      });
+      const { data, errors } = await res.json();
+      if (errors) throw new Error(errors[0]?.message || "Error en GraphQL");
+
+      setProductos(data.products);
+    } catch (err: any) {
+      setError(err.message || "Error al cargar productos");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Llama a fetchProductos al montar
+  useEffect(() => {
+    fetchProductos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return { productos, loading, error, refetch: fetchProductos };
+}

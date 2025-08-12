@@ -33,7 +33,7 @@ export default function Body({ mostrar }: BodyProps) {
       {mostrar === "Productos" && (
         <>
           <h1 className="text-2xl font-bold mt-10 mb-6 p-2">Productos</h1>
-          <Productos productos={productosMock} />
+          <Productos />
         </>
       )}
       {mostrar === "Finanzas" && (
