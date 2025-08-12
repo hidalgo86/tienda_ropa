@@ -73,8 +73,10 @@ export default function FormProducto({
       const { errors } = await res.json();
       if (errors) throw new Error(errors[0]?.message || "Error en GraphQL");
       onSuccess();
-    } catch (err: any) {
-      setError(err.message || "Error al crear producto");
+    } catch (err) {
+      const errorMsg =
+        err instanceof Error ? err.message : "Error al crear producto";
+      setError(errorMsg);
     } finally {
       setLoading(false);
       setUploading(false);

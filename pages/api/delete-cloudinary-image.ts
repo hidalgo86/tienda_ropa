@@ -22,7 +22,9 @@ export default async function handler(
   try {
     const result = await cloudinary.uploader.destroy(public_id);
     res.status(200).json({ result });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
+  } catch (error) {
+    const errorMsg =
+      error instanceof Error ? error.message : "Error eliminando imagen";
+    res.status(500).json({ error: errorMsg });
   }
 }

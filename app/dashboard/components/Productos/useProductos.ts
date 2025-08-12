@@ -40,8 +40,10 @@ export function useProductos() {
       if (errors) throw new Error(errors[0]?.message || "Error en GraphQL");
 
       setProductos(data.products);
-    } catch (err: any) {
-      setError(err.message || "Error al cargar productos");
+    } catch (err) {
+      const errorMsg =
+        err instanceof Error ? err.message : "Error al cargar productos";
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }

@@ -36,7 +36,7 @@ const Productos = () => {
         }),
       });
       refetch && refetch();
-    } catch (err: any) {
+    } catch (err) {
       setDeleteError("Error al eliminar producto");
     } finally {
       setDeleteId(null);
