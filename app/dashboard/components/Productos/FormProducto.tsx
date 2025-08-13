@@ -1,24 +1,39 @@
 import { useState } from "react";
 import { uploadToCloudinary } from "./cloudinaryUpload";
 
+export interface Producto {
+  id?: number;
+  name: string;
+  category: string;
+  description: string;
+  price: string;
+  stock: string;
+  imageUrl: string;
+  imagePublicId?: string;
+}
+
 interface FormProductoProps {
   onCancel: () => void;
   onSuccess: () => void;
+  producto?: Producto;
 }
 
 export default function FormProducto({
   onCancel,
   onSuccess,
+  producto,
 }: FormProductoProps) {
-  const [form, setForm] = useState({
-    name: "",
-    category: "",
-    description: "",
-    price: "",
-    stock: "",
-    imageUrl: "",
-    imagePublicId: "",
-  });
+  const [form, setForm] = useState<Producto>(
+    producto || {
+      name: "",
+      category: "",
+      description: "",
+      price: "",
+      stock: "",
+      imageUrl: "",
+      imagePublicId: "",
+    }
+  );
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -50,25 +65,42 @@ export default function FormProducto({
         imagePublicId = uploadResult.public_id;
         setUploading(false);
       }
+      let query = "";
+      let variables: any = {};
+      if (producto && producto.id) {
+        // Edición
+        query = `mutation UpdateProduct($input: UpdateProductInput!) { updateProduct(input: $input) { id name price imagePublicId } }`;
+        variables = {
+          input: {
+            id: String(producto.id),
+            name: form.name,
+            category: form.category,
+            description: form.description,
+            price: Number(form.price),
+            stock: Number(form.stock),
+            imageUrl,
+            imagePublicId,
+          },
+        };
+      } else {
+        // Creación
+        query = `mutation CreateProduct($input: CreateProductInput!) { createProduct(input: $input) { id } }`;
+        variables = {
+          input: {
+            name: form.name,
+            category: form.category,
+            description: form.description,
+            price: Number(form.price),
+            stock: Number(form.stock),
+            imageUrl,
+            imagePublicId,
+          },
+        };
+      }
       const res = await fetch("https://chikitoslandia.up.railway.app/graphql", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query: `mutation CreateProduct($input: CreateProductInput!) {
-            createProduct(input: $input) { id }
-          }`,
-          variables: {
-            input: {
-              name: form.name,
-              category: form.category,
-              description: form.description,
-              price: Number(form.price),
-              stock: Number(form.stock),
-              imageUrl,
-              imagePublicId,
-            },
-          },
-        }),
+        body: JSON.stringify({ query, variables }),
       });
       const { errors } = await res.json();
       if (errors) throw new Error(errors[0]?.message || "Error en GraphQL");
@@ -88,7 +120,9 @@ export default function FormProducto({
       onSubmit={handleSubmit}
       className="max-w-md mx-auto bg-white p-6 rounded shadow"
     >
-      <h2 className="text-xl font-bold mb-4">Agregar nuevo producto</h2>
+      <h2 className="text-xl font-bold mb-4">
+        {producto ? "Editar producto" : "Agregar nuevo producto"}
+      </h2>
       <div className="mb-3">
         <div className="mb-3">
           <label className="block mb-1">Imagen (subir archivo o URL)</label>

@@ -1,12 +1,14 @@
 import { useProductos } from "./useProductos";
 import { useState } from "react";
 import FormProducto from "./FormProducto";
+import type { Producto } from "./FormProducto";
 
 const Productos = () => {
   const { productos, loading, error, refetch } = useProductos();
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [editProducto, setEditProducto] = useState<Producto | null>(null);
 
   const handleDelete = async (id: number) => {
     const seguro = window.confirm(
@@ -56,11 +58,16 @@ const Productos = () => {
   if (showForm) {
     return (
       <FormProducto
-        onCancel={() => setShowForm(false)}
+        onCancel={() => {
+          setShowForm(false);
+          setEditProducto(null);
+        }}
         onSuccess={() => {
           setShowForm(false);
+          setEditProducto(null);
           refetch && refetch();
         }}
+        producto={editProducto || undefined}
       />
     );
   }
@@ -114,9 +121,16 @@ const Productos = () => {
                 <div className="flex gap-2 justify-center items-center h-full">
                   <button
                     className="bg-yellow-400 text-white px-2 py-1 rounded flex items-center justify-center"
-                    onClick={() =>
-                      alert("Funcionalidad de edición próximamente")
-                    }
+                    onClick={() => {
+                      setEditProducto({
+                        ...producto,
+                        description: producto.description ?? "",
+                        stock: String(producto.stock),
+                        imageUrl: producto.imageUrl ?? "",
+                        imagePublicId: producto.imagePublicId ?? "",
+                      });
+                      setShowForm(true);
+                    }}
                     title="Editar"
                   >
                     <svg
