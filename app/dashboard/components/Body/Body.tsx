@@ -6,7 +6,6 @@ import Proveedores from "../Proveedores/Proveedores";
 import {
   clientesMock,
   proveedoresMock,
-  productosMock,
   ventasMock,
   comprasMock,
 } from "../mocks";

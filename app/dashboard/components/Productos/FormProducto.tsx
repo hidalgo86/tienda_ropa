@@ -66,7 +66,7 @@ export default function FormProducto({
         setUploading(false);
       }
       let query = "";
-      let variables: any = {};
+      let variables: { input: Record<string, unknown> } = { input: {} };
       if (producto && producto.id) {
         // Edición
         query = `mutation UpdateProduct($input: UpdateProductInput!) { updateProduct(input: $input) { id name price imagePublicId } }`;
