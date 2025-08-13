@@ -7,7 +7,14 @@ import Cards from "./components/Cards/Cards";
 import { useEffect, useState } from "react";
 
 export default function Home() {
-  const [productos, setProductos] = useState([]);
+  interface ProductoCard {
+    src: string;
+    alt: string;
+    nombre: string;
+    descripcion: string;
+    precio: string;
+  }
+  const [productos, setProductos] = useState<ProductoCard[]>([]);
   useEffect(() => {
     fetch("https://chikitoslandia.up.railway.app/graphql", {
       method: "POST",
@@ -29,13 +36,20 @@ export default function Home() {
       .then((res) => res.json())
       .then(({ data }) => {
         // Adaptar los datos al formato esperado por Cards
-        const adaptados = (data.products || []).map((p: any) => ({
-          src: p.imageUrl,
-          alt: p.name,
-          nombre: p.name,
-          descripcion: p.descripcion || "",
-          precio: `$${p.price}`,
-        }));
+        const adaptados = (data.products || []).map(
+          (p: {
+            imageUrl: string;
+            name: string;
+            description?: string;
+            price: number;
+          }) => ({
+            src: p.imageUrl,
+            alt: p.name,
+            nombre: p.name,
+            descripcion: p.description || "",
+            precio: `$${p.price}`,
+          })
+        );
         setProductos(adaptados);
       });
   }, []);

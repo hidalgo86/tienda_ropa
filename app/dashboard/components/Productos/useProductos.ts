@@ -54,7 +54,6 @@ export function useProductos() {
   // Llama a fetchProductos al montar
   useEffect(() => {
     fetchProductos();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return { productos, loading, error, refetch: fetchProductos };
