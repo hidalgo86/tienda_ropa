@@ -1,5 +1,5 @@
-import { useProductos } from "./useProductos";
 import { useState } from "react";
+import { useProductos } from "./useProductos";
 import FormProducto from "./FormProducto";
 import type { Producto } from "./FormProducto";
 
@@ -10,6 +10,7 @@ const Productos = () => {
   const [showForm, setShowForm] = useState(false);
   const [editProducto, setEditProducto] = useState<Producto | null>(null);
 
+  // Maneja la eliminación de un producto
   const handleDelete = async (id: number) => {
     const seguro = window.confirm(
       "¿Estás seguro de que deseas eliminar este producto?"
@@ -48,13 +49,9 @@ const Productos = () => {
   if (loading) {
     return <div className="p-4">Cargando productos...</div>;
   }
-  if (loading) {
-    return <div className="p-4">Cargando productos...</div>;
-  }
   if (error) {
     return <div className="p-4 text-red-500">Error: {error}</div>;
   }
-
   if (showForm) {
     return (
       <FormProducto
@@ -101,7 +98,6 @@ const Productos = () => {
       <table className="min-w-full bg-white border border-gray-200 rounded">
         <thead>
           <tr>
-            {/* <th className="px-4 py-2 border-b">ID</th> */}
             <th className="px-4 py-2 border-b">Nombre</th>
             <th className="px-4 py-2 border-b">Categoría</th>
             <th className="px-4 py-2 border-b">Precio</th>
@@ -112,7 +108,6 @@ const Productos = () => {
         <tbody>
           {(productos || []).map((producto) => (
             <tr key={producto.id} className="text-center">
-              {/* <td className="px-4 py-2 border-b">{producto.id}</td> */}
               <td className="px-4 py-2 border-b">{producto.name}</td>
               <td className="px-4 py-2 border-b">{producto.category}</td>
               <td className="px-4 py-2 border-b">{producto.price}</td>
@@ -128,6 +123,7 @@ const Productos = () => {
                         stock: String(producto.stock),
                         imageUrl: producto.imageUrl ?? "",
                         imagePublicId: producto.imagePublicId ?? "",
+                        size: producto.size ?? "", // <-- Añade la propiedad size
                       });
                       setShowForm(true);
                     }}

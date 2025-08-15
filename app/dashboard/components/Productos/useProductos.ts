@@ -3,12 +3,14 @@ import { useEffect, useState } from "react";
 export interface Producto {
   id: number;
   name: string;
+  description?: string;
   category: string;
+  size?: string;
   price: string;
   stock: number;
   imageUrl?: string;
   imagePublicId?: string;
-  description?: string;
+  isActive?: boolean;
 }
 
 export function useProductos() {
@@ -28,19 +30,20 @@ export function useProductos() {
             products {
               id
               name
+              description
               category
+              size
               price
               stock
               imageUrl
               imagePublicId
-              description
+              isActive
             }
           }`,
         }),
       });
       const { data, errors } = await res.json();
       if (errors) throw new Error(errors[0]?.message || "Error en GraphQL");
-
       setProductos(data.products);
     } catch (err) {
       const errorMsg =

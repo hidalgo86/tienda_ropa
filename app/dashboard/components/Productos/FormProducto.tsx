@@ -4,8 +4,9 @@ import { uploadToCloudinary } from "./cloudinaryUpload";
 export interface Producto {
   id?: number;
   name: string;
-  category: string;
   description: string;
+  category: string;
+  size: string;
   price: string;
   stock: string;
   imageUrl: string;
@@ -28,6 +29,7 @@ export default function FormProducto({
       name: "",
       category: "",
       description: "",
+      size: "",
       price: "",
       stock: "",
       imageUrl: "",
@@ -48,6 +50,15 @@ export default function FormProducto({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
+      // Mostrar vista previa inmediata al seleccionar archivo
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const result = ev.target?.result;
+        if (typeof result === "string") {
+          setForm((prev) => ({ ...prev, imageUrl: result }));
+        }
+      };
+      reader.readAsDataURL(e.target.files[0]);
     }
   };
 
@@ -74,8 +85,9 @@ export default function FormProducto({
           input: {
             id: String(producto.id),
             name: form.name,
-            category: form.category,
             description: form.description,
+            category: form.category,
+            size: form.size,
             price: Number(form.price),
             stock: Number(form.stock),
             imageUrl,
@@ -88,8 +100,9 @@ export default function FormProducto({
         variables = {
           input: {
             name: form.name,
-            category: form.category,
             description: form.description,
+            category: form.category,
+            size: form.size,
             price: Number(form.price),
             stock: Number(form.stock),
             imageUrl,
@@ -133,17 +146,17 @@ export default function FormProducto({
             className="w-full border rounded px-2 py-1 mb-2"
             disabled={uploading || loading}
           />
-          <input
-            name="imageUrl"
-            type="text"
-            placeholder="o pega la URL de la imagen"
-            value={form.imageUrl}
-            onChange={handleChange}
-            className="w-full border rounded px-2 py-1"
-            disabled={uploading || loading}
-          />
           {uploading && (
             <div className="text-blue-500 mt-1">Subiendo imagen...</div>
+          )}
+          {form.imageUrl && (
+            <div className="mt-2 flex justify-center">
+              <img
+                src={form.imageUrl}
+                alt="Vista previa"
+                className="max-h-40 rounded shadow"
+              />
+            </div>
           )}
         </div>
         <label className="block mb-1">Nombre</label>
@@ -156,20 +169,35 @@ export default function FormProducto({
         />
       </div>
       <div className="mb-3">
-        <label className="block mb-1">Categoría</label>
-        <input
-          name="category"
-          value={form.category}
+        <label className="block mb-1">Descripción</label>
+        <textarea
+          name="description"
+          value={form.description}
           onChange={handleChange}
           className="w-full border rounded px-2 py-1"
           required
         />
       </div>
       <div className="mb-3">
-        <label className="block mb-1">Descripción</label>
-        <textarea
-          name="description"
-          value={form.description}
+        <label className="block mb-1">Categoría</label>
+        <select
+          name="category"
+          value={form.category}
+          onChange={(e) => setForm({ ...form, category: e.target.value })}
+          className="w-full border rounded px-2 py-1"
+          required
+        >
+          <option value="">Selecciona una categoría</option>
+          <option value="bebe">Bebé</option>
+          <option value="niña">Niña</option>
+          <option value="niño">Niño</option>
+        </select>
+      </div>
+      <div className="mb-3">
+        <label className="block mb-1">Talla</label>
+        <input
+          name="size"
+          value={form.size}
           onChange={handleChange}
           className="w-full border rounded px-2 py-1"
           required
@@ -189,15 +217,20 @@ export default function FormProducto({
       </div>
       <div className="mb-3">
         <label className="block mb-1">Stock</label>
-        <input
+        <select
           name="stock"
-          type="number"
           value={form.stock}
-          onChange={handleChange}
+          onChange={(e) => setForm({ ...form, stock: e.target.value })}
           className="w-full border rounded px-2 py-1"
           required
-          min="0"
-        />
+        >
+          <option value="">Selecciona stock</option>
+          {[...Array(101)].map((_, i) => (
+            <option key={i} value={i}>
+              {i}
+            </option>
+          ))}
+        </select>
       </div>
       {error && <div className="text-red-500 mb-2">{error}</div>}
       <div className="flex gap-4 mt-4">

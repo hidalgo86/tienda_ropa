@@ -74,7 +74,7 @@ export default function Navbar() {
         alt="Logo"
         width={150}
         height={150}
-        className="w-[150px] h-[150px] sm:w-[200px] sm:h-[200px]"
+        className="sm:w-[300px] sm:h-[200px]"
       />
 
       <div className="flex items-center gap-4">
