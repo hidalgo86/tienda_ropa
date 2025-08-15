@@ -3,10 +3,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 
 const imagenes = [
-  { src: "/instapago.png", alt: "Instapago" },
-  { src: "/PagoMovil.png", alt: "Instapago" },
-  
- 
+  { src: "/PagoMovil.png", alt: "pagoMovil" },
 ];
 
 export default function Carrusel() {

@@ -5,7 +5,7 @@ export interface Producto {
   id?: number;
   name: string;
   description: string;
-  category: string;
+  genre: string;
   size: string;
   price: string;
   stock: string;
@@ -27,7 +27,7 @@ export default function FormProducto({
   const [form, setForm] = useState<Producto>(
     producto || {
       name: "",
-      category: "",
+      genre: "",
       description: "",
       size: "",
       price: "",
@@ -86,7 +86,7 @@ export default function FormProducto({
             id: String(producto.id),
             name: form.name,
             description: form.description,
-            category: form.category,
+            genre: form.genre,
             size: form.size,
             price: Number(form.price),
             stock: Number(form.stock),
@@ -101,7 +101,7 @@ export default function FormProducto({
           input: {
             name: form.name,
             description: form.description,
-            category: form.category,
+            genre: form.genre,
             size: form.size,
             price: Number(form.price),
             stock: Number(form.stock),
@@ -181,16 +181,16 @@ export default function FormProducto({
       <div className="mb-3">
         <label className="block mb-1">Categoría</label>
         <select
-          name="category"
-          value={form.category}
-          onChange={(e) => setForm({ ...form, category: e.target.value })}
+          name="genre"
+          value={form.genre}
+          onChange={(e) => setForm({ ...form, genre: e.target.value })}
           className="w-full border rounded px-2 py-1"
           required
         >
-          <option value="">Selecciona una categoría</option>
-          <option value="bebe">Bebé</option>
+          <option value="">Selecciona un género</option>
           <option value="niña">Niña</option>
-          <option value="niño">Niño</option>
+          <option value="niño">Niño</option> 
+          <option value="unisex">unisex</option>
         </select>
       </div>
       <div className="mb-3">

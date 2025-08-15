@@ -24,7 +24,7 @@ export default function Home() {
           products {
             id
             name
-            category
+            genre
             price
             stock
             imageUrl

@@ -109,7 +109,7 @@ const Productos = () => {
           {(productos || []).map((producto) => (
             <tr key={producto.id} className="text-center">
               <td className="px-4 py-2 border-b">{producto.name}</td>
-              <td className="px-4 py-2 border-b">{producto.category}</td>
+              <td className="px-4 py-2 border-b">{producto.genre}</td>
               <td className="px-4 py-2 border-b">{producto.price}</td>
               <td className="px-4 py-2 border-b">{producto.stock}</td>
               <td className="px-4 border-b gap-2 justify-center h-12 align-middle">

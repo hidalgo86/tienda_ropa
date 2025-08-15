@@ -2,14 +2,15 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   FaFacebookSquare,
   FaInstagram,
-  FaShoppingBasket,
   FaSearch,
+  FaHeart,
+  FaShoppingCart,
+  FaUser,
 } from "react-icons/fa";
-import { MdOutlineMenu } from "react-icons/md";
-import { useRouter } from "next/navigation";
 
 const imagenes = [
   { src: "/menuCategoria/bebe.png", alt: "Bebé" },
@@ -26,64 +27,94 @@ export default function Navbar() {
 
   return (
     <div
-      style={{ backgroundColor: "#AEEFFF" }}
-      className="pr-10 pl-10 sm:pr-20 sm:pl-20 xl:pr-30 xl:pl-30 flex items-center justify-between relative"
+      style={{ backgroundColor: "#FF93B3" }}
+      className="pr-10 pl-10 sm:pr-10 sm:pl-10 xl:pr-30 xl:pl-30 flex items-center justify-around relative h-50"
     >
-      {/* Icono menú hamburguesa */}
-      <div className="block md:hidden relative">
-        <MdOutlineMenu size={28} onClick={() => setOpen((prev) => !prev)} />
-        {/* Menú desplegable con imágenes y nombres */}
-        {open && (
-          <ul className="absolute left-0 mt-2 w-48 bg-white rounded shadow-lg z-50 py-2 md:hidden">
-            {imagenes.map((img, idx) => (
-              <li
-                key={idx}
-                className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-blue-100 cursor-pointer"
-                onClick={() => {
-                  setOpen(false);
-                  if (img.alt === "Mi cuenta") {
-                    router.push("/dashboard");
-                  }
-                }}
-              >
-                <Image
-                  src={img.src}
-                  alt={img.alt}
-                  width={28}
-                  height={28}
-                  className="shrink-0"
-                />
-                <span className="text-sm">{img.alt}</span>
-              </li>
-            ))}
-          </ul>
-        )}
+      {/* IZQUIERDA: Facebook, Instagram, Buscar (solo sm y arriba) */}
+      <div
+        className="hidden sm:flex items-center gap-4 flex-1 transition-all duration-300 justify-start"
+        style={{
+          backgroundColor: "#8AEAFB",
+          borderRadius: "12px 0 0 12px",
+          padding: "8px 16px",
+          minWidth: "120px",
+          maxWidth: "600px",
+         
+        }}
+      >
+        <button title="Facebook">
+          <FaFacebookSquare size={28} color="#1877F3" />
+        </button>
+        <button title="Instagram">
+          <FaInstagram size={28} color="#E4405F" />
+        </button>
       </div>
 
-      <div className="hidden md:flex items-center gap-4">
-        <FaFacebookSquare
-          size={20}
-          className="sm:size-[32px]"
-          color="#1877F3"
-        />
-        <FaInstagram size={20} className="sm:size-[32px]" color="#E4405F" />
+      {/* Menú hamburguesa solo en xs */}
+      <div className="flex sm:hidden items-center">
+        <button title="Menú">
+          <svg
+            width="32"
+            height="32"
+            fill="none"
+            stroke="#333"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+          >
+            <line x1="4" y1="7" x2="20" y2="7" />
+            <line x1="4" y1="12" x2="20" y2="12" />
+            <line x1="4" y1="17" x2="20" y2="17" />
+          </svg>
+        </button>
       </div>
 
-      <Image
-        src="/logo.png"
-        alt="Logo"
-        width={150}
-        height={150}
-        className="sm:w-[300px] sm:h-[200px]"
-      />
+      {/* CENTRO: Logo */}
+      <div
+        className="flex-1 flex justify-center items-center relative"
+        style={{ height: "80px" }}
+      >
+        {/* Fondo azul */}
+        <div className="sm:w-80 md:w-120 h-11" style={{ backgroundColor: "#8AEAFB" }}></div>
+        {/* Logo superpuesto */}
+        <div
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex justify-center items-center"
+          style={{ zIndex: 2 }}
+        >
+          <div
+            style={{ minWidth: 150, maxWidth: 300 }}
+            className="flex justify-center drop-shadow-lg ml-20 ms:ml-0"
+          >
+            <Image
+              src="/logo.png"
+              alt="Logo"
+              width={150}
+              height={150}
+              className="sm:w-[300px] sm:h-[200px]"
+            />
+          </div>
+        </div>
+      </div>
 
-      <div className="flex items-center gap-4">
-        <FaSearch size={20} className="md:size-[32px]" color="#333333" />
-        <FaShoppingBasket
-          size={20}
-          className="md:size-[32px]"
-          color="#E4405F"
-        />
+      {/* DERECHA: Favorito, Carrito, Login */}
+      <div
+        className=" bg-[#FF93B3] sm:bg-[#8AEAFB] flex items-center gap-4 flex-1 justify-end transition-all duration-300 "
+        style={{
+          // backgroundColor: "#8AEAFB",
+          borderRadius: "0 12px 12px 0",
+          padding: "8px 16px",
+          minWidth: "120px",
+          maxWidth: "600px",
+        }}
+      >
+        <button title="Favoritos">
+          <FaHeart size={28} color="#E4405F" />
+        </button>
+        <button title="Carrito">
+          <FaShoppingCart size={28} color="#7ED957" />
+        </button>
+        <button title="Iniciar sesión" className="hidden sm:flex">
+          <FaUser size={28} color="#4DA3FF" />
+        </button>
       </div>
     </div>
   );

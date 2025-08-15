@@ -4,7 +4,7 @@ export interface Producto {
   id: number;
   name: string;
   description?: string;
-  category: string;
+  genre: string;
   size?: string;
   price: string;
   stock: number;
@@ -31,7 +31,7 @@ export function useProductos() {
               id
               name
               description
-              category
+              genre
               size
               price
               stock
