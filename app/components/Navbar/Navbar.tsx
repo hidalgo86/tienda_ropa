@@ -28,7 +28,7 @@ export default function Navbar() {
   return (
     <div
       style={{ backgroundColor: "#FF93B3" }}
-      className="pr-10 pl-10 sm:pr-10 sm:pl-10 xl:pr-30 xl:pl-30 flex items-center justify-around relative h-50"
+      className="pr-5 pl-5 sm:pr-10 sm:pl-10 xl:pr-30 xl:pl-30 flex items-center justify-around relative h-50"
     >
       {/* IZQUIERDA: Facebook, Instagram, Buscar (solo sm y arriba) */}
       <div
@@ -39,7 +39,6 @@ export default function Navbar() {
           padding: "8px 16px",
           minWidth: "120px",
           maxWidth: "600px",
-         
         }}
       >
         <button title="Facebook">
@@ -51,8 +50,8 @@ export default function Navbar() {
       </div>
 
       {/* Menú hamburguesa solo en xs */}
-      <div className="flex sm:hidden items-center">
-        <button title="Menú">
+      <div className="flex sm:hidden items-center relative">
+        <button title="Menú" onClick={() => setOpen(!open)}>
           <svg
             width="32"
             height="32"
@@ -66,6 +65,22 @@ export default function Navbar() {
             <line x1="4" y1="17" x2="20" y2="17" />
           </svg>
         </button>
+        {open && (
+          <div className="absolute top-12 left-0 w-48 bg-white shadow-lg rounded-lg z-50 p-4 flex flex-col gap-2">
+            <button className="text-left py-2 px-4 hover:bg-pink-100 rounded">
+              Acceder
+            </button>
+            <button className="text-left py-2 px-4 hover:bg-pink-100 rounded">
+              Contacto
+            </button>
+            <button className="text-left py-2 px-4 hover:bg-pink-100 rounded">
+              Acerca
+            </button>
+            <button className="text-left py-2 px-4 hover:bg-pink-100 rounded">
+              Salir
+            </button>
+          </div>
+        )}
       </div>
 
       {/* CENTRO: Logo */}
@@ -74,22 +89,25 @@ export default function Navbar() {
         style={{ height: "80px" }}
       >
         {/* Fondo azul */}
-        <div className="sm:w-80 md:w-120 h-11" style={{ backgroundColor: "#8AEAFB" }}></div>
+        <div
+          className="hidden sm:flex  w-20 sm:w-70 md:w-100 xl:w-180 2xl:w-240 h-11"
+          style={{ backgroundColor: "#8AEAFB" }}
+        ></div>
         {/* Logo superpuesto */}
         <div
           className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex justify-center items-center"
           style={{ zIndex: 2 }}
         >
           <div
-            style={{ minWidth: 150, maxWidth: 300 }}
+            style={{ minWidth: 200, maxWidth: 300 }}
             className="flex justify-center drop-shadow-lg ml-20 ms:ml-0"
           >
             <Image
               src="/logo.png"
               alt="Logo"
-              width={150}
-              height={150}
-              className="sm:w-[300px] sm:h-[200px]"
+              width={300}
+              height={190}
+              className="sm:w-[300px] sm:h-[180px]"
             />
           </div>
         </div>
