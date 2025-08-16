@@ -1,10 +1,19 @@
 "use client";
+import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Product } from "../types/products";
 
 export default function ProductDetailPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center">Cargando...</div>}>
+      <ProductDetailContent />
+    </Suspense>
+  );
+}
+
+function ProductDetailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [producto, setProducto] = useState<Product | null>(null);
