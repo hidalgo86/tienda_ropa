@@ -1,22 +1,15 @@
 import Card from "../Card/Card";
+import { Product } from "../../types/products";
 
-interface Producto {
-  src: string;
-  alt: string;
-  nombre: string;
-  descripcion: string;
-  precio: string;
-}
-
-interface CardsProps {
-  productos: Producto[];
-}
-
-export default function Cards({ productos }: CardsProps) {
+export default function Cards({
+  productos,
+}: {
+  productos: Partial<Product>[];
+}) {
   return (
-    <div className="flex flex-wrap gap-6 justify-center">
-      {productos.map((producto, idx) => (
-        <Card key={idx} producto={producto} />
+    <div className="mt-10 mb-10 flex flex-wrap gap-6 justify-center">
+      {productos.map((producto, id) => (
+        <Card key={id} producto={producto} />
       ))}
     </div>
   );

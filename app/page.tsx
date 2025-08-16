@@ -1,64 +1,41 @@
-"use client";
 import Navbar from "./components/Navbar/Navbar";
 import Menu from "./components/Menu/Menu";
 import Carrusel from "./components/Carrusel/Carrusel";
 import Cards from "./components/Cards/Cards";
+import { Product } from "./types/products";
 
-import { useEffect, useState } from "react";
+async function fetchProductos(): Promise<Product[]> {
+  const res = await fetch("https://chikitoslandia.up.railway.app/graphql", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query: `{
+        products {
+          id
+          name
+          description
+          genre
+          size
+          price
+          stock
+          imageUrl
+          imagePublicId
+          isActive
+        }
+      }`,
+    }),
+  });
+  const { data } = await res.json() as { data: { products: Product[] } };
+  return data.products || [];
+}
 
-export default function Home() {
-  interface ProductoCard {
-    src: string;
-    alt: string;
-    nombre: string;
-    descripcion: string;
-    precio: string;
-  }
-  const [productos, setProductos] = useState<ProductoCard[]>([]);
-  useEffect(() => {
-    fetch("https://chikitoslandia.up.railway.app/graphql", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        query: `{
-          products {
-            id
-            name
-            genre
-            price
-            stock
-            imageUrl
-            description
-          }
-        }`,
-      }),
-    })
-      .then((res) => res.json())
-      .then(({ data }) => {
-        // Adaptar los datos al formato esperado por Cards
-        const adaptados = (data.products || []).map(
-          (p: {
-            imageUrl: string;
-            name: string;
-            description?: string;
-            price: number;
-          }) => ({
-            src: p.imageUrl,
-            alt: p.name,
-            nombre: p.name,
-            descripcion: p.description || "",
-            precio: `$${p.price}`,
-          })
-        );
-        setProductos(adaptados);
-      });
-  }, []);
-
+export default async function Home() {
+  const productos = await fetchProductos();
   return (
     <div>
       <Navbar />
       <Menu />
-      <Carrusel />
+      {/* <Carrusel /> */}
       <Cards productos={productos} />
     </div>
   );

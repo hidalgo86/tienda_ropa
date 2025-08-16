@@ -10,6 +10,10 @@ import {
   FaHeart,
   FaShoppingCart,
   FaUser,
+  FaSignInAlt,
+  FaEnvelope,
+  FaInfoCircle,
+  FaSignOutAlt,
 } from "react-icons/fa";
 
 const imagenes = [
@@ -51,7 +55,37 @@ export default function Navbar() {
 
       {/* Menú hamburguesa solo en xs */}
       <div className="flex sm:hidden items-center relative">
-        <button title="Menú" onClick={() => setOpen(!open)}>
+        {open && (
+          <>
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setOpen(false)}
+              style={{ background: "transparent" }}
+            />
+            <div
+              className="absolute top-12 left-0 w-48 bg-white shadow-lg rounded-lg z-50 p-4 flex flex-col gap-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button className="flex items-center gap-2 text-left py-2 px-4 hover:bg-pink-100 rounded">
+                <FaSignInAlt size={18} color="#4DA3FF" /> Acceder
+              </button>
+              <button className="flex items-center gap-2 text-left py-2 px-4 hover:bg-pink-100 rounded">
+                <FaEnvelope size={18} color="#E4405F" /> Contacto
+              </button>
+              <button className="flex items-center gap-2 text-left py-2 px-4 hover:bg-pink-100 rounded">
+                <FaInfoCircle size={18} color="#7ED957" /> Acerca
+              </button>
+              <button className="flex items-center gap-2 text-left py-2 px-4 hover:bg-pink-100 rounded">
+                <FaSignOutAlt size={18} color="#FF93B3" /> Salir
+              </button>
+            </div>
+          </>
+        )}
+        <button
+          title="Menú"
+          onClick={() => setOpen(!open)}
+          style={{ zIndex: 50 }}
+        >
           <svg
             width="32"
             height="32"
@@ -65,22 +99,6 @@ export default function Navbar() {
             <line x1="4" y1="17" x2="20" y2="17" />
           </svg>
         </button>
-        {open && (
-          <div className="absolute top-12 left-0 w-48 bg-white shadow-lg rounded-lg z-50 p-4 flex flex-col gap-2">
-            <button className="text-left py-2 px-4 hover:bg-pink-100 rounded">
-              Acceder
-            </button>
-            <button className="text-left py-2 px-4 hover:bg-pink-100 rounded">
-              Contacto
-            </button>
-            <button className="text-left py-2 px-4 hover:bg-pink-100 rounded">
-              Acerca
-            </button>
-            <button className="text-left py-2 px-4 hover:bg-pink-100 rounded">
-              Salir
-            </button>
-          </div>
-        )}
       </div>
 
       {/* CENTRO: Logo */}

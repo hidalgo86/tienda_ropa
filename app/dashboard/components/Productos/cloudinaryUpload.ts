@@ -34,6 +34,5 @@ export async function uploadToCloudinary(
   });
   if (!res.ok) throw new Error("Error al subir imagen a Cloudinary");
   const data = await res.json();
-  console.log("Imagen subida a Cloudinary:", data);
   return { secure_url: data.secure_url, public_id: data.public_id };
 }
