@@ -20,7 +20,6 @@ async function fetchProductos(): Promise<Product[]> {
           stock
           imageUrl
           imagePublicId
-          isActive
         }
       }`,
     }),
