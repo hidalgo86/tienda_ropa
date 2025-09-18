@@ -10,7 +10,6 @@ export interface Producto {
   stock: number;
   imageUrl?: string;
   imagePublicId?: string;
-  isActive?: boolean;
 }
 
 export function useProductos() {
@@ -37,7 +36,6 @@ export function useProductos() {
               stock
               imageUrl
               imagePublicId
-              isActive
             }
           }`,
         }),

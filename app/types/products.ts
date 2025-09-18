@@ -8,6 +8,5 @@ export interface Product {
   stock: number;
   imageUrl?: string;
   imagePublicId?: string;
-  isActive: boolean;
 }
 
