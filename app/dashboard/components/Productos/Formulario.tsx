@@ -1,8 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { uploadToCloudinary } from "./cloudinaryUpload";
-import { getProductoById } from "./getProductoById";
+import { uploadToCloudinary } from "@/utils/cloudinaryUpload";
 
 // ----- Tipos -----
 export interface Producto {

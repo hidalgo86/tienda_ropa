@@ -18,7 +18,7 @@ import Clientes from "./components/Clientes/clientes";
 import Finanzas from "./components/Finanzas/Finanzas";
 import FormProducto from "./components/Productos/Formulario";
 import { redirect } from "next/navigation";
-import { getProductoById } from "./components/Productos/getProductoById";
+import { getProductoById } from "@/utils/getProductoById";
 import { log } from "console";
 
 // Forzar tipado any para searchParams por compatibilidad con Next.js 15
