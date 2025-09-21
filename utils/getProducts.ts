@@ -40,6 +40,6 @@ export async function getProducts(page: number): Promise<PaginatedProducts> {
     return data.products;
   } catch (error) {
     console.error("Error en getProducts:", error);
-    return { items: [], total: 0, page: 1, totalPages: 10 };
+    return { items: [], total: 0, page: 1, totalPages: 1 };
   }
 }

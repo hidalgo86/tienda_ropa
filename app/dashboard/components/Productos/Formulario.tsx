@@ -130,7 +130,7 @@ export default function FormProducto({ modo, producto }: FormProductoProps) {
         .split(",")
         .map((s) => s.trim())
         .filter((s) => s.length > 0);
-      const variables: unknown = {
+      const variables: any = {
         input: {
           ...form,
           size: sizeArray,
@@ -147,7 +147,7 @@ export default function FormProducto({ modo, producto }: FormProductoProps) {
           : `mutation CreateProduct($input: CreateProductInput!) { createProduct(input: $input) { id } }`;
 
       if (modo === "editar" && producto?.id)
-        (variables as any).input.id = String(producto.id);
+        variables.input.id = String(producto.id);
 
       const res = await fetch(process.env.NEXT_PUBLIC_API_URL!, {
         method: "POST",
