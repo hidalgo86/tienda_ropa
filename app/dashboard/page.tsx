@@ -22,8 +22,9 @@ import { getProductoById } from "@/utils/getProductoById";
 import { log } from "console";
 
 // Forzar tipado any para searchParams por compatibilidad con Next.js 15
+
 interface DashboardPageProps {
-  searchParams: any;
+  searchParams: unknown;
 }
 
 export default async function DashboardPage({
@@ -31,12 +32,15 @@ export default async function DashboardPage({
 }: DashboardPageProps) {
   // Si searchParams es una promesa, espera su resolución (Next.js 15)
   const params =
-    typeof searchParams === "object" && typeof searchParams.then === "function"
-      ? await searchParams
+    typeof searchParams === "object" &&
+    searchParams !== null &&
+    "then" in searchParams &&
+    typeof (searchParams as any).then === "function"
+      ? await (searchParams as any)
       : searchParams;
-  const opcion = params?.opcion || "Productos";
-  const page = Number(params?.page) || 1;
-  const mostrarFormulario = params?.formulario;
+  const opcion = (params as any)?.opcion || "Productos";
+  const page = Number((params as any)?.page) || 1;
+  const mostrarFormulario = (params as any)?.formulario;
   let producto = null;
 
   if (opcion === "Salir") {
