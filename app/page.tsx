@@ -1,4 +1,4 @@
-import Navbar from "./components/Navbar/Navbar";
+import Navbar from "./components/Navbar";
 import Menu from "./components/Menu/Menu";
 import Carrusel from "./components/Carrusel/Carrusel";
 import Cards from "./components/Cards/Cards";
@@ -24,7 +24,7 @@ async function fetchProductos(): Promise<Product[]> {
       }`,
     }),
   });
-  const { data } = await res.json() as { data: { products: Product[] } };
+  const { data } = (await res.json()) as { data: { products: Product[] } };
   return data.products || [];
 }
 

@@ -1,7 +1,5 @@
-"use client";
 import Image from "next/image";
-import { useState } from "react";
-import { MdOutlineMenu } from "react-icons/md";
+import Link from "next/link";
 
 const imagenes = [
   { src: "/dashboard/clientes.png", alt: "Clientes" },
@@ -13,69 +11,20 @@ const imagenes = [
 
 interface MenuProps {
   opcion: string;
-  setOpcion: (opcion: string) => void;
 }
 
-export default function Menu({ opcion, setOpcion }: MenuProps) {
-  const [open, setOpen] = useState(false);
-
+export default function Menu({ opcion }: MenuProps) {
   return (
-    <div
-      style={{ backgroundColor: "#AEEFFF", height: "64px" }}
-      className="flex sm:justify-around items-center relative w-full sm:p-11"
-    >
-      {/* Móvil: menú hamburguesa y logo */}
-      <div className="flex items-center gap-4 sm:hidden relative w-full h-full">
-        <MdOutlineMenu
-          className="ml-2"
-          size={28}
-          onClick={() => setOpen((prev) => !prev)}
-        />
-        <div className="flex-1 flex justify-center items-center h-full">
-          <Image
-            src="/logo.png"
-            alt="Logo tienda"
-            width={40}
-            height={40}
-            style={{ objectFit: "contain" }}
-            className="h-full w-auto"
-          />
-        </div>
-        {open && (
-          <div className="absolute left-0 top-12 w-40 bg-white rounded shadow-lg z-50 py-2">
-            {imagenes.map((img, idx) => (
-              <button
-                key={idx}
-                className={`flex flex-col items-center w-full px-2 py-2 ${
-                  opcion === img.alt ? "font-bold text-blue-600" : ""
-                }`}
-                onClick={() => {
-                  setOpcion(img.alt);
-                  setOpen(false);
-                }}
-              >
-                <Image
-                  src={img.src}
-                  alt={img.alt}
-                  width={32}
-                  height={32}
-                  className="m-auto"
-                />
-                <span className="text-xs text-center">{img.alt}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-      {/* Escritorio/tablet: botones horizontales y logo centrado */}
-      <div className="hidden sm:flex items-center justify-center w-full h-full relative">
+    <div className="flex sm:justify-around items-center relative w-full sm:p-11">
+      {/* Escritorio/tablet: menú vertical */}
+      <div className="hidden md:flex flex-col items-center justify-start w-full h-full gap-6 pt-4">
         {imagenes.map((img, idx) => (
-          <button
+          <Link
             key={idx}
-            className={`flex flex-col ${
+            href={`/dashboard?opcion=${encodeURIComponent(img.alt)}`}
+            className={`flex flex-col items-center w-full ${
               opcion === img.alt ? "font-bold text-blue-600" : ""
             }`}
-            onClick={() => setOpcion(img.alt)}
           >
             <Image
               src={img.src}
@@ -85,18 +34,8 @@ export default function Menu({ opcion, setOpcion }: MenuProps) {
               className="m-auto"
             />
             <span className="w-27 text-center">{img.alt}</span>
-          </button>
+          </Link>
         ))}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-full flex items-center sm:hidden">
-          <Image
-            src="/logo.png"
-            alt="Logo tienda"
-            height={64}
-            width={160}
-            style={{ objectFit: "contain" }}
-            className="h-full w-auto"
-          />
-        </div>
       </div>
     </div>
   );

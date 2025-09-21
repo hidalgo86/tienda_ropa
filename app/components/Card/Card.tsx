@@ -4,7 +4,12 @@ import Image from "next/image";
 import { MdFavorite, MdShoppingCart } from "react-icons/md";
 import { Product } from "../../types/products";
 
-export default function Card({ producto }: { producto: Partial<Product> }) {
+interface CardProps {
+  producto: Partial<Product>;
+  priority?: boolean;
+}
+
+export default function Card({ producto, priority = false }: CardProps) {
   const router = useRouter();
   const handleClick = () => {
     if (producto.id) {
@@ -14,18 +19,28 @@ export default function Card({ producto }: { producto: Partial<Product> }) {
   };
   return (
     <div
-      className=" max-w-xs bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 relative cursor-pointer"
+      className="w-[210px] h-[340px] bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 relative cursor-pointer flex flex-col"
       onClick={handleClick}
+      style={{ minWidth: 210, maxWidth: 210, minHeight: 340, maxHeight: 340 }}
     >
-      <Image
-        src={producto.imageUrl ?? "/placeholder.webp"}
-        alt={producto.name ?? "Producto sin nombre"}
-        width={320}
-        height={240}
-        className="w-full h-48 object-cover"
-        style={{ width: "320px", height: "240px" }}
-      />
-      <div className="p-4">
+      <div className="w-full h-[210px] flex items-center justify-center bg-gray-50">
+        <Image
+          src={producto.imageUrl ?? "/placeholder.webp"}
+          alt={
+            producto.name ? `Imagen de ${producto.name}` : "Producto sin nombre"
+          }
+          width={210}
+          height={210}
+          className="object-cover w-full h-full"
+          placeholder="empty"
+          {...(priority ? { priority: true } : { loading: "lazy" })}
+          onError={(e: any) => {
+            e.currentTarget.src = "/placeholder.webp";
+          }}
+          sizes="(max-width: 768px) 100vw, 210px"
+        />
+      </div>
+      <div className="p-4 flex flex-col flex-1">
         {/* Precio y tallas */}
         <div className="flex items-center justify-between mb-2">
           <span className="text-blue-600 font-bold text-lg">
@@ -35,14 +50,17 @@ export default function Card({ producto }: { producto: Partial<Product> }) {
           </span>
           <span className="text-gray-500 text-sm">
             {producto.size && producto.size.length > 0
-              ? `Tallas: _${producto.size.join(", ")}`
+              ? `Tallas: ${producto.size.join(", ")}`
               : "Sin tallas"}
           </span>
         </div>
         {/* Descripción opcional */}
         {producto.description && (
-          <p className="text-gray-600 text-sm mb-4">{producto.description}</p>
+          <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+            {producto.description}
+          </p>
         )}
+        <div className="flex-1" />
         {/* Botones de acción */}
         <div className="flex items-center justify-end">
           <div className="flex items-center justify-between w-full">

@@ -1,9 +1,3 @@
-// Utilidad para subir imágenes a Cloudinary desde el frontend
-// Reemplaza <tu_cloud_name> y <tu_upload_preset> por los valores de tu cuenta Cloudinary
-
-// Utilidad para subir imágenes a Cloudinary con firma (signed upload)
-// Llama primero a la API local /api/cloudinary-signature para obtener la firma
-
 interface CloudinarySignature {
   signature: string;
   timestamp: number;
