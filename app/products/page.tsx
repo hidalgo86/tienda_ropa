@@ -9,16 +9,12 @@ interface ProductsSearchParams {
   page?: string | number;
 }
 
-interface ProductsPageProps {
-  searchParams: ProductsSearchParams | Promise<ProductsSearchParams>;
-}
 export default async function ProductsPage({
   searchParams,
-}: ProductsPageProps) {
-  const params =
-    typeof searchParams === "object" && "then" in searchParams
-      ? await searchParams
-      : searchParams;
+}: {
+  searchParams?: Promise<ProductsSearchParams>;
+}) {
+  const params = await searchParams;
   const page = Number(params?.page) || 1;
   const { items, totalPages } = await getProducts(page);
   // Extraer categorías únicas de los productos
