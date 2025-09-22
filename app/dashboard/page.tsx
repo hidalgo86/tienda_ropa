@@ -23,23 +23,17 @@ import { log } from "console";
 
 interface DashboardSearchParams {
   opcion?: string;
-  page?: string | number;
+  page?: string;
   formulario?: "crear" | "editar";
   id?: string;
 }
 
-interface DashboardPageProps {
-  searchParams: DashboardSearchParams | Promise<DashboardSearchParams>;
-}
-
 export default async function DashboardPage({
   searchParams,
-}: DashboardPageProps) {
-  // Si searchParams es una promesa, espera su resolución (Next.js 15)
-  const params =
-    typeof searchParams === "object" && "then" in searchParams
-      ? await searchParams
-      : searchParams;
+}: {
+  searchParams?: Promise<DashboardSearchParams>;
+}) {
+  const params = searchParams ? await searchParams : {};
   const opcion = params?.opcion || "Productos";
   const page = Number(params?.page) || 1;
   const mostrarFormulario = params?.formulario;
