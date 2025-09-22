@@ -5,15 +5,18 @@ import Navbar from "../components/Navbar";
 import { getProducts } from "../../utils/getProducts";
 import { notFound } from "next/navigation";
 
-interface ProductsPageProps {
-  searchParams: any;
+interface ProductsSearchParams {
+  page?: string | number;
 }
 
+interface ProductsPageProps {
+  searchParams: ProductsSearchParams | Promise<ProductsSearchParams>;
+}
 export default async function ProductsPage({
   searchParams,
 }: ProductsPageProps) {
   const params =
-    typeof searchParams === "object" && typeof searchParams.then === "function"
+    typeof searchParams === "object" && "then" in searchParams
       ? await searchParams
       : searchParams;
   const page = Number(params?.page) || 1;

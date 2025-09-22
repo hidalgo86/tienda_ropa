@@ -21,9 +21,15 @@ import { redirect } from "next/navigation";
 import { getProductoById } from "@/utils/getProductoById";
 import { log } from "console";
 
-// Forzar tipado any para searchParams por compatibilidad con Next.js 15
+interface DashboardSearchParams {
+  opcion?: string;
+  page?: string | number;
+  formulario?: "crear" | "editar";
+  id?: string;
+}
+
 interface DashboardPageProps {
-  searchParams: any;
+  searchParams: DashboardSearchParams | Promise<DashboardSearchParams>;
 }
 
 export default async function DashboardPage({
@@ -31,7 +37,7 @@ export default async function DashboardPage({
 }: DashboardPageProps) {
   // Si searchParams es una promesa, espera su resolución (Next.js 15)
   const params =
-    typeof searchParams === "object" && typeof searchParams.then === "function"
+    typeof searchParams === "object" && "then" in searchParams
       ? await searchParams
       : searchParams;
   const opcion = params?.opcion || "Productos";
