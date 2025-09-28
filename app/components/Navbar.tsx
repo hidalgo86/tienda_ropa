@@ -32,23 +32,25 @@ export default function Navbar() {
       {/* Navbar superior */}
       <nav className="w-full bg-white shadow-md border-b border-gray-200 flex items-center justify-between px-4 h-16 sm:h-16 md:h-14 transition-all">
         {/* Logo */}
-        <div className="flex items-center h-full">
-          <Link href="/">
-            <div
-              className="overflow-hidden flex items-center h-full max-h-32 sm:max-h-38 md:max-h-32"
-              style={{ height: "100%", overflow: "hidden" }}
-            >
-              <Image
-                src="/chikitoslandia.png"
-                alt="Logo"
-                width={480}
-                height={160}
-                priority
-                unoptimized
-                className="mr-6 w-auto h-20 sm:h-28 md:h-24 object-cover transition-all"
-                style={{ objectPosition: "center" }}
-              />
-            </div>
+        <div className="flex items-center h-full overflow-hidden">
+          <Link
+            href="/"
+            className="relative h-16 w-44 sm:w-56 md:w-64 overflow-hidden"
+          >
+            <Image
+              src="/chikitoslandia.png"
+              alt="Logo"
+              fill
+              priority
+              unoptimized
+              className="object-cover"
+              style={{
+                objectPosition:
+                  typeof window !== "undefined" && window.innerWidth < 768
+                    ? "center 60%"
+                    : "center 70%",
+              }}
+            />
           </Link>
         </div>
 
