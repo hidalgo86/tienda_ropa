@@ -12,22 +12,11 @@ interface ProductsSearchParams {
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams?: ProductsSearchParams | Promise<ProductsSearchParams>;
+  searchParams?: Promise<any>;
 }) {
-  const params =
-    typeof searchParams === "object" && "then" in searchParams
-      ? await searchParams
-      : searchParams;
+  const params = await searchParams;
   const page = Number(params?.page) || 1;
   const { items, totalPages } = await getProducts(page);
-  // Extraer categorías únicas de los productos
-  const categorias = Array.from(
-    new Set(
-      items
-        .map((p) => p.genre)
-        .filter((g): g is Exclude<typeof g, undefined> => !!g)
-    )
-  ).map(String);
 
   if (page < 1 || (totalPages && page > totalPages)) return notFound();
 
