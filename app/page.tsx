@@ -5,7 +5,6 @@ import { getProducts } from "@/utils/getProducts";
 
 export default async function Home() {
   const productos = await getProducts(1);
-  console.log(productos);
   return (
     <div>
       <Navbar />

@@ -189,12 +189,28 @@ export default function FormProducto({ modo, producto }: FormProductoProps) {
       onSubmit={handleSubmit}
       className="max-w-md mx-auto bg-white p-6 rounded shadow"
     >
-      <h2 className="text-xl font-bold mb-4">
+      <h2 className="text-xl font-bold mb-2">
         {modo === "editar" ? "Editar producto" : "Agregar nuevo producto"}
       </h2>
+      <hr className="mb-5 border-gray-300" />
 
       {/* Imagen */}
       <div className="mb-3">
+        {form.imageUrl && (
+          <div className="mb-3 flex justify-center">
+            <div
+              className="border-2 border-gray-300 bg-gray-50 rounded-lg p-2 shadow-inner flex items-center justify-center"
+              style={{ minWidth: 120, minHeight: 120 }}
+            >
+              <img
+                src={form.imageUrl}
+                alt="Vista previa"
+                className="max-h-40 rounded object-contain"
+                style={{ maxWidth: 160, maxHeight: 160 }}
+              />
+            </div>
+          </div>
+        )}
         <label className="block mb-1">Imagen (subir archivo o URL)</label>
         <input
           type="file"
@@ -205,15 +221,6 @@ export default function FormProducto({ modo, producto }: FormProductoProps) {
         />
         {uploading && (
           <div className="text-blue-500 mt-1">Subiendo imagen...</div>
-        )}
-        {form.imageUrl && (
-          <div className="mt-2 flex justify-center">
-            <img
-              src={form.imageUrl}
-              alt="Vista previa"
-              className="max-h-40 rounded shadow"
-            />
-          </div>
         )}
       </div>
 

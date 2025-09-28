@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -11,85 +12,114 @@ import {
   MdPerson,
   MdBarChart,
   MdInfo,
+  MdMenu,
+  MdClose,
 } from "react-icons/md";
 
 const navLinks = [
-  { href: "/", icon: <MdHome size={28} />, label: "Home" },
-  { href: "/products", icon: <MdStore size={28} />, label: "Productos" },
-  { href: "/account", icon: <MdPerson size={28} />, label: "Account" },
-  { href: "/dashboard", icon: <MdBarChart size={28} />, label: "Dashboard" },
-  { href: "/acerca", icon: <MdInfo size={28} />, label: "Acerca" },
+  { href: "/", icon: <MdHome />, label: "Home" },
+  { href: "/products", icon: <MdStore />, label: "Productos" },
+  { href: "/account", icon: <MdPerson />, label: "Account" },
+  { href: "/dashboard", icon: <MdBarChart />, label: "Dashboard" },
+  { href: "/acerca", icon: <MdInfo />, label: "Acerca" },
 ];
 
 export default function Navbar() {
+  const [isOpen, setIsOpen] = useState(false);
+
   return (
-    <nav
-      className="w-full bg-white shadow-md border-b border-gray-200 flex items-center justify-between px-4"
-      style={{ height: 110 }}
-    >
-      {/* Logo a la izquierda */}
-      <div className="flex items-center h-full">
-        <Link href="/">
-          <Image
-            src="/Logo.png"
-            alt="Logo"
-            width={1400}
-            height={180}
-            priority
-            className="mr-6"
-            style={{ maxHeight: 152, width: "auto" }}
-          />
-        </Link>
-      </div>
-      {/* Navegación principal en el centro (solo iconos) */}
-      <div className="flex-1 flex justify-center h-full gap-16 md:gap-12 sm:gap-8 xs:gap-4 transition-all duration-200">
-        {navLinks.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className="h-full flex items-center justify-center rounded transition focus:outline-none focus:ring-2 focus:ring-blue-400 hover:bg-blue-100 hover:text-blue-600 text-gray-700 px-2"
-            style={{ minWidth: 64, minHeight: 44 }}
-            title={link.label}
-          >
-            {React.cloneElement(link.icon, {
-              size: 32,
-              color:
-                link.label === "Home"
-                  ? "#2563eb" // azul
-                  : link.label === "Products"
-                  ? "#16a34a" // verde
-                  : link.label === "Account"
-                  ? "#f59e42" // naranja
-                  : link.label === "Dashboard"
-                  ? "#a21caf" // morado
-                  : link.label === "Acerca"
-                  ? "#0ea5e9" // celeste
-                  : undefined,
-            })}
+    <>
+      {/* Navbar superior */}
+      <nav className="w-full bg-white shadow-md border-b border-gray-200 flex items-center justify-between px-4 h-16 sm:h-16 md:h-14 transition-all">
+        {/* Logo */}
+        <div className="flex items-center h-full">
+          <Link href="/">
+            <div
+              className="overflow-hidden flex items-center h-full max-h-32 sm:max-h-38 md:max-h-32"
+              style={{ height: "100%", overflow: "hidden" }}
+            >
+              <Image
+                src="/Logo.png"
+                alt="Logo"
+                width={480}
+                height={160}
+                priority
+                className="mr-6 w-auto h-20 sm:h-28 md:h-24 object-cover transition-all"
+                style={{ objectPosition: "center" }}
+              />
+            </div>
           </Link>
-        ))}
-      </div>
-      {/* Iconos a la derecha */}
-      <div className="flex gap-4 items-center h-full">
-        <Link
-          href="/favorito"
-          title="Favoritos"
-          className="h-full flex items-center"
-        >
-          <MdFavorite size={28} className="text-pink-500 hover:text-pink-600" />
-        </Link>
-        <Link href="/cart" title="Carrito" className="h-full flex items-center">
-          <MdShoppingCart
-            size={28}
-            className="text-blue-500 hover:text-blue-600"
-          />
-        </Link>
-        <Link href="/login" title="Login" className="h-full flex items-center">
-          <MdLogin size={28} className="text-gray-500 hover:text-gray-700" />
-        </Link>
-      </div>
-    </nav>
+        </div>
+
+        {/* Links en desktop */}
+        <div className="hidden md:flex flex-1 justify-center gap-8">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="flex items-center gap-1 text-gray-700 hover:text-blue-600"
+            >
+              {link.icon}
+              <span>{link.label}</span>
+            </Link>
+          ))}
+        </div>
+
+        {/* Iconos a la derecha */}
+        <div className="flex gap-4 items-center">
+          <Link href="/favorito" title="Favoritos">
+            <MdFavorite
+              size={24}
+              className="text-pink-500 hover:text-pink-600"
+            />
+          </Link>
+          <Link href="/cart" title="Carrito">
+            <MdShoppingCart
+              size={24}
+              className="text-blue-500 hover:text-blue-600"
+            />
+          </Link>
+
+          {/* Login solo visible en desktop */}
+          <Link href="/login" title="Login" className="hidden md:inline">
+            <MdLogin size={24} className="text-gray-500 hover:text-gray-700" />
+          </Link>
+
+          {/* Botón Hamburguesa en móvil */}
+          <button
+            className="md:hidden text-gray-700 hover:text-blue-600"
+            onClick={() => setIsOpen(!isOpen)}
+          >
+            {isOpen ? <MdClose size={28} /> : <MdMenu size={28} />}
+          </button>
+        </div>
+      </nav>
+
+      {/* Menú desplegable móvil */}
+      {isOpen && (
+        <div className="md:hidden bg-white shadow-md border-t border-gray-200 flex flex-col p-4 space-y-4">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="flex items-center gap-2 text-gray-700 hover:text-blue-600"
+              onClick={() => setIsOpen(false)} // cerrar menú al hacer click
+            >
+              {link.icon}
+              <span>{link.label}</span>
+            </Link>
+          ))}
+          {/* Login en menú hamburguesa móvil */}
+          <Link
+            href="/login"
+            className="flex items-center gap-2 text-gray-700 hover:text-blue-600 border-t pt-4 mt-2"
+            onClick={() => setIsOpen(false)}
+          >
+            <MdLogin size={24} />
+            <span>Login</span>
+          </Link>
+        </div>
+      )}
+    </>
   );
 }
-// ...existing code...
-import React from "react";
