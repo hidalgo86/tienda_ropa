@@ -39,7 +39,7 @@ export default function Navbar() {
               style={{ height: "100%", overflow: "hidden" }}
             >
               <Image
-                src="/Logo.png"
+                src="/chikitoslandia.png"
                 alt="Logo"
                 width={480}
                 height={160}
