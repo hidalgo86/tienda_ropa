@@ -44,6 +44,7 @@ export default function Navbar() {
                 width={480}
                 height={160}
                 priority
+                unoptimized
                 className="mr-6 w-auto h-20 sm:h-28 md:h-24 object-cover transition-all"
                 style={{ objectPosition: "center" }}
               />
