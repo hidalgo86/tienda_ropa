@@ -47,8 +47,8 @@ export default function Navbar() {
               style={{
                 objectPosition:
                   typeof window !== "undefined" && window.innerWidth < 768
-                    ? "center 60%"
-                    : "center 70%",
+                    ? "center 50%"
+                    : "center 50%",
               }}
             />
           </Link>
