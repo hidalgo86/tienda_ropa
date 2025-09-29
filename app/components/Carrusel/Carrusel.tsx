@@ -3,7 +3,9 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 
 const imagenes = [
-  { src: "/PagoMovil.png", alt: "pagoMovil" },
+  { src: "/bebe2.png", alt: "Pago Movil" },
+  { src: "/bebe3.png", alt: "Banner 2" },
+  { src: "/bebe.png", alt: "Banner 3" },
 ];
 
 export default function Carrusel() {
@@ -16,37 +18,49 @@ export default function Carrusel() {
     return () => clearInterval(timer);
   }, []);
 
-  const siguiente = () => {
-    setActual((prev) => (prev + 1) % imagenes.length);
-  };
-
-  const anterior = () => {
+  const siguiente = () => setActual((prev) => (prev + 1) % imagenes.length);
+  const anterior = () =>
     setActual((prev) => (prev - 1 + imagenes.length) % imagenes.length);
-  };
 
- return (
-  <div className="flex justify-between items-center w-full px-4" >
-    <button
-      onClick={anterior}
-      className="bg-blue-400 text-white px-3 py-2 rounded hover:bg-blue-500 transition"
-    >
-      &#8592;
-    </button>
-    <div className="flex flex-col items-center justify-center" style={{ width: 300, height: 300 }}>
-      <Image
-        src={imagenes[actual].src}
-        alt={imagenes[actual].alt}
-        width={300}
-        height={300}
-        style={{ objectFit: "contain" }}
-      />
+  return (
+    <div className="relative w-full max-w-4xl mx-auto mt-8 rounded-xl overflow-hidden shadow-lg">
+      {/* Imagen */}
+      <div className="w-full h-[200px] sm:h-[250px] md:h-[350px] bg-pink-50 flex items-center justify-center">
+        <Image
+          src={imagenes[actual].src}
+          alt={imagenes[actual].alt}
+          fill
+          style={{ objectFit: "contain" }}
+          className="rounded-xl"
+          priority
+        />
+      </div>
+
+      {/* Botones */}
+      <button
+        onClick={anterior}
+        className="absolute top-1/2 left-4 -translate-y-1/2 bg-pink-200 hover:bg-pink-300 text-white rounded-full p-2 shadow-md transition"
+      >
+        &#8592;
+      </button>
+      <button
+        onClick={siguiente}
+        className="absolute top-1/2 right-4 -translate-y-1/2 bg-pink-200 hover:bg-pink-300 text-white rounded-full p-2 shadow-md transition"
+      >
+        &#8594;
+      </button>
+
+      {/* Puntos de navegación */}
+      <div className="absolute bottom-4 w-full flex justify-center gap-2">
+        {imagenes.map((_, idx) => (
+          <span
+            key={idx}
+            className={`w-3 h-3 rounded-full ${
+              idx === actual ? "bg-pink-400" : "bg-pink-200"
+            } transition`}
+          />
+        ))}
+      </div>
     </div>
-    <button
-      onClick={siguiente}
-      className="bg-blue-400 text-white px-3 py-2 rounded hover:bg-blue-500 transition"
-    >
-      &#8594;
-    </button>
-  </div>
-);
+  );
 }
