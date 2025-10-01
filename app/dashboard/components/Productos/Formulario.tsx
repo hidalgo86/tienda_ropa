@@ -1,45 +1,52 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { uploadToCloudinary } from "@/utils/cloudinaryUpload";
 
-// ----- Tipos -----
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
+// ------------------ Tipos ------------------
 export interface Producto {
   id?: string;
   name: string;
   description: string;
   genre: string;
-  size: string;
-  price: string;
-  stock: string;
-  imageUrl: string;
-  imagePublicId?: string;
+  size: string; // en el formulario lo tratamos como CSV ("S,M,L")
+  price: string; // controlado como string en el input
+  stock: string; // controlado como string en el input
+  imageUrl: string; // puede ser dataURL (preview) o URL remota
+  imagePublicId?: string | null;
 }
 
 interface CreateProductInput {
   name: string;
-  description: string;
-  genre: string;
-  size: string[];
+  description?: string;
+  genre?: string;
+  size?: string[];
   price: number;
   stock: number;
-  imageUrl: string;
+  imageUrl?: string;
   imagePublicId?: string;
-}
-
-interface UpdateProductInput extends CreateProductInput {
-  id: string;
 }
 
 type FormProductoModo = "crear" | "editar";
 
 interface FormProductoProps {
-  producto?: Producto;
+  producto?: Producto | null;
   modo?: FormProductoModo;
-  id?: string;
 }
 
-// ----- Componente de input reutilizable -----
+// ------------------ Valores por defecto ------------------
+const DEFAULT_FORM: Producto = {
+  name: "",
+  genre: "",
+  description: "",
+  size: "",
+  price: "",
+  stock: "",
+  imageUrl: "",
+  imagePublicId: "",
+};
+
+// ------------------ Input reutilizable ------------------
 interface InputProps {
   label: string;
   name: keyof Producto;
@@ -63,7 +70,7 @@ const InputField = ({
     <label className="block mb-1">{label}</label>
     {type === "textarea" ? (
       <textarea
-        name={name}
+        name={String(name)}
         value={value}
         onChange={onChange}
         className="w-full border rounded px-2 py-1"
@@ -71,7 +78,7 @@ const InputField = ({
       />
     ) : (
       <input
-        name={name}
+        name={String(name)}
         type={type}
         value={value}
         onChange={onChange}
@@ -82,172 +89,151 @@ const InputField = ({
   </div>
 );
 
-// ----- Componente principal -----
-export default function FormProducto({ modo, producto }: FormProductoProps) {
+// ------------------ Componente principal ------------------
+export default function FormProducto({ modo = "crear", producto = null }: FormProductoProps) {
   const router = useRouter();
 
-  const [form, setForm] = useState<Producto>(
-    producto || {
-      name: "",
-      genre: "",
-      description: "",
-      size: "",
-      price: "",
-      stock: "",
-      imageUrl: "",
-      imagePublicId: "",
-    }
-  );
+  // Inicialmente usamos valores por defecto para evitar leer propiedades de `producto` cuando es null
+  const [form, setForm] = useState<Producto>({ ...DEFAULT_FORM });
   const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const genres = ["niña", "niño", "unisex"];
   const stockOptions = Array.from({ length: 101 }, (_, i) => i);
 
-  // ----- Handlers -----
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => setForm({ ...form, [e.target.name]: e.target.value });
+  // Si el prop `producto` cambia (p. ej. en edición), actualizamos el formulario y el preview.
+  useEffect(() => {
+    if (producto) {
+      // mezclamos con DEFAULT_FORM para asegurarnos de que las propiedades faltantes existen
+      setForm({ ...DEFAULT_FORM, ...producto });
+      setPreview(producto.imageUrl ?? null);
+    } else {
+      // si no hay producto, dejamos valores por defecto
+      setForm({ ...DEFAULT_FORM });
+      setPreview(null);
+    }
+  }, [producto]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files?.[0]) return;
-    const f = e.target.files[0];
-    setFile(f);
+  useEffect(() => {
+    // Generar preview cuando se seleccione file
+    if (!file) return;
+
     const reader = new FileReader();
     reader.onload = (ev) => {
       const result = ev.target?.result;
       if (typeof result === "string") {
+        setPreview(result);
+        // Actualizamos solo el campo imageUrl del formulario
         setForm((prev) => ({ ...prev, imageUrl: result }));
       }
     };
-    reader.readAsDataURL(f);
+    reader.readAsDataURL(file);
+
+    // Cleanup: abort() está disponible en FileReader, pero usamos optional chaining para mayor seguridad
+    return () => reader.abort?.();
+  }, [file]);
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const name = e.currentTarget.name as keyof Producto;
+    const value = e.currentTarget.value;
+    setForm((prev) => ({ ...prev, [name]: value } as Producto));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0] ?? null;
+    setFile(f);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError(null);
-    let imageUrl = form.imageUrl;
-    let imagePublicId = form.imagePublicId;
+    setLoading(true);
 
     try {
+      // Validación mínima en cliente
+      if (!form.name || form.name.trim().length === 0) throw new Error("El nombre es obligatorio");
+      if (!form.price || Number.isNaN(Number(form.price))) throw new Error("Precio inválido");
+      if (!form.stock || Number.isNaN(Number(form.stock))) throw new Error("Stock inválido");
+
+      const formData = new FormData();
+      formData.append("name", form.name);
+      formData.append("description", form.description ?? "");
+      formData.append("genre", form.genre ?? "");
+      formData.append("size", form.size ?? ""); // backend deberá parsear el CSV o recibir múltiples
+      formData.append("price", String(form.price));
+      formData.append("stock", String(form.stock));
+
       if (file) {
-        setUploading(true);
-        const upload = await uploadToCloudinary(file);
-        imageUrl = upload.secure_url;
-        imagePublicId = upload.public_id;
-        setUploading(false);
+        formData.append("file", file);
       }
 
-      const sizeArray = form.size
-        .split(",")
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
+      // Construir URL base desde env
+      const base = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
 
-      const variables: { input: CreateProductInput | UpdateProductInput } = {
-        input: {
-          ...form,
-          size: sizeArray,
-          price: Number(form.price) || 0,
-          stock: Number(form.stock) || 0,
-          imageUrl,
-          imagePublicId,
-          ...(modo === "editar" && producto?.id
-            ? { id: String(producto.id) }
-            : {}),
-        },
-      };
+      // Para actualizar, usamos el id que está en el formulario (si existe). Así no dependemos del prop `producto`.
+      const url = modo === "editar" && form.id ? `${base}/products/${form.id}` : `${base}/products`;
+      const method = modo === "editar" && form.id ? "PUT" : "POST";
 
-      const query =
-        modo === "editar" && producto?.id
-          ? `mutation UpdateProduct($input: UpdateProductInput!) { updateProduct(input: $input) { id name price imagePublicId } }`
-          : `mutation CreateProduct($input: CreateProductInput!) { createProduct(input: $input) { id } }`;
-
-      const res = await fetch(process.env.NEXT_PUBLIC_API_URL!, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query, variables }),
+      const res = await fetch(url, {
+        method,
+        body: formData,
+        // NO poner headers Content-Type: el navegador lo gestiona con boundary
       });
-      const { errors } = await res.json();
-      if (errors) throw new Error(errors[0]?.message || "Error en GraphQL");
 
+      if (!res.ok) {
+        const text = await res.text();
+        try {
+          const json = JSON.parse(text);
+          throw new Error(json.message || json.error || text || "Error desconocido");
+        } catch {
+          throw new Error(text || "Error al comunicarse con el servidor");
+        }
+      }
+
+      // Éxito: redirigir
       router.push("/dashboard?opcion=Productos");
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Error al guardar producto"
-      );
+      setError(err instanceof Error ? err.message : "Error al guardar producto");
     } finally {
       setLoading(false);
-      setUploading(false);
     }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="max-w-md mx-auto bg-white p-6 rounded shadow"
-    >
-      <h2 className="text-xl font-bold mb-2">
-        {modo === "editar" ? "Editar producto" : "Agregar nuevo producto"}
-      </h2>
+    <form onSubmit={handleSubmit} className="max-w-md mx-auto bg-white p-6 rounded shadow">
+      <h2 className="text-xl font-bold mb-2">{modo === "editar" ? "Editar producto" : "Agregar nuevo producto"}</h2>
       <hr className="mb-5 border-gray-300" />
 
       {/* Imagen */}
       <div className="mb-3">
-        {form.imageUrl && (
+        {preview && (
           <div className="mb-3 flex justify-center">
-            <div
-              className="border-2 border-gray-300 bg-gray-50 rounded-lg p-2 shadow-inner flex items-center justify-center"
-              style={{ minWidth: 120, minHeight: 120 }}
-            >
-              <img
-                src={form.imageUrl}
-                alt="Vista previa"
-                className="max-h-40 rounded object-contain"
-                style={{ maxWidth: 160, maxHeight: 160 }}
-              />
+            <div className="border-2 border-gray-300 bg-gray-50 rounded-lg p-2 shadow-inner flex items-center justify-center" style={{ minWidth: 120, minHeight: 120 }}>
+              <img src={preview} alt="Vista previa" className="max-h-40 rounded object-contain" style={{ maxWidth: 160, maxHeight: 160 }} />
             </div>
           </div>
         )}
-        <label className="block mb-1">Imagen (subir archivo o URL)</label>
+
+        <label className="block mb-1">Imagen (subir archivo)</label>
         <input
           type="file"
           accept="image/*"
           onChange={handleFileChange}
           className="w-full border rounded px-2 py-1 mb-2"
-          disabled={uploading || loading}
+          disabled={loading}
         />
-        {uploading && (
-          <div className="text-blue-500 mt-1">Subiendo imagen...</div>
-        )}
       </div>
 
-      {/* Inputs reutilizables */}
-      <InputField
-        label="Nombre"
-        name="name"
-        value={form.name}
-        onChange={handleChange}
-        required
-      />
-      <InputField
-        label="Descripción"
-        name="description"
-        value={form.description}
-        onChange={handleChange}
-        type="textarea"
-        required
-      />
+      <InputField label="Nombre" name="name" value={form.name} onChange={handleChange} required />
+      <InputField label="Descripción" name="description" value={form.description} onChange={handleChange} type="textarea" required />
+
       <div className="mb-3">
         <label className="block mb-1">Categoría</label>
-        <select
-          value={form.genre ?? ""}
-          onChange={(e) => setForm({ ...form, genre: e.target.value })}
-          className="w-full border rounded px-2 py-1"
-          required
-        >
+        <select value={form.genre ?? ""} onChange={(e) => setForm((prev) => ({ ...prev, genre: e.target.value }))} className="w-full border rounded px-2 py-1" required>
           <option value="">Selecciona género</option>
           {genres.map((g) => (
             <option key={g} value={g}>
@@ -256,31 +242,14 @@ export default function FormProducto({ modo, producto }: FormProductoProps) {
           ))}
         </select>
       </div>
-      <InputField
-        label="Talla"
-        name="size"
-        value={form.size}
-        onChange={handleChange}
-        required
-      />
-      <InputField
-        label="Precio"
-        name="price"
-        type="number"
-        value={form.price}
-        onChange={handleChange}
-        required
-      />
 
-      {/* Stock */}
+      <InputField label="Talla (ej: S,M,L)" name="size" value={form.size} onChange={handleChange} required />
+
+      <InputField label="Precio" name="price" type="number" value={form.price} onChange={handleChange} required />
+
       <div className="mb-3">
         <label className="block mb-1">Stock</label>
-        <select
-          value={form.stock ?? ""}
-          onChange={(e) => setForm({ ...form, stock: e.target.value })}
-          className="w-full border rounded px-2 py-1"
-          required
-        >
+        <select value={form.stock ?? ""} onChange={(e) => setForm((prev) => ({ ...prev, stock: e.target.value }))} className="w-full border rounded px-2 py-1" required>
           <option value="">Selecciona stock</option>
           {stockOptions.map((s) => (
             <option key={s} value={s}>
@@ -290,24 +259,13 @@ export default function FormProducto({ modo, producto }: FormProductoProps) {
         </select>
       </div>
 
-      {/* Error */}
       {error && <div className="text-red-500 mb-2">{error}</div>}
 
-      {/* Botones */}
       <div className="flex gap-4 mt-4">
-        <button
-          type="submit"
-          className="bg-green-600 text-white px-4 py-2 rounded"
-          disabled={loading || uploading}
-        >
+        <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded" disabled={loading}>
           {loading ? "Guardando..." : "Aceptar"}
         </button>
-        <button
-          type="button"
-          className="bg-gray-400 text-white px-4 py-2 rounded"
-          onClick={() => router.push("/dashboard?opcion=Productos")}
-          disabled={loading}
-        >
+        <button type="button" className="bg-gray-400 text-white px-4 py-2 rounded" onClick={() => router.push("/dashboard?opcion=Productos")} disabled={loading}>
           Cancelar
         </button>
       </div>
