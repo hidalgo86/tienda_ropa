@@ -11,7 +11,7 @@ export interface PaginatedProducts {
 export async function getProducts(page: number): Promise<PaginatedProducts> {
   try {
     const res = await fetch(
-      "https://chikitoslandia-copy-production.up.railway.app/graphql",
+      "https://chikitoslandia.up.railway.app/graphql",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
