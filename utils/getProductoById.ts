@@ -1,6 +1,7 @@
-import { Producto } from "@/app/dashboard/components/Products/Form";
+import { Product } from "@/app/types/products";
 
-export async function getProductoById(id: string): Promise<Producto | null> {
+
+export async function getProductoById(id: string): Promise <Product | null> {
   const query = `
     query product($id: String!) {
       product(id: $id) {
