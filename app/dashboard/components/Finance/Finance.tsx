@@ -29,7 +29,7 @@ interface FinanzasProps {
   compras: Movimiento[];
 }
 
-export default function Finanzas({ ventas, compras }: FinanzasProps) {
+export default function Finance({ ventas, compras }: FinanzasProps) {
   // Preparar datos para los gráficos
   const labels = ventas.map((v) => v.fecha);
 

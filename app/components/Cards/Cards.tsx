@@ -1,8 +1,8 @@
 import Card from "../Card/Card";
-import { Product } from "../../types/products";
+import { ProductServer } from "@/types/product.type";
 
 interface CardsProps {
-  productos?: Partial<Product>[];
+  productos?: ProductServer[];
 }
 
 export default function Cards({ productos = [] }: CardsProps) {
@@ -15,10 +15,11 @@ export default function Cards({ productos = [] }: CardsProps) {
   }
 
   return (
-    <div className="mt-10 mb-10 flex flex-wrap gap-6 justify-center">
+    <div className="mt-10 mb-10 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 justify-items-center">
       {productos.map((producto) => (
         <Card key={producto.id ?? Math.random()} producto={producto} />
       ))}
     </div>
   );
 }
+

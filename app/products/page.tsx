@@ -2,8 +2,8 @@ import Card from "../components/Card/Card";
 import Pagination from "../components/Pagination";
 import Filtros from "../components/Filtros";
 import Navbar from "../components/Navbar";
-import { getProducts } from "../../utils/getProducts";
 import { notFound } from "next/navigation";
+import { getProducts } from "@/services/products.services";
 
 export default async function ProductsPage({
   searchParams,

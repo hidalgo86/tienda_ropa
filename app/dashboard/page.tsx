@@ -10,41 +10,50 @@ export const generateMetadata = () => ({
     },
   },
 });
+import { redirect } from "next/navigation";
+
+// Component
 import Menu from "./components/Menu/Menu";
 import Navbar from "../components/Navbar";
-import Productos from "./components/Productos/Productos";
-import Proveedores from "./components/Proveedores/Proveedores";
-import Clientes from "./components/Clientes/clientes";
-import Finanzas from "./components/Finanzas/Finanzas";
-import FormProducto from "./components/Productos/Formulario";
-import { redirect } from "next/navigation";
+import Products from "./components/Products/Products";
+import Provider from "./components/Provider/Provider";
+import Clients from "./components/Clients/Clients";
+import Finance from "./components/Finance/Finance";
+import FormProduct from "./components/Products/Form";
+
+// Types
+import { ProductServer } from "@/types/product.type";
+
+// Services
 import { getProductoById } from "@/utils/getProductoById";
 
 interface DashboardSearchParams {
-  opcion?: string;
-  page?: string;
-  formulario?: "crear" | "editar";
   id?: string;
+  page?: string;
+  option?: string;
+  form?: "create" | "edit";
 }
 
+// Component Dashboard
 export default async function DashboardPage({
   searchParams,
 }: {
   searchParams?: Promise<DashboardSearchParams>;
 }) {
   const params = searchParams ? await searchParams : {};
-  const opcion = params?.opcion || "Productos";
+  const option = params?.option || "Products";
   const page = Number(params?.page) || 1;
-  const mostrarFormulario = params?.formulario;
-  let producto = null;
+  const form = params?.form;
 
-  if (opcion === "Salir") {
+  // Product with empty values
+  let product: ProductServer | null = null;
+
+  if (option === "Salir") {
     redirect("/");
   }
 
-  if (params.id && mostrarFormulario === "editar") {
-    // Aquí puedes manejar la lógica para cargar el producto por ID
-    producto = await getProductoById(params.id);
+  if (params.id && form === "edit") {
+   product = await getProductoById(params.id);
   }
 
   return (
@@ -52,41 +61,39 @@ export default async function DashboardPage({
       <Navbar />
       <div className="flex flex-1 w-full">
         <aside className="w-full max-w-xs min-w-[220px] p-4 bg-gray-50 border-r border-gray-200 hidden md:block">
-          <Menu opcion={opcion} />
+          <Menu option={option} />
         </aside>
         <main className="flex-1 p-4">
-          {opcion === "Productos" && mostrarFormulario && (
+          {option === "products" && form && (
             <>
-              <FormProducto
-                modo={mostrarFormulario as "crear" | "editar"}
-                {...(mostrarFormulario === "editar" && producto
-                  ? { producto }
-                  : {})}
+              <FormProduct
+                mode={form}
+                {...(form === "edit" && product ? { product } : {})}
               />
             </>
           )}
-          {opcion === "Productos" && !mostrarFormulario && (
+          {option === "products" && !form && (
             <>
               <h1 className="text-2xl font-bold mt-10 mb-6 p-2">Productos</h1>
-              <Productos page={page} />
+              <Products page={page} />
             </>
           )}
-          {opcion === "Clientes" && (
+          {option === "clients" && (
             <>
               <h1 className="text-2xl font-bold mb-6 p-2">Clientes</h1>
-              <Clientes clientes={[]} />
+              <Clients clientes={[]} />
             </>
           )}
-          {opcion === "Proveedores" && (
+          {option === "providers" && (
             <>
               <h1 className="text-2xl font-bold mt-10 mb-6 p-2">Proveedores</h1>
-              <Proveedores proveedores={[]} />
+              <Provider proveedores={[]} />
             </>
           )}
-          {opcion === "Finanzas" && (
+          {option === "finance" && (
             <>
               <h1 className="text-2xl font-bold mt-10 mb-6 p-2">Finanzas</h1>
-              <Finanzas ventas={[]} compras={[]} />
+              <Finance ventas={[]} compras={[]} />
             </>
           )}
         </main>

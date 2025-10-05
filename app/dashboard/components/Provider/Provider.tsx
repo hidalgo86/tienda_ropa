@@ -10,7 +10,7 @@ interface ProveedoresProps {
   proveedores: Proveedor[];
 }
 
-export default function Proveedores({ proveedores }: ProveedoresProps) {
+export default function Provider({ proveedores }: ProveedoresProps) {
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full bg-white border border-gray-200 rounded">

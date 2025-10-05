@@ -1,19 +1,22 @@
-import Pagination from "@/app/components/Pagination";
-import { getProducts } from "@/utils/getProducts";
 import Link from "next/link";
 
-interface ProductosProps {
-  page?: number;
-}
+// Components
+import Pagination from "@/app/components/Pagination";
 
-export default async function Productos({ page = 1 }: ProductosProps) {
+// Services
+import { getProducts } from "@/services/products.services";
+
+
+// Component Products
+export default async function Products({ page = 1 }) {
+
   const { items, totalPages } = await getProducts(page);
 
   return (
     <div className="overflow-x-auto">
       <div className="flex items-center mb-4">
         <Link
-          href="/dashboard?opcion=Productos&formulario=crear"
+          href="/dashboard?option=products&form=create"
           className="bg-green-500 hover:bg-green-600 text-white rounded-full p-2 flex items-center justify-center"
           title="Agregar nuevo producto"
         >
@@ -45,16 +48,16 @@ export default async function Productos({ page = 1 }: ProductosProps) {
           </tr>
         </thead>
         <tbody>
-          {items.map((producto) => (
-            <tr key={producto.id} className="text-center">
-              <td className="px-4 py-2 border-b">{producto.name}</td>
-              <td className="px-4 py-2 border-b">{producto.genre}</td>
-              <td className="px-4 py-2 border-b">{producto.price}</td>
-              <td className="px-4 py-2 border-b">{producto.stock}</td>
+          {items.map((product) => (
+            <tr key={product.id} className="text-center">
+              <td className="px-4 py-2 border-b">{product.name}</td>
+              <td className="px-4 py-2 border-b">{product.genre}</td>
+              <td className="px-4 py-2 border-b">{product.price}</td>
+              <td className="px-4 py-2 border-b">{product.stock}</td>
               <td className="px-4 border-b gap-2 justify-center h-12 align-middle">
                 <div className="flex gap-2 justify-center items-center h-full">
                   <Link
-                    href={`/dashboard?opcion=Productos&formulario=editar&id=${producto.id}`}
+                    href={`/dashboard?option=products&form=edit&id=${product.id}`}
                     className="bg-yellow-400 text-white px-2 py-1 rounded flex items-center justify-center"
                     title="Editar"
                   >
@@ -75,7 +78,7 @@ export default async function Productos({ page = 1 }: ProductosProps) {
                     </svg>
                   </Link>
                   <Link
-                    href={`/dashboard/productos/eliminar/${producto.id}`}
+                    href={`/dashboard/products/delete/${product.id}`}
                     className="bg-red-500 text-white px-2 py-1 rounded flex items-center justify-center"
                     title="Eliminar"
                   >

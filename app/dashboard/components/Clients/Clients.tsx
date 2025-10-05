@@ -9,7 +9,7 @@ interface ClientesProps {
   clientes: Cliente[];
 }
 
-export default function Clientes({ clientes }: ClientesProps) {
+export default function Clients({ clientes }: ClientesProps) {
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full bg-white border border-gray-200 rounded">

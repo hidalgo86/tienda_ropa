@@ -1,8 +1,8 @@
 import Navbar from "./components/Navbar";
 import Carrusel from "./components/Carrusel/Carrusel";
 import Cards from "./components/Cards/Cards";
-import { getProducts } from "@/utils/getProducts";
 import Footer from "./components/Footer";
+import { getProducts } from "@/services/products.services";
 
 export default async function Home() {
   const productos = await getProducts(1);

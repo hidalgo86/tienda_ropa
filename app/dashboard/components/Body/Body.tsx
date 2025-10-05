@@ -1,7 +1,7 @@
-import Clientes from "../Clientes/clientes";
-import Finanzas from "../Finanzas/Finanzas";
-import Productos from "../Productos/Productos";
-import Proveedores from "../Proveedores/Proveedores";
+import Clients from "../Clients/Clients";
+import Finance from "../Finance/Finance";
+import Products from "../Products/Products";
+import Provider from "../Provider/Provider";
 
 import {
   clientesMock,
@@ -11,34 +11,34 @@ import {
 } from "../mocks";
 
 interface BodyProps {
-  mostrar: "Clientes" | "Proveedores" | "Productos" | "Finanzas";
+  mostrar: "Clients" | "Providers" | "Products" | "Finance";
 }
 
 export default function Body({ mostrar }: BodyProps) {
   return (
     <div className="p-4">
-      {mostrar === "Clientes" && (
+      {mostrar === "Clients" && (
         <>
           <h1 className="text-2xl font-bold mb-6 p-2">Clientes</h1>
-          <Clientes clientes={clientesMock} />
+          <Clients clientes={clientesMock} />
         </>
       )}
-      {mostrar === "Proveedores" && (
+      {mostrar === "Providers" && (
         <>
           <h1 className="text-2xl font-bold mt-10 mb-6 p-2">Proveedores</h1>
-          <Proveedores proveedores={proveedoresMock} />
+          <Provider proveedores={proveedoresMock} />
         </>
       )}
-      {mostrar === "Productos" && (
+      {mostrar === "Products" && (
         <>
           <h1 className="text-2xl font-bold mt-10 mb-6 p-2">Productos</h1>
-          <Productos />
+          <Products />
         </>
       )}
-      {mostrar === "Finanzas" && (
+      {mostrar === "Finance" && (
         <>
           <h1 className="text-2xl font-bold mt-10 mb-6 p-2">Finanzas</h1>
-          <Finanzas ventas={ventasMock} compras={comprasMock} />
+          <Finance ventas={ventasMock} compras={comprasMock} />
         </>
       )}
     </div>
