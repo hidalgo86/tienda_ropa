@@ -1,7 +1,7 @@
-import { Product } from "@/app/types/products";
+import { ProductServer } from "@/types/product.type";
 
 
-export async function getProductoById(id: string): Promise <Product | null> {
+export async function getProductoById(id: string): Promise <ProductServer | null> {
   const query = `
     query product($id: String!) {
       product(id: $id) {
