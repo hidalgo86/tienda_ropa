@@ -1,8 +1,8 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Product } from "@/app/types/products";
+import { ProductServer } from "@/types/product.type";
 
 interface ProductsState {
-  products: Product[];
+  products: ProductServer[];
   loading: boolean;
   error: string | null;
 }
@@ -17,7 +17,7 @@ const productsSlice = createSlice({
   name: "products",
   initialState,
   reducers: {
-    setProducts(state, action: PayloadAction<Product[]>) {
+    setProducts(state, action: PayloadAction<ProductServer[]>) {
       state.products = action.payload;
       state.loading = false;
       state.error = null;
@@ -29,13 +29,13 @@ const productsSlice = createSlice({
       state.error = action.payload;
       state.loading = false;
     },
-    addProduct(state, action: PayloadAction<Product>) {
+    addProduct(state, action: PayloadAction<ProductServer>) {
       state.products.push(action.payload);
     },
     removeProduct(state, action: PayloadAction<string>) {
       state.products = state.products.filter((p) => p.id !== action.payload);
     },
-    updateProduct(state, action: PayloadAction<Product>) {
+    updateProduct(state, action: PayloadAction<ProductServer>) {
       const idx = state.products.findIndex((p) => p.id === action.payload.id);
       if (idx !== -1) {
         state.products[idx] = action.payload;

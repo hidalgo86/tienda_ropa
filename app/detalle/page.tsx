@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Product } from "../types/products";
+import { ProductServer } from "@/types/product.type";
 import { MdArrowBack } from "react-icons/md";
 
 export default function ProductDetailPage() {
@@ -17,7 +17,7 @@ export default function ProductDetailPage() {
 function ProductDetailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [producto, setProducto] = useState<Product | null>(null);
+  const [producto, setProducto] = useState<ProductServer | null>(null);
 
   useEffect(() => {
     const productoParam = searchParams ? searchParams.get("producto") : null;

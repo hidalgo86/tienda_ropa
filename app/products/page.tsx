@@ -4,6 +4,7 @@ import Filtros from "../components/Filtros";
 import Navbar from "../components/Navbar";
 import { notFound } from "next/navigation";
 import { getProducts } from "@/services/products.services";
+import { ProductServer } from "@/types/product.type";
 
 export default async function ProductsPage({
   searchParams,
@@ -12,7 +13,8 @@ export default async function ProductsPage({
 }) {
   const params = await searchParams;
   const page = Number(params?.page) || 1;
-  const { items, totalPages } = await getProducts(page);
+  const { items, totalPages }: { items: ProductServer[]; totalPages: number } =
+    await getProducts(page);
 
   if (page < 1 || (totalPages && page > totalPages)) return notFound();
 
@@ -35,7 +37,7 @@ export default async function ProductsPage({
             </div>
           ) : (
             <div className="flex flex-wrap gap-4 justify-center md:justify-start">
-              {items.map((product, index) => (
+              {items.map((product: ProductServer, index: number) => (
                 <Card
                   key={product.id}
                   producto={product}

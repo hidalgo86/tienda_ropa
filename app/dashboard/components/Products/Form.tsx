@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ProductClient, ProductServer } from "@/types/product.type";
 import { createProduct, updateProduct } from "@/services/products.services";
@@ -142,7 +143,8 @@ function normalizeSizes(raw: string[] | undefined | null): string {
   if (!raw || raw.length === 0) return "";
   const flat: string[] = [];
 
-  const process = (val: any) => {
+  // Se reemplaza any por unknown para cumplir regla eslint y se restringe el flujo
+  const process = (val: unknown): void => {
     if (typeof val === "string") {
       const trimmed = val.trim();
       if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
@@ -388,10 +390,13 @@ export default function FormProducto({
               className="border-2 border-gray-300 bg-gray-50 rounded-lg p-2 shadow-inner flex items-center justify-center"
               style={{ minWidth: 120, minHeight: 120 }}
             >
-              <img
+              <Image
                 src={preview}
                 alt="Vista previa"
-                className="max-h-40 rounded object-contain"
+                width={160}
+                height={160}
+                unoptimized
+                className="max-h-40 rounded object-contain w-auto h-auto"
                 style={{ maxWidth: 160, maxHeight: 160 }}
               />
             </div>

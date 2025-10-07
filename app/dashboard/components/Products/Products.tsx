@@ -3,7 +3,6 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import Pagination from "@/app/components/Pagination";
 import {
   getProducts,
@@ -15,7 +14,6 @@ import { useEffect, useState } from "react";
 import { ProductServer } from "@/types/product.type";
 
 export default function Products({ page = 1 }: { page?: number }) {
-  const router = useRouter();
   const [items, setItems] = useState<ProductServer[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
