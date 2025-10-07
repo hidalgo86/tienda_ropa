@@ -3,12 +3,13 @@ export interface ProductServer {
   id: string;
   name: string;
   description?: string;
-  genre: "NINA" | "NINO" | "UNISEX";
+  genre: "niña" | "niño" | "unisex";
   size: string[];
   price: number;
   stock: number;
   imageUrl?: string;
   imagePublicId?: string;
+  status?: "DISPONIBLE" | "AGOTADO" | "ELIMINADO";
 }
 
 export interface ProductClient {
@@ -21,6 +22,7 @@ export interface ProductClient {
   stock: number;
   imageUrl?: string;
   imagePublicId?: string;
+  status?: "DISPONIBLE" | "AGOTADO" | "ELIMINADO";
 }
 
 // Define PaginatedProducts
@@ -30,4 +32,3 @@ export interface PaginatedProducts {
   page: number;
   totalPages: number;
 }
-

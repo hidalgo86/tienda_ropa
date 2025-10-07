@@ -1,3 +1,4 @@
+// app/dashboard/page.tsx
 export const generateMetadata = () => ({
   robots: {
     index: false,
