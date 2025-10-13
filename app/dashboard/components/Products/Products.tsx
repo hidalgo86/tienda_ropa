@@ -68,7 +68,7 @@ export default function Products({ page = 1 }: { page?: number }) {
   async function handleRestore(product: ProductServer) {
     try {
       const targetStatus =
-        product.stock && product.stock > 0 ? "disponible" : "agotado";
+        product.stock && product.stock > 0 ? "DISPONIBLE" : "AGOTADO";
       await restoreProduct(product.id, targetStatus);
       alert(`✅ Producto habilitado como ${targetStatus}`);
 
