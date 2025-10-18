@@ -26,7 +26,7 @@ import FormProduct from "./components/Products/Form";
 import { ProductServer } from "@/types/product.type";
 
 // Services
-import { getProductoById } from "@/utils/getProductoById";
+import { getProductoById } from "@/services/products.services";
 
 interface DashboardSearchParams {
   id?: string;
@@ -54,7 +54,7 @@ export default async function DashboardPage({
   }
 
   if (params.id && form === "edit") {
-   product = await getProductoById(params.id);
+    product = await getProductoById(params.id);
   }
 
   return (

@@ -13,7 +13,28 @@ interface CardProps {
 
 export default function Card({ producto, priority = false }: CardProps) {
   const router = useRouter();
-  const [imgSrc, setImgSrc] = useState(producto.imageUrl ?? "/placeholder.webp");
+  const [imgSrc, setImgSrc] = useState(
+    producto.imageUrl ?? "/placeholder.webp"
+  );
+
+  const variants = (producto as any)?.variants as
+    | Array<{ size: string; stock: number; price: number }>
+    | undefined;
+  const minPrice = Array.isArray(variants)
+    ? variants
+        .map((v) => Number(v?.price))
+        .filter((n) => Number.isFinite(n))
+        .reduce(
+          (min, n) => (min === null ? n : Math.min(min, n)),
+          null as number | null
+        )
+    : null;
+  const sizesCsv = Array.isArray(variants)
+    ? variants
+        .map((v) => v?.size)
+        .filter(Boolean)
+        .join(", ")
+    : "";
 
   const handleClick = () => {
     if (producto.id) {
@@ -32,7 +53,9 @@ export default function Card({ producto, priority = false }: CardProps) {
       <div className="w-full h-[210px] flex items-center justify-center bg-pink-100 relative">
         <Image
           src={imgSrc}
-          alt={producto.name ? `Imagen de ${producto.name}` : "Producto sin nombre"}
+          alt={
+            producto.name ? `Imagen de ${producto.name}` : "Producto sin nombre"
+          }
           width={210}
           height={210}
           className="object-cover w-full h-full rounded-t-xl"
@@ -63,12 +86,12 @@ export default function Card({ producto, priority = false }: CardProps) {
         {/* Precio y tallas */}
         <div className="flex items-center justify-between mb-1">
           <span className="text-pink-500 font-bold text-lg">
-            {typeof producto.price === "number" ? `$${producto.price}` : producto.price}
+            {Number.isFinite(minPrice)
+              ? `$${(minPrice as number).toFixed(2)}`
+              : ""}
           </span>
           <span className="text-gray-500 text-xs" translate="no">
-            {producto.size && producto.size.length > 0
-              ? `Talla: ${producto.size.join(", ")}`
-              : "Sin talla"}
+            {sizesCsv ? `Tallas: ${sizesCsv}` : "Sin talla"}
           </span>
         </div>
 

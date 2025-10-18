@@ -18,12 +18,18 @@ function ProductDetailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [producto, setProducto] = useState<ProductServer | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string>("");
 
   useEffect(() => {
     const productoParam = searchParams ? searchParams.get("producto") : null;
     if (productoParam) {
       try {
-        setProducto(JSON.parse(decodeURIComponent(productoParam)));
+        const parsed: ProductServer = JSON.parse(
+          decodeURIComponent(productoParam)
+        );
+        setProducto(parsed);
+        const firstSize = (parsed as any)?.variants?.[0]?.size || "";
+        setSelectedSize(firstSize);
       } catch {
         setProducto(null);
       }
@@ -32,6 +38,25 @@ function ProductDetailContent() {
 
   if (!producto)
     return <div className="p-8 text-center">Producto no encontrado</div>;
+
+  const variants = (producto as any)?.variants as
+    | Array<{ size: string; stock: number; price: number }>
+    | undefined;
+  const totalStock = Array.isArray(variants)
+    ? variants.reduce((sum, v) => sum + (Number(v?.stock) || 0), 0)
+    : 0;
+  const currentVariant = Array.isArray(variants)
+    ? variants.find((v) => v.size === selectedSize)
+    : undefined;
+  const displayPrice =
+    currentVariant?.price ??
+    (Array.isArray(variants)
+      ? Math.min(
+          ...variants
+            .map((v) => Number(v?.price))
+            .filter((n) => Number.isFinite(n))
+        )
+      : 0);
 
   return (
     <div className="min-h-screen bg-pink-50 flex flex-col items-center py-10 px-4">
@@ -65,23 +90,28 @@ function ProductDetailContent() {
             {producto.name}
           </h2>
           <p className="text-pink-600 font-bold text-2xl mb-4">
-            ${producto.price}
+            ${Number(displayPrice || 0).toFixed(2)}
           </p>
           <p className="text-gray-600 mb-4">{producto.description}</p>
 
           {/* Tallas */}
-          {producto.size && producto.size.length > 0 ? (
+          {Array.isArray(variants) && variants.length > 0 ? (
             <div className="mb-4">
               <h4 className="text-sm font-semibold text-gray-700 mb-2">
                 Tallas disponibles:
               </h4>
               <div className="flex gap-2 flex-wrap">
-                {producto.size.map((talla) => (
+                {variants.map((v) => (
                   <button
-                    key={talla}
-                    className="px-3 py-1 border border-gray-300 rounded-lg hover:border-pink-400 hover:text-pink-500 text-sm transition"
+                    key={v.size}
+                    onClick={() => setSelectedSize(v.size)}
+                    className={`px-3 py-1 border rounded-lg text-sm transition ${
+                      selectedSize === v.size
+                        ? "border-pink-500 text-pink-600 bg-pink-50"
+                        : "border-gray-300 hover:border-pink-400 hover:text-pink-500"
+                    }`}
                   >
-                    {talla}
+                    {v.size}
                   </button>
                 ))}
               </div>
@@ -92,7 +122,7 @@ function ProductDetailContent() {
 
           {/* Stock */}
           <p className="text-gray-500 text-sm mb-4">
-            Stock disponible: {producto.stock}
+            Stock disponible: {totalStock}
           </p>
 
           {/* Botones de acción */}
