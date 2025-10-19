@@ -70,7 +70,7 @@ const InputField = ({
         id={String(name)}
         name={name}
         type={type}
-        value={value as any}
+        value={String(value)}
         onChange={onChange}
         className="w-full border rounded px-2 py-1 disabled:opacity-50"
         required={required}
@@ -110,14 +110,14 @@ const SelectField = ({
     <select
       id={String(name ?? label)}
       name={name}
-      value={value as any}
+      value={String(value)}
       onChange={onChange}
       className="w-full border rounded px-2 py-1 disabled:opacity-50"
       required={required}
       disabled={disabled}
     >
       {options.map((opt) => (
-        <option key={String(opt)} value={opt as any}>
+        <option key={String(opt)} value={String(opt)}>
           {String(opt)}
         </option>
       ))}
@@ -244,7 +244,7 @@ const toServerProduct = (
   console.log("🔧 Género normalizado:", payload.genre);
 
   // Incluir variants siempre (tanto para create como para update)
-  (payload as any).variants = variants;
+  payload.variants = variants;
 
   // Para creates, incluir imágenes
   if (!isUpdate) {
@@ -410,17 +410,17 @@ export default function FormProducto({
 
     console.log("📦 Producto recibido:", product);
 
-    const variantsFromProduct: ProductVariant[] = (
-      (product as any)?.variants || []
-    ).map((v: any) => ({
-      size: v?.size || "RN", // ya viene en formato backend, no necesitamos convertir
-      stock: Number(v?.stock) || 0,
-      price: Number(v?.price) || 0,
-    }));
+    const variantsFromProduct: ProductVariant[] = (product.variants || []).map(
+      (v) => ({
+        size: v?.size || "RN", // ya viene en formato backend, no necesitamos convertir
+        stock: Number(v?.stock) || 0,
+        price: Number(v?.price) || 0,
+      })
+    );
 
     console.log("🔄 Variants procesados:", variantsFromProduct);
 
-    const genreRaw = (product as any)?.genre;
+    const genreRaw = product.genre;
     const genre =
       typeof genreRaw === "string"
         ? genreRaw === "nina" || genreRaw === "NINA"
@@ -437,26 +437,26 @@ export default function FormProducto({
         ? "niño"
         : "unisex";
 
-    const productId = (product as any)?.id;
+    const productId = product.id;
     console.log("🆔 ID del producto:", productId);
 
     const newForm = {
       ...DEFAULT_FORM,
       id: productId ?? "",
-      name: (product as any)?.name ?? "",
-      description: (product as any)?.description ?? "",
+      name: product.name ?? "",
+      description: product.description ?? "",
       genre: genre as "niña" | "niño" | "unisex",
       variants: variantsFromProduct.length
         ? variantsFromProduct
         : [{ size: "RN", price: 0, stock: 0 }], // usar formato backend
-      imageUrl: (product as any)?.imageUrl ?? "",
-      imagePublicId: (product as any)?.imagePublicId ?? "",
+      imageUrl: product.imageUrl ?? "",
+      imagePublicId: product.imagePublicId ?? "",
     };
 
     console.log("📋 Formulario inicializado:", newForm);
 
     setForm(newForm);
-    setPreview((product as any)?.imageUrl ?? null);
+    setPreview(product.imageUrl ?? null);
     setError(null);
   }, [product, mode]);
 
@@ -476,7 +476,7 @@ export default function FormProducto({
   ) => {
     const { name, value } = e.target as {
       name: "name" | "description";
-      value: any;
+      value: string;
     };
     setForm((prev) => ({
       ...prev,
@@ -485,7 +485,10 @@ export default function FormProducto({
   };
 
   const handleGenreChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setForm((prev) => ({ ...prev, genre: e.target.value as any }));
+    setForm((prev) => ({
+      ...prev,
+      genre: e.target.value as "niña" | "niño" | "unisex",
+    }));
   };
 
   // No hay stock global; el stock se edita por variante
@@ -570,17 +573,14 @@ export default function FormProducto({
 
         const result = await updateProduct(
           form.id,
-          payload as any,
+          payload,
           fileToSend || undefined
         );
         console.log("✅ Resultado actualización:", result);
         alert("✅ Producto actualizado correctamente");
       } else {
         console.log("🆕 Creando nuevo producto");
-        const result = await createProduct(
-          payload as any,
-          fileToSend || undefined
-        );
+        const result = await createProduct(payload, fileToSend || undefined);
         console.log("✅ Resultado creación:", result);
         alert("✅ Producto creado correctamente");
 
@@ -594,9 +594,11 @@ export default function FormProducto({
       console.log("🔄 Redirigiendo al listado");
       router.push("/dashboard?option=products");
       router.refresh();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("❌ Error en handleSubmit:", err);
-      setError(err?.message || "Error al guardar el producto");
+      const errorMessage =
+        err instanceof Error ? err.message : "Error al guardar el producto";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -12,7 +12,7 @@ interface Product {
   name: string;
   description: string;
   status: string;
-  variants: any;
+  variants: unknown;
   size?: string[];
 }
 
@@ -20,6 +20,7 @@ export default function DeleteProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState<string[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [deleteType, setDeleteType] = useState<"soft" | "hard">("soft");
   const [deleted, setDeleted] = useState<string[]>([]);
 
