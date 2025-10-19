@@ -2,11 +2,8 @@ import Navbar from "./components/Navbar";
 import Carrusel from "./components/Carrusel/Carrusel";
 import Cards from "./components/Cards/Cards";
 import Footer from "./components/Footer";
-import { getProducts } from "@/services/products.services";
 
-export default async function Home() {
-  const productos = await getProducts(1);
-
+export default function Home() {
   return (
     <div className="bg-white">
       <Navbar />
@@ -14,7 +11,7 @@ export default async function Home() {
         <Carrusel />
 
         <div className="mt-10 mb-10">
-          <Cards productos={productos.items} />
+          <Cards />
         </div>
       </main>
       <Footer />
