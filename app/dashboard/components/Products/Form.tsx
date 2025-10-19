@@ -23,7 +23,7 @@ const DEFAULT_FORM: ProductClient = {
   name: "",
   genre: "unisex",
   description: "",
-  variants: [{ size: "RN", price: 0, stock: 0 }],
+  variants: [{ size: "RN", price: 0, stock: 0 }], // usar formato backend
   imageUrl: "",
   imagePublicId: "",
 };
@@ -126,56 +126,52 @@ const SelectField = ({
 );
 
 // ------------------ Helpers ------------------
-// Enum Size del schema: RN, M3, M6, M9, M12, M18, M24, T2, T3, ..., T12
+// Enum Size del schema del backend: RN, 3M, 6M, 9M, 12M, 18M, 24M, 2T, 3T, ..., 12T
 const ALLOWED_SIZES = [
   "RN",
-  "M3",
-  "M6",
-  "M9",
-  "M12",
-  "M18",
-  "M24",
-  "T2",
-  "T3",
-  "T4",
-  "T5",
-  "T6",
-  "T7",
-  "T8",
-  "T9",
-  "T10",
-  "T12",
+  "3M",
+  "6M",
+  "9M",
+  "12M",
+  "18M",
+  "24M",
+  "2T",
+  "3T",
+  "4T",
+  "5T",
+  "6T",
+  "7T",
+  "8T",
+  "9T",
+  "10T",
+  "12T",
 ];
 
-// Normaliza talla a token de GraphQL/UI (acepta 3M/M3 y 2T/T2)
+// Normaliza talla a formato backend (acepta 3M/M3 y 2T/T2 pero convierte al formato del backend)
 function canonicalizeSize(raw: string): string {
   const s = String(raw || "")
     .trim()
     .toUpperCase();
   if (s === "RN") return "RN";
-  // 3M o M3 -> M3
+
+  // 3M o M3 -> 3M (formato backend)
   const m1 = /^(\d+)M$/.exec(s);
-  if (m1) return `M${m1[1]}`;
+  if (m1) return `${m1[1]}M`;
   const m2 = /^M(\d+)$/.exec(s);
-  if (m2) return `M${m2[1]}`;
-  // 2T o T2 -> T2
+  if (m2) return `${m2[1]}M`;
+
+  // 2T o T2 -> 2T (formato backend)
   const t1 = /^(\d+)T$/.exec(s);
-  if (t1) return `T${t1[1]}`;
+  if (t1) return `${t1[1]}T`;
   const t2 = /^T(\d+)$/.exec(s);
-  if (t2) return `T${t2[1]}`;
+  if (t2) return `${t2[1]}T`;
+
   return s;
 }
 
-// Convierte token UI/GraphQL -> valor REST (M3->3M, T2->2T, RN->RN)
+// Convierte a formato backend (ya no necesita conversión porque canonicalizeSize ya lo hace)
 function toRestSize(token: string): string {
-  const s = String(token || "").toUpperCase();
-  if (s === "RN") return "RN";
-  const m = /^M(\d+)$/.exec(s);
-  if (m) return `${m[1]}M`;
-  const t = /^T(\d+)$/.exec(s);
-  if (t) return `${t[1]}T`;
-  // Si ya viene en formato REST (3M/2T) o desconocido, devolver tal cual
-  return s;
+  return canonicalizeSize(token);
 }
 
 // Derivados desde variants
@@ -217,7 +213,7 @@ const toServerProduct = (
 ): ProductServer => {
   const variants = (form.variants || [])
     .map((v) => ({
-      size: toRestSize(canonicalizeSize(v.size)),
+      size: canonicalizeSize(v.size), // ya devuelve formato backend (3M, 2T, etc.)
       stock: Math.max(0, Number(v.stock) || 0),
       price: Math.max(0, Number(v.price) || 0),
     }))
@@ -247,13 +243,14 @@ const toServerProduct = (
   payload.genre = normalizedGenre;
   console.log("🔧 Género normalizado:", payload.genre);
 
-  // Para creates, incluir variants e imágenes
+  // Incluir variants siempre (tanto para create como para update)
+  (payload as any).variants = variants;
+
+  // Para creates, incluir imágenes
   if (!isUpdate) {
-    (payload as any).variants = variants;
     payload.imageUrl = form.imageUrl || "";
     payload.imagePublicId = form.imagePublicId || "";
   }
-  // Para updates, variants se manejan por separado usando endpoints específicos
 
   console.log("🔧 Payload construido (isUpdate=" + isUpdate + "):", payload);
   console.log("🔧 Keys en payload:", Object.keys(payload));
@@ -273,7 +270,7 @@ function VariantRows({
   disabled: boolean;
 }) {
   const addRow = () => {
-    const used = new Set(variants.map((v) => canonicalizeSize(v.size)));
+    const used = new Set(variants.map((v) => v.size)); // ya no necesitamos canonicalizar
     const nextSize =
       ALLOWED_SIZES.find((s) => !used.has(s)) || ALLOWED_SIZES[0];
     setVariants([...variants, { size: nextSize, price: 0, stock: 0 }]);
@@ -313,7 +310,7 @@ function VariantRows({
           <React.Fragment key={`${v.size}-${idx}`}>
             <div className="col-span-4">
               <select
-                value={canonicalizeSize(v.size)}
+                value={v.size}
                 onChange={(e) => updateRow(idx, { size: e.target.value })}
                 disabled={disabled}
                 className="w-full border rounded px-2 py-1"
@@ -321,9 +318,7 @@ function VariantRows({
                 {ALLOWED_SIZES.map((s) => {
                   const usedByOthers = new Set(
                     variants
-                      .map((vv, i) =>
-                        i === idx ? null : canonicalizeSize(vv.size)
-                      )
+                      .map((vv, i) => (i === idx ? null : vv.size))
                       .filter(Boolean) as string[]
                   );
                   const disabledOpt = usedByOthers.has(s);
@@ -418,7 +413,7 @@ export default function FormProducto({
     const variantsFromProduct: ProductVariant[] = (
       (product as any)?.variants || []
     ).map((v: any) => ({
-      size: canonicalizeSize(v?.size),
+      size: v?.size || "RN", // ya viene en formato backend, no necesitamos convertir
       stock: Number(v?.stock) || 0,
       price: Number(v?.price) || 0,
     }));
@@ -453,7 +448,7 @@ export default function FormProducto({
       genre: genre as "niña" | "niño" | "unisex",
       variants: variantsFromProduct.length
         ? variantsFromProduct
-        : [{ size: "RN", price: 0, stock: 0 }],
+        : [{ size: "RN", price: 0, stock: 0 }], // usar formato backend
       imageUrl: (product as any)?.imageUrl ?? "",
       imagePublicId: (product as any)?.imagePublicId ?? "",
     };
@@ -511,7 +506,7 @@ export default function FormProducto({
       console.log("📦 Variants no vacíos:", nonEmpty);
 
       // sin duplicados de talla
-      const normalizedSizes = nonEmpty.map((v) => canonicalizeSize(v.size));
+      const normalizedSizes = nonEmpty.map((v) => v.size); // ya viene normalizado
       const uniqueCount = new Set(normalizedSizes).size;
       if (uniqueCount !== nonEmpty.length) {
         throw new Error("No se permiten variantes con tallas duplicadas");
@@ -527,11 +522,11 @@ export default function FormProducto({
       console.log("📄 Payload generado:", payload);
 
       // Manejo de archivos mejorado
-      let fileToSend = file;
+      let fileToSend: File | null = file;
 
-      // Solo generar placeholder si no hay archivo NI imagen existente
-      if (!file && !form.imageUrl) {
-        console.log("🖼️ Generando imagen placeholder");
+      // Solo generar placeholder si no hay archivo NI imagen existente Y es creación
+      if (!file && !form.imageUrl && mode === "create") {
+        console.log("🖼️ Generando imagen placeholder para nuevo producto");
         const placeholderSvg = generatePlaceholderImage(form.name);
         const response = await fetch(placeholderSvg);
         const blob = await response.blob();
@@ -539,6 +534,14 @@ export default function FormProducto({
           [blob],
           `${form.name.replace(/\s+/g, "_")}_placeholder.svg`,
           { type: "image/svg+xml" }
+        );
+      }
+
+      // Para ediciones, solo enviar archivo si hay uno nuevo seleccionado
+      if (mode === "edit" && !file) {
+        fileToSend = null; // No enviar archivo si no hay uno nuevo
+        console.log(
+          "📁 Editando sin archivo nuevo - manteniendo imagen existente"
         );
       }
 
@@ -568,7 +571,7 @@ export default function FormProducto({
         const result = await updateProduct(
           form.id,
           payload as any,
-          fileToSend ?? undefined
+          fileToSend || undefined
         );
         console.log("✅ Resultado actualización:", result);
         alert("✅ Producto actualizado correctamente");
@@ -576,7 +579,7 @@ export default function FormProducto({
         console.log("🆕 Creando nuevo producto");
         const result = await createProduct(
           payload as any,
-          fileToSend ?? undefined
+          fileToSend || undefined
         );
         console.log("✅ Resultado creación:", result);
         alert("✅ Producto creado correctamente");

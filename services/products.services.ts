@@ -6,19 +6,25 @@ import { ProductServer } from "@/types/product.type";
    🛡️ VALIDACIONES Y UTILIDADES
 ================================================================ */
 
-// Tallas válidas según el test de integración
+// Tallas válidas según el enum Size del backend
 const VALID_SIZES = [
   "RN",
-  "0-3M",
   "3M",
-  "3-6M",
   "6M",
-  "6-9M",
   "9M",
-  "9-12M",
   "12M",
   "18M",
   "24M",
+  "2T",
+  "3T",
+  "4T",
+  "5T",
+  "6T",
+  "7T",
+  "8T",
+  "9T",
+  "10T",
+  "12T",
 ];
 
 function validateVariants(variants: any[]): string[] {
@@ -75,7 +81,12 @@ function calculateStatusFromVariants(
 function buildFormData(payload: ProductServer, isUpdate = false) {
   const formData = new FormData();
 
+  console.log("🔧 buildFormData called with isUpdate:", isUpdate);
+  console.log("🔧 payload keys:", Object.keys(payload || {}));
+
   Object.entries(payload || {}).forEach(([key, value]) => {
+    console.log(`🔧 Processing key: ${key}, isUpdate: ${isUpdate}`);
+
     // Excluir campos que no deben enviarse al backend
     const excludedFields = [
       "id",
@@ -87,25 +98,21 @@ function buildFormData(payload: ProductServer, isUpdate = false) {
       "stock", // legacy UI
     ];
 
-    // Para updates, excluir variants para evitar conflictos de validación DTO
-    if (isUpdate && key === "variants") {
-      console.log(
-        "🔧 Skipping variants in update mode to avoid DTO validation conflict"
-      );
-      return;
-    }
-
     if (excludedFields.includes(key)) {
+      console.log(`🔧 Excluding field: ${key}`);
       return;
     }
 
-    if (value === undefined || value === null) return;
+    if (value === undefined || value === null) {
+      console.log(`🔧 Skipping null/undefined field: ${key}`);
+      return;
+    }
 
     // variants en JSON string - formatear según backend expectativa
     if (key === "variants" && Array.isArray(value)) {
       // Convertir a formato esperado por backend: stock y price como strings
       const formattedVariants = value.map((variant: any) => ({
-        size: variant.size, // mantenemos como está (enum)
+        size: variant.size, // el size ya debe estar en formato backend (3M, 6M, etc.)
         stock: String(variant.stock || 0), // convertir a string
         price: String(variant.price || 0), // convertir a string
       }));
@@ -116,13 +123,16 @@ function buildFormData(payload: ProductServer, isUpdate = false) {
 
     // Objetos -> JSON
     if (typeof value === "object") {
+      console.log(`🔧 Appending object field: ${key}`);
       formData.append(key, JSON.stringify(value));
       return;
     }
 
+    console.log(`🔧 Appending field: ${key} = ${value}`);
     formData.append(key, value as any);
   });
 
+  console.log("🔧 Final FormData entries:", Array.from(formData.entries()));
   return formData;
 }
 
@@ -163,10 +173,9 @@ export async function createProduct(payload: ProductServer, file?: File) {
 }
 
 /* ================================================================
-   ✏️ EDITAR PRODUCTO (REST + FormData)
-   - PUT /products/:id
-   - Campos opcionales: name, description, genre, variants (JSON string), file?
-   - Auto-actualiza status basado en stock total
+   ✏️ EDITAR PRODUCTO (REST)
+   - Usa PATCH /products/:id para actualización unificada
+   - Solo usa FormData si hay un archivo NUEVO, sino usa JSON
 ================================================================ */
 export async function updateProduct(
   id: string,
@@ -177,124 +186,95 @@ export async function updateProduct(
 
   console.log("🔧 UpdateProduct payload completo:", payload);
   console.log("🔧 Payload keys:", Object.keys(payload));
-
-  // Validar variants antes del envío
-  if (payload.variants) {
-    const validationErrors = validateVariants(payload.variants);
-    if (validationErrors.length > 0) {
-      throw new Error(`Errores de validación:\n${validationErrors.join("\n")}`);
-    }
-  }
+  console.log("🔧 ¿Hay archivo NUEVO?", !!file);
 
   try {
-    let result: any;
-
-    // 1. Actualizar detalles básicos sin variants
-    const formData = buildFormData(payload, true); // true = update mode (excluye variants)
-    if (file) formData.append("file", file);
-
-    console.log(
-      "🔧 FormData para update (sin variants):",
-      Array.from(formData.entries())
-    );
-
-    // Hacer PUT con FormData sin variants
-    const { data } = await api.put(`/products/${id}`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    result = data;
-
-    // 2. Si hay variants, actualizarlas por separado usando endpoint específico
+    // Validación previa de variants para ambos casos
     if (payload.variants && payload.variants.length > 0) {
-      console.log("🔧 Actualizando variants separadamente:", payload.variants);
+      console.log("🔧 Validando variants antes del envío");
 
-      const variantsOnly = new FormData();
-      const formattedVariants = payload.variants.map((variant: any) => ({
-        size: variant.size,
-        stock: String(variant.stock || 0),
-        price: String(variant.price || 0),
-      }));
-      variantsOnly.append("variants", JSON.stringify(formattedVariants));
-
-      console.log("🔧 Enviando variants:", formattedVariants);
-
-      // Segundo PUT solo con variants
-      const { data: variantsData } = await api.put(
-        `/products/${id}`,
-        variantsOnly,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
+      payload.variants.forEach((variant, index) => {
+        if (!variant.size) {
+          throw new Error(`Variant ${index + 1}: size es requerido`);
         }
-      );
-      result = variantsData;
-      console.log("✅ Variants actualizados");
+        if (variant.stock !== undefined && isNaN(Number(variant.stock))) {
+          throw new Error(`Variant ${index + 1}: stock debe ser numérico`);
+        }
+        if (variant.price !== undefined && isNaN(Number(variant.price))) {
+          throw new Error(`Variant ${index + 1}: price debe ser numérico`);
+        }
+      });
+      console.log("✅ Variants validados correctamente");
     }
 
-    return result;
+    if (file) {
+      // Con archivo: usar FormData
+      console.log("🔧 Usando FormData (con archivo)");
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("name", payload.name);
+      formData.append("description", payload.description || "");
+      formData.append("genre", payload.genre);
+
+      // Formatear variants exactamente como espera el backend
+      const variantsForBackend = payload.variants?.map((v) => ({
+        size: v.size, // debe coincidir con enum Size
+        stock: String(v.stock || 0), // string, validación /^\d+$/
+        price: String(v.price || 0), // string, validación hasta 2 decimales
+      }));
+
+      formData.append("variants", JSON.stringify(variantsForBackend));
+
+      console.log("🔧 FormData keys:", Array.from(formData.keys()));
+      console.log("🔧 Variants para backend:", variantsForBackend);
+
+      const { data } = await api.patch(`/products/${id}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      console.log("✅ Producto actualizado con FormData");
+      return data;
+    } else {
+      // Sin archivo: usar JSON
+      console.log("🔧 Usando JSON (sin archivo)");
+
+      const jsonPayload = {
+        name: payload.name,
+        description: payload.description,
+        genre: payload.genre,
+        variants: payload.variants?.map((variant) => ({
+          size: variant.size,
+          stock: String(variant.stock || 0),
+          price: String(variant.price || 0),
+        })),
+      };
+
+      console.log("🔧 JSON payload:", jsonPayload);
+
+      const { data } = await api.patch(`/products/${id}`, jsonPayload, {
+        headers: { "Content-Type": "application/json" },
+      });
+
+      console.log("✅ Producto actualizado con JSON");
+      return data;
+    }
   } catch (error: any) {
     console.error("❌ Error completo:", error.response?.data);
     console.error("❌ Error config:", error.config);
     console.error("❌ Request URL:", error.config?.url);
     console.error("❌ Request method:", error.config?.method);
-    console.error("❌ Request data enviada:", error.config?.data);
-    console.error("❌ Request headers:", error.config?.headers);
 
-    if (error.response?.status === 400) {
-      const serverError =
-        error.response.data?.message || error.response.data?.error;
+    const errorMessage = error.response?.data?.message || error.message;
+
+    if (Array.isArray(errorMessage)) {
       throw new Error(
-        `Error de validación del servidor: ${JSON.stringify(serverError)}`
+        `Error de validación del servidor: ${JSON.stringify(errorMessage)}`
       );
+    } else {
+      throw new Error(`Error del servidor: ${errorMessage}`);
     }
-    throw error;
   }
-}
-
-/* ================================================================
-   🔧 Ajustar stock por talla (REST)
-   - PATCH /products/:id/variants
-   - Body: { size, stock } | { size, stockDelta }
-================================================================ */
-export async function adjustVariantStock(
-  id: string,
-  body: { size: string; stock?: number; stockDelta?: number }
-) {
-  if (!id) throw new Error("ID de producto requerido");
-  const { data } = await api.patch(`/products/${id}/variants`, body);
-  return data;
-}
-
-/* ================================================================
-   💲 Actualizar precio por talla (REST)
-   - PATCH /products/:id/variants/price
-   - Body: { size, price } (>= 0)
-================================================================ */
-export async function updateVariantPrice(
-  id: string,
-  body: { size: string; price: string | number }
-) {
-  if (!id) throw new Error("ID de producto requerido");
-  const { data } = await api.patch(`/products/${id}/variants/price`, body);
-  return data;
-}
-
-/* ================================================================
-   📝 Actualizar datos generales (REST)
-   - PATCH /products/:id/details
-   - Body: { name?, description?, genre?, status? }
-================================================================ */
-export async function updateProductDetails(
-  id: string,
-  details: {
-    name?: string;
-    description?: string;
-    genre?: string;
-    status?: string;
-  }
-) {
-  if (!id) throw new Error("ID de producto requerido");
-  const { data } = await api.patch(`/products/${id}/details`, details);
-  return data;
 }
 
 /* ================================================================
