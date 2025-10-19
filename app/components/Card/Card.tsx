@@ -2,9 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { MdFavorite } from "react-icons/md";
+import { MdFavorite, MdFavoriteBorder, MdShoppingCart } from "react-icons/md";
 import { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { ProductServer } from "@/types/product.type";
+import { RootState } from "@/store";
+import { toggleFavorite } from "@/store/slices/favoriteSlice";
+import { addToCart } from "@/store/slices/cartSlice";
 
 interface CardProps {
   producto: ProductServer;
@@ -13,8 +17,14 @@ interface CardProps {
 
 export default function Card({ producto, priority = false }: CardProps) {
   const router = useRouter();
+  const dispatch = useDispatch();
   const [imgSrc, setImgSrc] = useState(
     producto.imageUrl ?? "/placeholder.webp"
+  );
+
+  // Verificar si el producto está en favoritos
+  const isFavorite = useSelector((state: RootState) =>
+    state.favorites.items.some((item) => item.id === producto.id)
   );
 
   const variants = producto.variants;
@@ -40,10 +50,35 @@ export default function Card({ producto, priority = false }: CardProps) {
     }
   };
 
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dispatch(toggleFavorite(producto));
+  };
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Obtener la primera talla disponible si existe
+    const firstSize =
+      Array.isArray(variants) && variants.length > 0
+        ? variants[0]?.size
+        : undefined;
+
+    dispatch(
+      addToCart({
+        product: producto,
+        quantity: 1,
+        selectedSize: firstSize,
+      })
+    );
+  };
+
   return (
     <div
       className="w-full max-w-[160px] sm:max-w-[180px] lg:max-w-[220px] 
-                 h-[240px] sm:h-[280px] lg:h-[320px] 
+                 h-[280px] sm:h-[320px] lg:h-[360px] 
                  bg-pink-50 rounded-lg sm:rounded-xl 
                  shadow-md sm:shadow-lg hover:shadow-xl
                  overflow-hidden border border-pink-100 
@@ -68,24 +103,23 @@ export default function Card({ producto, priority = false }: CardProps) {
 
         {/* Botón de favorito responsivo */}
         <button
-          aria-label="Añadir a favoritos"
+          aria-label={isFavorite ? "Quitar de favoritos" : "Añadir a favoritos"}
           className="absolute top-1 right-1 sm:top-2 sm:right-2 
                      p-1 sm:p-1.5 lg:p-2 
-                     bg-pink-200 rounded-full hover:bg-pink-300 
-                     transition-colors flex items-center justify-center z-10"
-          title="Favorito"
-          onClick={(e) => e.stopPropagation()}
+                     bg-white/90 rounded-full hover:bg-white 
+                     transition-all duration-200 flex items-center justify-center z-10
+                     shadow-md hover:shadow-lg hover:scale-110"
+          title={isFavorite ? "Quitar de favoritos" : "Añadir a favoritos"}
+          onClick={handleFavoriteClick}
         >
-          <MdFavorite
-            size={
-              window?.innerWidth < 640
-                ? 16
-                : window?.innerWidth < 1024
-                ? 18
-                : 20
-            }
-            color="#E4405F"
-          />
+          {isFavorite ? (
+            <MdFavorite className="text-red-500" size={16} />
+          ) : (
+            <MdFavoriteBorder
+              className="text-gray-500 hover:text-red-500"
+              size={16}
+            />
+          )}
         </button>
       </div>
 
@@ -141,6 +175,22 @@ export default function Card({ producto, priority = false }: CardProps) {
             </p>
           </div>
         )}
+
+        {/* Botón agregar al carrito */}
+        <div className="mt-3 pt-2">
+          <button
+            onClick={handleAddToCart}
+            className="w-full flex items-center justify-center gap-2 
+                       py-2 px-3 bg-blue-500 hover:bg-blue-600 
+                       text-white rounded-lg transition-all duration-200 
+                       text-xs sm:text-sm font-medium
+                       hover:scale-105 active:scale-95"
+            aria-label="Agregar al carrito"
+          >
+            <MdShoppingCart size={14} />
+            <span>Agregar</span>
+          </button>
+        </div>
       </div>
     </div>
   );

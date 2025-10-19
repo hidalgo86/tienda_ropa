@@ -330,29 +330,45 @@ function VariantRows({
             <div className="col-span-4">
               <input
                 type="number"
-                min={0}
+                min="0"
                 step="0.01"
-                value={v.price}
-                onChange={(e) =>
-                  updateRow(idx, { price: Number(e.target.value) || 0 })
-                }
+                value={v.price === 0 ? "" : v.price}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === "") {
+                    updateRow(idx, { price: 0 });
+                  } else {
+                    const numValue = Number(value);
+                    if (numValue >= 0) {
+                      updateRow(idx, { price: numValue });
+                    }
+                  }
+                }}
                 disabled={disabled}
-                className="w-full border rounded px-2 py-1"
+                className="w-full border rounded px-2 py-1 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                placeholder="0.00"
               />
             </div>
             <div className="col-span-3">
               <input
                 type="number"
-                min={0}
+                min="0"
                 step="1"
-                value={v.stock}
-                onChange={(e) =>
-                  updateRow(idx, {
-                    stock: Math.max(0, Number(e.target.value) || 0),
-                  })
-                }
+                value={v.stock === 0 ? "" : v.stock}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value === "") {
+                    updateRow(idx, { stock: 0 });
+                  } else {
+                    const numValue = Number(value);
+                    if (numValue >= 0 && Number.isInteger(numValue)) {
+                      updateRow(idx, { stock: numValue });
+                    }
+                  }
+                }}
                 disabled={disabled}
-                className="w-full border rounded px-2 py-1"
+                className="w-full border rounded px-2 py-1 [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
+                placeholder="0"
               />
             </div>
             <div className="col-span-1 flex justify-end">

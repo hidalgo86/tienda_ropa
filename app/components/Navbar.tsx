@@ -2,6 +2,8 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 import {
   MdFavorite,
   MdShoppingCart,
@@ -22,8 +24,11 @@ const navLinks = [
 ];
 
 export default function Navbar() {
-  // 🔥 Simulación: número de productos en carrito
-  const cartCount = 3;
+  // Obtener contadores desde Redux
+  const cartCount = useSelector((state: RootState) => state.cart.totalItems);
+  const favoritesCount = useSelector(
+    (state: RootState) => state.favorites.items.length
+  );
 
   return (
     <>
@@ -62,11 +67,16 @@ export default function Navbar() {
 
         {/* Iconos a la derecha - Solo desktop */}
         <div className="hidden md:flex gap-4 items-center">
-          <Link href="/favorito" title="Favoritos">
+          <Link href="/favorites" title="Favoritos" className="relative">
             <MdFavorite
               size={24}
               className="text-pink-400 hover:text-pink-600 transition-colors"
             />
+            {favoritesCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-1">
+                {favoritesCount}
+              </span>
+            )}
           </Link>
 
           {/* Carrito con badge */}
@@ -137,11 +147,16 @@ export default function Navbar() {
 
           {/* Favoritos */}
           <Link
-            href="/favorito"
-            className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500"
+            href="/favorites"
+            className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500 relative"
           >
-            <div className="p-2 rounded-full hover:bg-pink-100 transition-colors">
+            <div className="p-2 rounded-full hover:bg-pink-100 transition-colors relative">
               <MdFavorite size={20} />
+              {favoritesCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center text-[10px]">
+                  {favoritesCount > 9 ? "9+" : favoritesCount}
+                </span>
+              )}
             </div>
             <span className="text-xs mt-1 text-center truncate w-full font-normal">
               Favoritos

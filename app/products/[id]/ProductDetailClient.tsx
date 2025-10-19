@@ -2,13 +2,20 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useDispatch, useSelector } from "react-redux";
 import Image from "next/image";
 import { ProductServer } from "@/types/product.type";
+import { RootState } from "@/store";
+import { addToCart } from "@/store/slices/cartSlice";
+import { toggleFavorite } from "@/store/slices/favoriteSlice";
 import {
   MdArrowBack,
   MdShoppingCart,
   MdFavorite,
+  MdFavoriteBorder,
   MdShare,
+  MdAdd,
+  MdRemove,
 } from "react-icons/md";
 
 interface ProductDetailClientProps {
@@ -19,8 +26,15 @@ export default function ProductDetailClient({
   producto,
 }: ProductDetailClientProps) {
   const router = useRouter();
+  const dispatch = useDispatch();
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
+  const [showAddedToCart, setShowAddedToCart] = useState(false);
+
+  // Verificar si el producto está en favoritos
+  const isFavorite = useSelector((state: RootState) =>
+    state.favorites.items.some((item) => item.id === producto.id)
+  );
 
   // Inicializar con la primera talla disponible
   useState(() => {
@@ -57,15 +71,22 @@ export default function ProductDetailClient({
       alert("No hay stock disponible para esta talla");
       return;
     }
-    // TODO: Implementar lógica del carrito
-    console.log("Agregado al carrito:", {
-      producto: producto.id,
-      size: selectedSize,
-      quantity,
-    });
-    alert(
-      `Producto agregado al carrito (Talla: ${selectedSize}, Cantidad: ${quantity})`
+
+    dispatch(
+      addToCart({
+        product: producto,
+        quantity,
+        selectedSize,
+      })
     );
+
+    // Mostrar confirmación visual
+    setShowAddedToCart(true);
+    setTimeout(() => setShowAddedToCart(false), 2000);
+  };
+
+  const handleFavoriteToggle = () => {
+    dispatch(toggleFavorite(producto));
   };
 
   const handleBuyNow = () => {
@@ -122,8 +143,18 @@ export default function ProductDetailClient({
 
               {/* Botones de acción secundarios */}
               <div className="flex gap-2 justify-center">
-                <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                  <MdFavorite className="text-gray-600" size={20} />
+                <button
+                  onClick={handleFavoriteToggle}
+                  className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  title={
+                    isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"
+                  }
+                >
+                  {isFavorite ? (
+                    <MdFavorite className="text-red-500" size={20} />
+                  ) : (
+                    <MdFavoriteBorder className="text-gray-600" size={20} />
+                  )}
                 </button>
                 <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
                   <MdShare className="text-gray-600" size={20} />
@@ -249,9 +280,10 @@ export default function ProductDetailClient({
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-50"
+                    className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    disabled={quantity <= 1}
                   >
-                    -
+                    <MdRemove size={18} />
                   </button>
                   <span className="w-16 text-center font-medium">
                     {quantity}
@@ -261,9 +293,9 @@ export default function ProductDetailClient({
                       setQuantity(Math.min(availableStock, quantity + 1))
                     }
                     disabled={quantity >= availableStock}
-                    className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                    className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
                   >
-                    +
+                    <MdAdd size={18} />
                   </button>
                 </div>
               </div>
@@ -287,6 +319,18 @@ export default function ProductDetailClient({
                   Comprar ahora
                 </button>
               </div>
+
+              {/* Notificación de agregado al carrito */}
+              {showAddedToCart && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 animate-pulse">
+                  <div className="flex items-center gap-2 text-green-800">
+                    <MdShoppingCart size={20} />
+                    <span className="font-medium">
+                      ¡Producto agregado al carrito!
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* Información adicional */}
               <div className="pt-6 border-t border-gray-200">

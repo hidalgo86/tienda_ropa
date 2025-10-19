@@ -1,16 +1,16 @@
 import { configureStore } from "@reduxjs/toolkit";
 // Importa tus slices aquí cuando los crees
 // import authReducer from "./slices/authSlice";
-// import cartReducer from "./slices/cartSlice";
-// import favoriteReducer from "./slices/favoriteSlice";
+import cartReducer from "./slices/cartSlice";
+import favoriteReducer from "./slices/favoriteSlice";
 // import ordersReducer from "./slices/ordersSlice";
 import productsReducer from "./slices/productsSlice";
 
 export const store = configureStore({
   reducer: {
     // auth: authReducer,
-    // cart: cartReducer,
-    // favorite: favoriteReducer,
+    cart: cartReducer,
+    favorites: favoriteReducer,
     // orders: ordersReducer,
     products: productsReducer,
   },
