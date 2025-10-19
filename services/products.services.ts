@@ -6,6 +6,36 @@ import { ProductServer } from "@/types/product.type";
    🛡️ VALIDACIONES Y UTILIDADES
 ================================================================ */
 
+// Función para traducir género del backend al español
+function translateGenre(genre: string): string {
+  const translations: { [key: string]: string } = {
+    NINO: "niño",
+    NINA: "niña",
+    UNISEX: "unisex",
+  };
+  return translations[genre?.toUpperCase()] || genre?.toLowerCase() || "";
+}
+
+// Función para transformar productos con género traducido
+function transformProductsWithTranslatedGenre(
+  products: ProductServer[]
+): ProductServer[] {
+  return products.map((product) => ({
+    ...product,
+    genre: translateGenre(product.genre),
+  }));
+}
+
+// Función para transformar un solo producto con género traducido
+function transformProductWithTranslatedGenre(
+  product: ProductServer
+): ProductServer {
+  return {
+    ...product,
+    genre: translateGenre(product.genre),
+  };
+}
+
 // Tallas válidas según el enum Size del backend
 const VALID_SIZES = [
   "RN",
@@ -365,7 +395,14 @@ export async function getProducts(
   if (data?.errors?.length) {
     throw new Error(data.errors.map((e: any) => e.message).join(", "));
   }
-  return data.data.products;
+
+  // Transformar productos con género traducido
+  const result = data.data.products;
+  if (result?.items) {
+    result.items = transformProductsWithTranslatedGenre(result.items);
+  }
+
+  return result;
 }
 
 /* ================================================================
@@ -434,7 +471,14 @@ export async function getAdminProducts(
   if (data?.errors?.length) {
     throw new Error(data.errors.map((e: any) => e.message).join(", "));
   }
-  return data.data.adminProducts;
+
+  // Transformar productos con género traducido
+  const result = data.data.adminProducts;
+  if (result?.items) {
+    result.items = transformProductsWithTranslatedGenre(result.items);
+  }
+
+  return result;
 }
 
 /* ================================================================
@@ -465,10 +509,19 @@ export async function getProductoById(id: string) {
     throw new Error(data.errors.map((e: any) => e.message).join(", "));
   }
 
-  return data.data.product;
+  // Transformar producto con género traducido
+  const product = data.data.product;
+  return product ? transformProductWithTranslatedGenre(product) : null;
 }
 
 /* ================================================================
    🔧 UTILIDADES EXPORTADAS
 ================================================================ */
-export { VALID_SIZES, validateVariants, calculateStatusFromVariants };
+export {
+  VALID_SIZES,
+  validateVariants,
+  calculateStatusFromVariants,
+  translateGenre,
+  transformProductsWithTranslatedGenre,
+  transformProductWithTranslatedGenre,
+};

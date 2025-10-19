@@ -175,8 +175,8 @@ export default function Products({ page = 1 }: { page?: number }) {
         </Link>
       </div>
 
-      {/* Grid de productos */}
-      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {/* Grid de productos - 2 columnas en móvil, más en pantallas grandes */}
+      <div className="grid gap-3 sm:gap-4 lg:gap-6 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
         {filteredItems.length === 0 && (
           <div className="col-span-full text-center text-gray-500 py-10">
             No hay productos que coincidan.
@@ -188,10 +188,10 @@ export default function Products({ page = 1 }: { page?: number }) {
           return (
             <div
               key={product.id}
-              className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition p-4 flex flex-col"
+              className="bg-white border border-gray-200 rounded-lg sm:rounded-xl shadow-sm hover:shadow-md transition p-2 sm:p-3 lg:p-4 flex flex-col"
             >
-              {/* Imagen + Acciones superpuestas */}
-              <div className="relative w-full h-80 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+              {/* Imagen + Acciones superpuestas - responsiva */}
+              <div className="relative w-full h-40 sm:h-60 lg:h-80 bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
                 {product.imageUrl ? (
                   <Image
                     src={product.imageUrl}
@@ -201,20 +201,23 @@ export default function Products({ page = 1 }: { page?: number }) {
                     className="object-cover w-full h-full"
                   />
                 ) : (
-                  <div className="text-gray-400 text-sm">Sin imagen</div>
+                  <div className="text-gray-400 text-xs sm:text-sm">
+                    Sin imagen
+                  </div>
                 )}
-                {/* Botones superpuestos */}
-                <div className="absolute top-2 right-2 flex gap-2 z-10">
+                {/* Botones superpuestos - más pequeños en móvil */}
+                <div className="absolute top-1 sm:top-2 right-1 sm:right-2 flex gap-1 sm:gap-2 z-10">
                   <Link
                     href={`/dashboard?option=products&form=edit&id=${product.id}`}
-                    className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded-full flex items-center justify-center shadow transition"
+                    className="bg-yellow-400 hover:bg-yellow-500 text-white p-1.5 sm:p-2 rounded-full flex items-center justify-center shadow transition"
                     title="Editar"
                     style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
+                      width="12"
+                      height="12"
+                      className="sm:w-4 sm:h-4"
                       fill="none"
                       viewBox="0 0 24 24"
                     >
@@ -229,14 +232,15 @@ export default function Products({ page = 1 }: { page?: number }) {
                   </Link>
                   <button
                     onClick={() => handleSoftDelete(product.id)}
-                    className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full flex items-center justify-center shadow transition"
+                    className="bg-red-500 hover:bg-red-600 text-white p-1.5 sm:p-2 rounded-full flex items-center justify-center shadow transition"
                     title="Eliminar"
                     style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      width="16"
-                      height="16"
+                      width="12"
+                      height="12"
+                      className="sm:w-4 sm:h-4"
                       fill="none"
                       viewBox="0 0 24 24"
                     >
@@ -250,10 +254,10 @@ export default function Products({ page = 1 }: { page?: number }) {
                     </svg>
                   </button>
                 </div>
-                {/* Badge de status (arriba izquierda) */}
+                {/* Badge de status (arriba izquierda) - más pequeño en móvil */}
                 {product.status && (
                   <div
-                    className={`absolute top-2 left-2 px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-wide shadow-sm uppercase border backdrop-blur
+                    className={`absolute top-1 sm:top-2 left-1 sm:left-2 px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[8px] sm:text-[10px] font-semibold tracking-wide shadow-sm uppercase border backdrop-blur
                   ${
                     product.status === "DISPONIBLE"
                       ? "bg-green-50 text-green-700 border-green-300"
@@ -274,17 +278,18 @@ export default function Products({ page = 1 }: { page?: number }) {
                   </div>
                 )}
 
-                {/* Botón habilitar (abajo derecha) si eliminado */}
+                {/* Botón habilitar (abajo derecha) si eliminado - más pequeño en móvil */}
                 {product.status === "ELIMINADO" && (
                   <button
                     onClick={() => handleRestore(product)}
-                    className="absolute bottom-2 right-2 inline-flex items-center gap-1 bg-blue-600/90 hover:bg-blue-700 text-white text-[10px] font-medium px-2.5 py-1 rounded-md shadow-sm transition focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1"
+                    className="absolute bottom-1 sm:bottom-2 right-1 sm:right-2 inline-flex items-center gap-1 bg-blue-600/90 hover:bg-blue-700 text-white text-[8px] sm:text-[10px] font-medium px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-md shadow-sm transition focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-1"
                     aria-label="Habilitar producto"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
-                      width="12"
-                      height="12"
+                      width="10"
+                      height="10"
+                      className="sm:w-3 sm:h-3"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
@@ -296,25 +301,26 @@ export default function Products({ page = 1 }: { page?: number }) {
                       <polyline points="23 20 23 14 17 14" />
                       <path d="M20.49 9A9 9 0 0 0 6.74 5.15L1 10m22 4-5.74 4.85A9 9 0 0 1 3.51 15" />
                     </svg>
-                    Habilitar
+                    <span className="hidden sm:inline">Habilitar</span>
+                    <span className="sm:hidden">Hab</span>
                   </button>
                 )}
               </div>
 
-              {/* Info */}
-              <div className="mt-3 flex flex-col flex-grow">
-                <h3 className="font-semibold text-lg truncate">
+              {/* Info - responsiva */}
+              <div className="mt-2 sm:mt-3 flex flex-col flex-grow">
+                <h3 className="font-semibold text-sm sm:text-base lg:text-lg truncate">
                   {product.name}
                 </h3>
-                <p className="text-sm text-gray-500 capitalize">
+                <p className="text-xs sm:text-sm text-gray-500">
                   {product.genre}
                 </p>
 
-                <div className="mt-2 flex justify-between items-center">
-                  <span className="font-bold text-green-600">
+                <div className="mt-1 sm:mt-2 flex justify-between items-center">
+                  <span className="font-bold text-green-600 text-sm sm:text-base">
                     ${Number(minPrice).toFixed(2)}
                   </span>
-                  <span className="text-sm text-gray-500">
+                  <span className="text-xs sm:text-sm text-gray-500">
                     Stock: {totalStock}
                   </span>
                 </div>

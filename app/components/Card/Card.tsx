@@ -36,8 +36,7 @@ export default function Card({ producto, priority = false }: CardProps) {
 
   const handleClick = () => {
     if (producto.id) {
-      const productoParam = encodeURIComponent(JSON.stringify(producto));
-      router.push(`/detalle?producto=${productoParam}`);
+      router.push(`/products/${producto.id}`);
     }
   };
 

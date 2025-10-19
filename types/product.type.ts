@@ -1,4 +1,4 @@
-// Tipos de producto alineados al backend (variants con precio)
+// types/product.type.ts
 
 export interface ProductVariant {
   size: string; // REST usa "3M"/"2T"; GraphQL tokens se mapean por el backend
@@ -16,7 +16,6 @@ export interface ProductServer {
   variants?: ProductVariant[];
   imageUrl?: string;
   imagePublicId?: string;
-  // GraphQL: DISPONIBLE | AGOTADO | ELIMINADO
   status?: "DISPONIBLE" | "AGOTADO" | "ELIMINADO";
   createdAt?: string;
   updatedAt?: string;
@@ -28,7 +27,7 @@ export interface ProductClient {
   name: string;
   description: string;
   genre: "niña" | "niño" | "unisex";
-  variants: ProductVariant[]; // Edición directa de variantes en el formulario
+  variants: ProductVariant[];
   imageUrl?: string;
   imagePublicId?: string;
 }
