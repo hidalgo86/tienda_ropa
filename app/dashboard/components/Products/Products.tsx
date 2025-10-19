@@ -49,16 +49,12 @@ export default function Products({ page = 1 }: { page?: number }) {
 
   // Utilidades para derivados
   const getTotalStock = (p: ProductServer) =>
-    (p as any).variants?.reduce(
-      (sum: number, v: any) => sum + (Number(v?.stock) || 0),
-      0
-    ) || 0;
+    p.variants?.reduce((sum: number, v) => sum + (Number(v?.stock) || 0), 0) ||
+    0;
 
   const getMinPrice = (p: ProductServer) => {
     const prices =
-      (p as any).variants
-        ?.map((v: any) => Number(v?.price))
-        .filter((n: any) => !isNaN(n)) || [];
+      p.variants?.map((v) => Number(v?.price)).filter((n) => !isNaN(n)) || [];
     if (prices.length === 0) return 0;
     return Math.min(...prices);
   };
@@ -86,7 +82,7 @@ export default function Products({ page = 1 }: { page?: number }) {
       const totalStock = getTotalStock(product);
       // REST requiere minúsculas: 'disponible' | 'agotado'
       const targetStatus = totalStock > 0 ? "disponible" : "agotado";
-      await restoreProduct((product as any).id, targetStatus);
+      await restoreProduct(product.id, targetStatus);
       alert(`✅ Producto habilitado como ${targetStatus.toUpperCase()}`);
 
       if (statusFilter === "ELIMINADO") {
@@ -191,7 +187,7 @@ export default function Products({ page = 1 }: { page?: number }) {
           const minPrice = getMinPrice(product);
           return (
             <div
-              key={(product as any).id}
+              key={product.id}
               className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition p-4 flex flex-col"
             >
               {/* Imagen + Acciones superpuestas */}
@@ -308,10 +304,10 @@ export default function Products({ page = 1 }: { page?: number }) {
               {/* Info */}
               <div className="mt-3 flex flex-col flex-grow">
                 <h3 className="font-semibold text-lg truncate">
-                  {(product as any).name}
+                  {product.name}
                 </h3>
                 <p className="text-sm text-gray-500 capitalize">
-                  {(product as any).genre}
+                  {product.genre}
                 </p>
 
                 <div className="mt-2 flex justify-between items-center">

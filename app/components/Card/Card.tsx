@@ -17,9 +17,7 @@ export default function Card({ producto, priority = false }: CardProps) {
     producto.imageUrl ?? "/placeholder.webp"
   );
 
-  const variants = (producto as any)?.variants as
-    | Array<{ size: string; stock: number; price: number }>
-    | undefined;
+  const variants = producto.variants;
   const minPrice = Array.isArray(variants)
     ? variants
         .map((v) => Number(v?.price))

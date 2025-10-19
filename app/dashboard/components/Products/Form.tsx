@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { createProduct, updateProduct } from "@/services/products.services";
 import {
   ProductClient,
@@ -167,11 +168,6 @@ function canonicalizeSize(raw: string): string {
   if (t2) return `${t2[1]}T`;
 
   return s;
-}
-
-// Convierte a formato backend (ya no necesita conversión porque canonicalizeSize ya lo hace)
-function toRestSize(token: string): string {
-  return canonicalizeSize(token);
 }
 
 // Derivados desde variants
@@ -631,10 +627,13 @@ export default function FormProducto({
           {/* Imagen o placeholder */}
           <div className="w-full h-full bg-gray-200 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden">
             {preview ? (
-              <img
+              <Image
                 src={preview}
                 alt="Preview del producto"
+                width={256}
+                height={256}
                 className="w-full h-full object-cover rounded-lg"
+                unoptimized
               />
             ) : (
               <div className="text-center text-gray-400 p-4">

@@ -28,7 +28,7 @@ function ProductDetailContent() {
           decodeURIComponent(productoParam)
         );
         setProducto(parsed);
-        const firstSize = (parsed as any)?.variants?.[0]?.size || "";
+        const firstSize = parsed.variants?.[0]?.size || "";
         setSelectedSize(firstSize);
       } catch {
         setProducto(null);
@@ -39,9 +39,7 @@ function ProductDetailContent() {
   if (!producto)
     return <div className="p-8 text-center">Producto no encontrado</div>;
 
-  const variants = (producto as any)?.variants as
-    | Array<{ size: string; stock: number; price: number }>
-    | undefined;
+  const variants = producto.variants;
   const totalStock = Array.isArray(variants)
     ? variants.reduce((sum, v) => sum + (Number(v?.stock) || 0), 0)
     : 0;

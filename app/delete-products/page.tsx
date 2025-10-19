@@ -231,7 +231,7 @@ export default function DeleteProductsPage() {
           <div className="bg-white rounded-lg shadow p-12 text-center">
             <p className="text-gray-500 text-lg">No hay productos cargados</p>
             <p className="text-gray-400 text-sm mt-2">
-              Haz clic en "Cargar Productos" para ver la lista
+              Haz clic en &quot;Cargar Productos&quot; para ver la lista
             </p>
           </div>
         )}

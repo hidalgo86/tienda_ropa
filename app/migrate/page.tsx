@@ -2,8 +2,24 @@
 
 import { useState } from "react";
 
+interface Migration {
+  id: string;
+  name?: string;
+  status: string;
+  reason?: string;
+  newVariants?: unknown[];
+}
+
+interface MigrationResult {
+  error?: string;
+  total?: number;
+  toMigrate?: number;
+  toSkip?: number;
+  migrations?: Migration[];
+}
+
 export default function MigrationPage() {
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<MigrationResult | null>(null);
   const [loading, setLoading] = useState(false);
 
   const runAnalysis = async () => {
@@ -109,7 +125,7 @@ export default function MigrationPage() {
                       <div className="space-y-2">
                         <h4 className="font-medium">Detalles por producto:</h4>
                         {result.migrations.map(
-                          (migration: any, index: number) => (
+                          (migration: Migration, index: number) => (
                             <div key={index} className="border p-3 rounded">
                               <p>
                                 <strong>ID:</strong> {migration.id}
@@ -158,7 +174,7 @@ export default function MigrationPage() {
                       </div>
                     )}
 
-                    {result.toMigrate > 0 && (
+                    {(result.toMigrate ?? 0) > 0 && (
                       <button
                         onClick={executeActualMigration}
                         className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
