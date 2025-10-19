@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { MdClose } from "react-icons/md";
 import Filtros from "./Filtros";
 

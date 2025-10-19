@@ -9,15 +9,10 @@ export default function Cards() {
   const [productos, setProductos] = useState<ProductServer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
 
-  const loadProducts = async (isManualRefresh = false) => {
+  const loadProducts = async () => {
     try {
-      if (isManualRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
+      setLoading(true);
       setError(null);
       const response = await getProducts(1);
       setProductos(response.items);
@@ -26,7 +21,6 @@ export default function Cards() {
       setError("Error al cargar los productos");
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   };
 
@@ -66,7 +60,7 @@ export default function Cards() {
         <div className="max-w-md mx-auto px-4">
           <p className="text-red-600 text-sm sm:text-base mb-4">{error}</p>
           <button
-            onClick={() => loadProducts(true)}
+            onClick={() => loadProducts()}
             className="w-full sm:w-auto px-4 py-2 sm:px-6 sm:py-3 bg-blue-600 text-white text-sm sm:text-base rounded-lg hover:bg-blue-700 transition-colors"
           >
             Reintentar

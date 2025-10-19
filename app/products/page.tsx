@@ -1,12 +1,12 @@
 import Card from "../components/Card/Card";
 import Pagination from "../components/Pagination";
 import Filtros from "../components/Filtros";
-import FiltrosModal from "../components/FiltrosModal";
 import Navbar from "../components/Navbar";
 import { notFound } from "next/navigation";
 import { getProducts } from "@/services/products.services";
 import { ProductServer } from "@/types/product.type";
 import ProductsClient from "./ProductsClient";
+import Link from "next/link";
 
 export default async function ProductsPage({
   searchParams,
@@ -51,8 +51,6 @@ export default async function ProductsPage({
             {/* Título y filtros móviles */}
             <div className="mb-4 sm:mb-6 lg:mb-8">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-               
-
                 {/* Botón filtros móvil */}
                 <div className="lg:hidden">
                   <ProductsClient
@@ -144,12 +142,12 @@ export default async function ProductsPage({
               No pudimos cargar los productos. Por favor, intenta de nuevo más
               tarde.
             </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="w-full sm:w-auto px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm sm:text-base"
+            <Link
+              href="/products"
+              className="inline-block w-full sm:w-auto px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium text-sm sm:text-base text-center"
             >
               🔄 Intentar de nuevo
-            </button>
+            </Link>
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import Navbar from "./components/Navbar";
 import Carrusel from "./components/Carrusel/Carrusel";
-import Cards from "./components/Cards/Cards";
-import Footer from "./components/Footer";
+import ClientCards from "./components/ClientCards";
+import FooterWrapper from "./components/FooterWrapper";
 
 export default function Home() {
   return (
@@ -15,10 +15,10 @@ export default function Home() {
 
         {/* Sección de productos con espaciado responsivo */}
         <section className="mt-8 sm:mt-12 lg:mt-16 mb-8 sm:mb-12 lg:mb-16">
-          <Cards />
+          <ClientCards />
         </section>
       </main>
-      <Footer />
+      <FooterWrapper />
     </div>
   );
 }

@@ -22,7 +22,6 @@ export default function Pagination({
   // Función para obtener páginas visibles según el tamaño de pantalla
   const getVisiblePages = () => {
     const maxVisible = 5; // Máximo de páginas visibles en desktop
-    const maxVisibleMobile = 3; // Máximo en móvil
 
     if (totalPages <= maxVisible) {
       return Array.from({ length: totalPages }, (_, i) => i + 1);
