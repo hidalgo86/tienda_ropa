@@ -51,64 +51,55 @@ export default function Cards() {
 
   if (loading) {
     return (
-      <div className="text-center py-10">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-        <p className="mt-2 text-gray-600">Cargando productos...</p>
+      <div className="text-center py-6 sm:py-10 lg:py-12">
+        <div className="inline-block animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10 border-b-2 border-gray-900"></div>
+        <p className="mt-2 text-sm sm:text-base text-gray-600">
+          Cargando productos...
+        </p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center py-10">
-        <p className="text-red-600">{error}</p>
-        <button
-          onClick={() => loadProducts(true)}
-          className="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-        >
-          Reintentar
-        </button>
+      <div className="text-center py-6 sm:py-10 lg:py-12">
+        <div className="max-w-md mx-auto px-4">
+          <p className="text-red-600 text-sm sm:text-base mb-4">{error}</p>
+          <button
+            onClick={() => loadProducts(true)}
+            className="w-full sm:w-auto px-4 py-2 sm:px-6 sm:py-3 bg-blue-600 text-white text-sm sm:text-base rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Reintentar
+          </button>
+        </div>
       </div>
     );
   }
 
   if (productos.length === 0) {
     return (
-      <p className="text-center text-gray-500 mt-10">
-        No hay productos para mostrar.
-      </p>
+      <div className="text-center py-6 sm:py-10 lg:py-12">
+        <p className="text-gray-500 text-sm sm:text-base">
+          No hay productos para mostrar.
+        </p>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Botón de actualización manual */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Nuestros Productos</h2>
-        <button
-          onClick={() => loadProducts(true)}
-          disabled={refreshing}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          <svg
-            className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-            />
-          </svg>
-          {refreshing ? "Actualizando..." : "Actualizar"}
-        </button>
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8">
+      {/* Título responsivo */}
+      <div className="text-center sm:text-left">
+        <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 sm:mb-0">
+          Nuestros Productos
+        </h2>
+        <p className="text-sm sm:text-base text-gray-600 lg:text-lg">
+          Descubre nuestra colección de ropa para bebés
+        </p>
       </div>
 
-      {/* Grid de productos */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 justify-items-center">
+      {/* Grid de productos completamente responsivo */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 justify-items-center">
         {productos.map((producto) => (
           <Card key={producto.id ?? Math.random()} producto={producto} />
         ))}

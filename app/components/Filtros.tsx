@@ -5,7 +5,11 @@ import { MdSearch } from "react-icons/md";
 
 // Eliminado filtro de categoría
 
-export default function Filtros() {
+interface FiltrosProps {
+  onFilterApply?: () => void;
+}
+
+export default function Filtros({ onFilterApply }: FiltrosProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -19,22 +23,32 @@ export default function Filtros() {
     searchParams?.get("precioMax") || ""
   );
   const [search, setSearch] = useState(searchParams?.get("search") || "");
+  const [isSearching, setIsSearching] = useState(false);
 
   // Actualiza la URL con todos los filtros
   const updateURL = (paramsObj: Record<string, string>) => {
+    console.log("🔍 Aplicando filtros:", paramsObj);
     const params = new URLSearchParams(
       searchParams ? searchParams.toString() : ""
     );
-    // Limpiar todos los filtros
+    // Limpiar todos los filtros anteriores
     ["genero", "precioMin", "precioMax", "search", "page"].forEach((key) =>
       params.delete(key)
     );
     // Agregar los nuevos filtros
     Object.entries(paramsObj).forEach(([key, value]) => {
-      if (value) params.set(key, value);
+      if (value && value.trim()) {
+        params.set(key, value.trim());
+        console.log(`✅ Filtro ${key}: ${value.trim()}`);
+      }
     });
     params.set("page", "1"); // Reiniciar paginación
-    router.push(`${pathname}?${params.toString()}`);
+    const newUrl = `${pathname}?${params.toString()}`;
+    console.log("🔗 Nueva URL:", newUrl);
+    router.push(newUrl);
+
+    // Cerrar el modal si estamos en móvil
+    onFilterApply?.();
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -43,87 +57,188 @@ export default function Filtros() {
   };
 
   return (
-    <form
-      className="mb-4 flex flex-wrap gap-4 items-end"
-      onSubmit={handleSubmit}
-    >
-      {/* Búsqueda con botón lupa */}
-      <div>
-        <label htmlFor="search" className="block font-medium mb-1">
-          Buscar:
-        </label>
-        <div className="flex items-center gap-1">
-          <input
-            id="search"
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border rounded px-2 py-1"
-            placeholder="Nombre o descripción"
-          />
+    <div className="space-y-4 sm:space-y-6">
+      {/* Título del sidebar */}
+      <div className="border-b border-gray-200 pb-3">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+          Filtros
+        </h2>
+        <p className="text-sm text-gray-600 mt-1">Refina tu búsqueda</p>
+      </div>
+
+      <form className="space-y-4" onSubmit={handleSubmit}>
+        {/* Búsqueda */}
+        <div>
+          <label
+            htmlFor="search"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
+            🔍 Buscar producto
+          </label>
+          <div className="flex gap-2">
+            <input
+              id="search"
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  if (search.trim() || genero || precioMin || precioMax) {
+                    updateURL({ genero, precioMin, precioMax, search });
+                  }
+                }
+              }}
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg 
+                         focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-300
+                         text-sm placeholder-gray-400
+                         transition-colors"
+              placeholder="Buscar por nombre o descripción..."
+            />
+            <button
+              type="button"
+              className={`px-3 py-2 text-white rounded-lg 
+                         transition-colors flex items-center justify-center
+                         focus:outline-none focus:ring-2 focus:ring-pink-300
+                         min-w-[44px] ${
+                           isSearching
+                             ? "bg-pink-400 cursor-wait"
+                             : "bg-pink-500 hover:bg-pink-600"
+                         }`}
+              title="Buscar productos"
+              disabled={isSearching}
+              onClick={async (e) => {
+                e.preventDefault();
+                if (!search.trim() && !genero && !precioMin && !precioMax) {
+                  alert("Por favor, ingresa algún criterio de búsqueda");
+                  return;
+                }
+
+                setIsSearching(true);
+                try {
+                  updateURL({ genero, precioMin, precioMax, search });
+                  // Simular pequeño delay para feedback visual
+                  setTimeout(() => setIsSearching(false), 800);
+                } catch (error) {
+                  setIsSearching(false);
+                  console.error("Error al aplicar filtros:", error);
+                }
+              }}
+            >
+              {isSearching ? (
+                <div className="w-[18px] h-[18px] border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <MdSearch size={18} />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Género */}
+        <div>
+          <label
+            htmlFor="genero"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
+            👶 Género
+          </label>
+          <select
+            id="genero"
+            value={genero}
+            onChange={(e) => setGenero(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg 
+                       focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-300
+                       text-sm bg-white
+                       transition-colors"
+          >
+            <option value="">Todos los géneros</option>
+            <option value="niño">Niño 👦</option>
+            <option value="niña">Niña 👧</option>
+            <option value="unisex">Unisex 👶</option>
+          </select>
+        </div>
+
+        {/* Rango de precio */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            💰 Rango de precio
+          </label>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label
+                htmlFor="precioMin"
+                className="block text-xs text-gray-600 mb-1"
+              >
+                Mínimo
+              </label>
+              <input
+                id="precioMin"
+                type="number"
+                min="0"
+                step="0.01"
+                value={precioMin}
+                onChange={(e) => setPrecioMin(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg 
+                           focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-300
+                           text-sm
+                           transition-colors"
+                placeholder="$0"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="precioMax"
+                className="block text-xs text-gray-600 mb-1"
+              >
+                Máximo
+              </label>
+              <input
+                id="precioMax"
+                type="number"
+                min="0"
+                step="0.01"
+                value={precioMax}
+                onChange={(e) => setPrecioMax(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg 
+                           focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-300
+                           text-sm
+                           transition-colors"
+                placeholder="$999"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Botones de acción */}
+        <div className="space-y-2 pt-4 border-t border-gray-200">
+          <button
+            type="submit"
+            className="w-full px-4 py-3 bg-pink-500 text-white rounded-lg 
+                       hover:bg-pink-600 active:bg-pink-700
+                       transition-colors font-medium text-sm
+                       focus:outline-none focus:ring-2 focus:ring-pink-300"
+          >
+            ✨ Aplicar filtros
+          </button>
+
           <button
             type="button"
-            className="bg-blue-500 hover:bg-blue-600 text-white rounded p-2 flex items-center justify-center"
-            title="Buscar"
-            onClick={() => updateURL({ genero, precioMin, precioMax, search })}
+            onClick={() => {
+              setGenero("");
+              setPrecioMin("");
+              setPrecioMax("");
+              setSearch("");
+              updateURL({});
+            }}
+            className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg 
+                       hover:bg-gray-200 active:bg-gray-300
+                       transition-colors text-sm
+                       focus:outline-none focus:ring-2 focus:ring-gray-300"
           >
-            <MdSearch size={20} />
+            🔄 Limpiar filtros
           </button>
         </div>
-      </div>
-      {/* Género */}
-      <div>
-        <label htmlFor="genero" className="block font-medium mb-1">
-          Género:
-        </label>
-        <select
-          id="genero"
-          value={genero}
-          onChange={(e) => setGenero(e.target.value)}
-          className="border rounded px-2 py-1"
-        >
-          <option value="">Todos</option>
-          <option value="niño">Niño</option>
-          <option value="niña">Niña</option>
-          <option value="unisex">Unisex</option>
-        </select>
-      </div>
-      {/* Precio mínimo y máximo en la misma línea */}
-      <div className="flex gap-2 items-end">
-        <div>
-          <label htmlFor="precioMin" className="block font-medium mb-1">
-            Precio mínimo:
-          </label>
-          <input
-            id="precioMin"
-            type="number"
-            min="0"
-            value={precioMin}
-            onChange={(e) => setPrecioMin(e.target.value)}
-            className="border rounded px-2 py-1 w-24"
-          />
-        </div>
-        <div>
-          <label htmlFor="precioMax" className="block font-medium mb-1">
-            Precio máximo:
-          </label>
-          <input
-            id="precioMax"
-            type="number"
-            min="0"
-            value={precioMax}
-            onChange={(e) => setPrecioMax(e.target.value)}
-            className="border rounded px-2 py-1 w-24"
-          />
-        </div>
-      </div>
-      {/* Botón de aplicar */}
-      <button
-        type="submit"
-        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-      >
-        Aplicar filtros
-      </button>
-    </form>
+      </form>
+    </div>
   );
 }

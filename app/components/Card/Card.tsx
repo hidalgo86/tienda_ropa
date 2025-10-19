@@ -43,61 +43,104 @@ export default function Card({ producto, priority = false }: CardProps) {
 
   return (
     <div
-      className="w-[210px] h-[310px] bg-pink-50 rounded-xl shadow-lg overflow-hidden border border-pink-100 relative cursor-pointer flex flex-col hover:scale-105 hover:shadow-xl transition-transform duration-300"
+      className="w-full max-w-[160px] sm:max-w-[180px] lg:max-w-[220px] 
+                 h-[240px] sm:h-[280px] lg:h-[320px] 
+                 bg-pink-50 rounded-lg sm:rounded-xl 
+                 shadow-md sm:shadow-lg hover:shadow-xl
+                 overflow-hidden border border-pink-100 
+                 relative cursor-pointer flex flex-col 
+                 hover:scale-105 transition-all duration-300"
       onClick={handleClick}
-      style={{ minWidth: 210, maxWidth: 210 }}
     >
-      {/* Imagen */}
-      <div className="w-full h-[210px] flex items-center justify-center bg-pink-100 relative">
+      {/* Imagen responsiva */}
+      <div className="w-full h-[160px] sm:h-[180px] lg:h-[220px] flex items-center justify-center bg-pink-100 relative">
         <Image
           src={imgSrc}
           alt={
             producto.name ? `Imagen de ${producto.name}` : "Producto sin nombre"
           }
-          width={210}
-          height={210}
-          className="object-cover w-full h-full rounded-t-xl"
+          fill
+          className="object-cover rounded-t-lg sm:rounded-t-xl"
           placeholder="empty"
           {...(priority ? { priority: true } : { loading: "lazy" })}
           onError={() => setImgSrc("/placeholder.webp")}
-          sizes="(max-width: 768px) 100vw, 210px"
+          sizes="(max-width: 640px) 160px, (max-width: 1024px) 180px, 220px"
         />
 
-        {/* Botón de favorito en la esquina superior derecha */}
+        {/* Botón de favorito responsivo */}
         <button
           aria-label="Añadir a favoritos"
-          className="absolute top-2 right-2 p-2 bg-pink-200 rounded-full hover:bg-pink-300 transition-colors flex items-center justify-center z-10"
+          className="absolute top-1 right-1 sm:top-2 sm:right-2 
+                     p-1 sm:p-1.5 lg:p-2 
+                     bg-pink-200 rounded-full hover:bg-pink-300 
+                     transition-colors flex items-center justify-center z-10"
           title="Favorito"
           onClick={(e) => e.stopPropagation()}
         >
-          <MdFavorite size={22} color="#E4405F" />
+          <MdFavorite
+            size={
+              window?.innerWidth < 640
+                ? 16
+                : window?.innerWidth < 1024
+                ? 18
+                : 20
+            }
+            color="#E4405F"
+          />
         </button>
       </div>
 
-      {/* Info */}
-      <div className="p-3 flex flex-col flex-1 max-h-[100px] overflow-hidden">
-        {/* Nombre */}
-        <h3 className="font-medium text-gray-700 text-sm mb-1 line-clamp-1">
-          {producto.name ?? "Producto sin nombre"}
-        </h3>
+      {/* Info responsiva */}
+      <div className="p-2 sm:p-3 lg:p-4 flex flex-col justify-between flex-1 min-h-0">
+        <div className="space-y-1">
+          {/* Nombre */}
+          <h3
+            className="font-medium text-gray-700 
+                       text-xs sm:text-sm lg:text-base 
+                       line-clamp-1"
+          >
+            {producto.name ?? "Producto sin nombre"}
+          </h3>
 
-        {/* Precio y tallas */}
-        <div className="flex items-center justify-between mb-1">
-          <span className="text-pink-500 font-bold text-lg">
-            {Number.isFinite(minPrice)
-              ? `$${(minPrice as number).toFixed(2)}`
-              : ""}
-          </span>
-          <span className="text-gray-500 text-xs" translate="no">
-            {sizesCsv ? `Tallas: ${sizesCsv}` : "Sin talla"}
-          </span>
+          {/* Precio y tallas en filas separadas para evitar superposición */}
+          <div className="space-y-1">
+            <div className="flex justify-between items-center">
+              <span
+                className="text-pink-500 font-bold 
+                          text-sm sm:text-base lg:text-lg"
+              >
+                {Number.isFinite(minPrice)
+                  ? `$${(minPrice as number).toFixed(2)}`
+                  : "N/A"}
+              </span>
+            </div>
+
+            <div className="text-right">
+              <span
+                className="text-gray-500 text-xs inline-block"
+                translate="no"
+              >
+                {sizesCsv
+                  ? `${sizesCsv.split(", ").slice(0, 3).join(", ")}${
+                      sizesCsv.split(", ").length > 3 ? "..." : ""
+                    }`
+                  : "Sin tallas"}
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Descripción corta */}
         {producto.description && (
-          <p className="text-gray-600 text-xs line-clamp-2">
-            {producto.description}
-          </p>
+          <div className="mt-2 flex-shrink-0">
+            <p
+              className="text-gray-600 
+                        text-xs lg:text-sm 
+                        line-clamp-1 sm:line-clamp-2"
+            >
+              {producto.description}
+            </p>
+          </div>
         )}
       </div>
     </div>

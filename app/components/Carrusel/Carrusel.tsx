@@ -23,41 +23,89 @@ export default function Carrusel() {
     setActual((prev) => (prev - 1 + imagenes.length) % imagenes.length);
 
   return (
-    <div className="relative w-full max-w-4xl mx-auto mt-8 rounded-xl overflow-hidden shadow-lg">
-      {/* Imagen */}
-      <div className="w-full h-[200px] sm:h-[250px] md:h-[350px] bg-pink-50 flex items-center justify-center">
+    <div
+      className="relative w-full 
+                    max-w-sm sm:max-w-2xl lg:max-w-5xl xl:max-w-6xl 
+                    mx-auto 
+                    rounded-lg sm:rounded-xl lg:rounded-2xl 
+                    overflow-hidden 
+                    shadow-md sm:shadow-lg lg:shadow-xl"
+    >
+      {/* Imagen responsiva */}
+      <div
+        className="w-full 
+                      h-[180px] sm:h-[280px] lg:h-[400px] xl:h-[480px] 
+                      bg-pink-50 flex items-center justify-center relative"
+      >
         <Image
           src={imagenes[actual].src}
           alt={imagenes[actual].alt}
           fill
           style={{ objectFit: "contain" }}
-          className="rounded-xl"
+          className="rounded-lg sm:rounded-xl lg:rounded-2xl"
           priority
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 70vw"
         />
       </div>
 
-      {/* Botones */}
+      {/* Botones de navegación responsivos */}
       <button
         onClick={anterior}
-        className="absolute top-1/2 left-4 -translate-y-1/2 bg-pink-200 hover:bg-pink-300 text-white rounded-full p-2 shadow-md transition"
+        className="absolute top-1/2 
+                   left-2 sm:left-4 lg:left-6 
+                   -translate-y-1/2 
+                   bg-pink-200 hover:bg-pink-300 active:bg-pink-400
+                   text-gray-700 
+                   rounded-full 
+                   p-1.5 sm:p-2 lg:p-3
+                   shadow-md hover:shadow-lg 
+                   transition-all duration-200
+                   text-sm sm:text-base lg:text-lg
+                   z-10"
+        aria-label="Imagen anterior"
       >
         &#8592;
       </button>
+
       <button
         onClick={siguiente}
-        className="absolute top-1/2 right-4 -translate-y-1/2 bg-pink-200 hover:bg-pink-300 text-white rounded-full p-2 shadow-md transition"
+        className="absolute top-1/2 
+                   right-2 sm:right-4 lg:right-6 
+                   -translate-y-1/2 
+                   bg-pink-200 hover:bg-pink-300 active:bg-pink-400
+                   text-gray-700 
+                   rounded-full 
+                   p-1.5 sm:p-2 lg:p-3
+                   shadow-md hover:shadow-lg 
+                   transition-all duration-200
+                   text-sm sm:text-base lg:text-lg
+                   z-10"
+        aria-label="Siguiente imagen"
       >
         &#8594;
       </button>
 
-      {/* Puntos de navegación */}
-      <div className="absolute bottom-4 w-full flex justify-center gap-2">
+      {/* Indicadores de navegación responsivos */}
+      <div
+        className="absolute 
+                      bottom-2 sm:bottom-4 lg:bottom-6 
+                      w-full flex justify-center 
+                      gap-1.5 sm:gap-2 lg:gap-3"
+      >
         {imagenes.map((_, idx) => (
-          <span
+          <button
             key={idx}
-            className={`w-3 h-3 rounded-full ${
-              idx === actual ? "bg-pink-400" : "bg-pink-200"
-            } transition`}
+            onClick={() => setActual(idx)}
+            className={`
+              w-2 h-2 sm:w-3 sm:h-3 lg:w-4 lg:h-4 
+              rounded-full transition-all duration-300
+              ${
+                idx === actual
+                  ? "bg-pink-500 scale-110"
+                  : "bg-pink-200 hover:bg-pink-300"
+              }
+            `}
+            aria-label={`Ir a imagen ${idx + 1}`}
           />
         ))}
       </div>
