@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -11,8 +11,6 @@ import {
   MdPerson,
   MdBarChart,
   MdInfo,
-  MdMenu,
-  MdClose,
 } from "react-icons/md";
 
 const navLinks = [
@@ -24,8 +22,6 @@ const navLinks = [
 ];
 
 export default function Navbar() {
-  const [isOpen, setIsOpen] = useState(false);
-
   // 🔥 Simulación: número de productos en carrito
   const cartCount = 3;
 
@@ -64,8 +60,8 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Iconos a la derecha */}
-        <div className="flex gap-4 items-center">
+        {/* Iconos a la derecha - Solo desktop */}
+        <div className="hidden md:flex gap-4 items-center">
           <Link href="/favorito" title="Favoritos">
             <MdFavorite
               size={24}
@@ -86,52 +82,98 @@ export default function Navbar() {
             )}
           </Link>
 
-          {/* Login solo visible en desktop */}
-          <Link href="/login" title="Login" className="hidden md:inline">
+          <Link href="/login" title="Login">
             <MdLogin
               size={24}
               className="text-gray-500 hover:text-gray-700 transition-colors"
             />
           </Link>
+        </div>
 
-          {/* Botón Hamburguesa en móvil */}
-          <button
-            aria-label="Abrir menú"
-            className="md:hidden text-gray-700 hover:text-pink-500 transition-colors"
-            onClick={() => setIsOpen(!isOpen)}
-          >
-            {isOpen ? <MdClose size={28} /> : <MdMenu size={28} />}
-          </button>
+        {/* Solo carrito visible en móvil */}
+        <div className="md:hidden">
+          <Link href="/cart" title="Carrito" className="relative">
+            <MdShoppingCart
+              size={24}
+              className="text-sky-400 hover:text-sky-600 transition-colors"
+            />
+            {cartCount > 0 && (
+              <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs rounded-full px-1">
+                {cartCount}
+              </span>
+            )}
+          </Link>
         </div>
       </nav>
 
-      {/* Menú desplegable móvil */}
-      <div
-        className={`md:hidden bg-pink-50 shadow-md border-t border-pink-200 flex flex-col p-4 space-y-4 transition-all duration-300 ${
-          isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0 overflow-hidden"
-        }`}
-      >
-        {navLinks.map((link) => (
+      {/* Menú inferior tipo Instagram - Solo móvil */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-pink-200 z-50 shadow-lg">
+        <div className="flex justify-around items-center py-2 px-2">
+          {/* Inicio */}
           <Link
-            key={link.href}
-            href={link.href}
-            className="flex items-center gap-2 text-gray-700 hover:text-pink-500 transition-colors"
-            onClick={() => setIsOpen(false)}
+            href="/"
+            className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500"
           >
-            {link.icon}
-            <span>{link.label}</span>
+            <div className="p-2 rounded-full hover:bg-pink-100 transition-colors">
+              <MdHome size={20} />
+            </div>
+            <span className="text-xs mt-1 text-center truncate w-full font-normal">
+              Inicio
+            </span>
           </Link>
-        ))}
 
-        {/* Login en menú hamburguesa móvil */}
-        <Link
-          href="/login"
-          className="flex items-center gap-2 text-gray-700 hover:text-pink-500 border-t pt-4 mt-2 transition-colors"
-          onClick={() => setIsOpen(false)}
-        >
-          <MdLogin size={24} />
-          <span>Login</span>
-        </Link>
+          {/* Productos */}
+          <Link
+            href="/products"
+            className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500"
+          >
+            <div className="p-2 rounded-full hover:bg-pink-100 transition-colors">
+              <MdStore size={20} />
+            </div>
+            <span className="text-xs mt-1 text-center truncate w-full font-normal">
+              Productos
+            </span>
+          </Link>
+
+          {/* Favoritos */}
+          <Link
+            href="/favorito"
+            className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500"
+          >
+            <div className="p-2 rounded-full hover:bg-pink-100 transition-colors">
+              <MdFavorite size={20} />
+            </div>
+            <span className="text-xs mt-1 text-center truncate w-full font-normal">
+              Favoritos
+            </span>
+          </Link>
+
+          {/* Cuenta */}
+          <Link
+            href="/account"
+            className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500"
+          >
+            <div className="p-2 rounded-full hover:bg-pink-100 transition-colors">
+              <MdPerson size={20} />
+            </div>
+            <span className="text-xs mt-1 text-center truncate w-full font-normal">
+              Cuenta
+            </span>
+          </Link>
+
+          {/* Dashboard */}
+          <Link
+            href="/dashboard"
+            className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500"
+          >
+            <div className="p-2 rounded-full hover:bg-pink-100 transition-colors">
+              <MdBarChart size={20} />
+            </div>
+            <span className="text-xs mt-1 text-center truncate w-full font-normal">
+              Dashboard
+            </span>
+          </Link>
+        </div>
       </div>
     </>
   );

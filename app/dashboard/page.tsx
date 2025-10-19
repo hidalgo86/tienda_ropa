@@ -49,7 +49,7 @@ export default async function DashboardPage({
   // Product with empty values
   let product: ProductServer | null = null;
 
-  if (option === "Salir") {
+  if (option === "exit") {
     redirect("/");
   }
 
@@ -61,10 +61,13 @@ export default async function DashboardPage({
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <div className="flex flex-1 w-full">
+        {/* Sidebar para escritorio */}
         <aside className="w-full max-w-xs min-w-[220px] p-4 bg-gray-50 border-r border-gray-200 hidden md:block">
           <Menu option={option} />
         </aside>
-        <main className="flex-1 p-4">
+
+        {/* Main content con padding bottom en móvil para el menú inferior */}
+        <main className="flex-1 p-4 pb-24 md:pb-4 overflow-x-auto">
           {option === "products" && form && (
             <>
               <FormProduct
@@ -99,6 +102,9 @@ export default async function DashboardPage({
           )}
         </main>
       </div>
+
+      {/* Menú móvil en la parte inferior */}
+      <Menu option={option} />
     </div>
   );
 }

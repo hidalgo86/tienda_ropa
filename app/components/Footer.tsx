@@ -6,9 +6,8 @@ import { FaFacebook, FaInstagram, FaTiktok } from "react-icons/fa";
 
 export default function Footer() {
   return (
-    <footer className="bg-pink-50 border-t border-pink-200 mt-10">
+    <footer className="bg-pink-50 border-t border-pink-200 mt-10 mb-20 md:mb-0">
       <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-1 md:grid-cols-3 gap-8">
-        
         {/* Logo + descripción */}
         <div className="flex flex-col items-start">
           <Image
@@ -19,8 +18,8 @@ export default function Footer() {
             className="object-contain mb-3"
           />
           <p className="text-gray-600 text-sm">
-            ChikitosLandia 👶💕  
-            Ropa tierna y cómoda para los más pequeños de la casa.
+            ChikitosLandia 👶💕 Ropa tierna y cómoda para los más pequeños de la
+            casa.
           </p>
         </div>
 
@@ -28,14 +27,31 @@ export default function Footer() {
         <div className="flex flex-col">
           <h3 className="text-gray-800 font-semibold mb-3">Síguenos</h3>
           <div className="flex gap-4 text-pink-500">
-            <Link href="https://facebook.com" target="_blank" aria-label="Facebook">
-              <FaFacebook size={22} className="hover:text-pink-700 transition-colors" />
+            <Link
+              href="https://facebook.com"
+              target="_blank"
+              aria-label="Facebook"
+            >
+              <FaFacebook
+                size={22}
+                className="hover:text-pink-700 transition-colors"
+              />
             </Link>
-            <Link href="https://instagram.com" target="_blank" aria-label="Instagram">
-              <FaInstagram size={22} className="hover:text-pink-700 transition-colors" />
+            <Link
+              href="https://instagram.com"
+              target="_blank"
+              aria-label="Instagram"
+            >
+              <FaInstagram
+                size={22}
+                className="hover:text-pink-700 transition-colors"
+              />
             </Link>
             <Link href="https://tiktok.com" target="_blank" aria-label="TikTok">
-              <FaTiktok size={22} className="hover:text-pink-700 transition-colors" />
+              <FaTiktok
+                size={22}
+                className="hover:text-pink-700 transition-colors"
+              />
             </Link>
           </div>
         </div>
@@ -64,7 +80,8 @@ export default function Footer() {
 
       {/* Copyright */}
       <div className="bg-pink-100 text-gray-600 text-center py-4 text-sm">
-        © {new Date().getFullYear()} ChikitosLandia. Todos los derechos reservados.
+        © {new Date().getFullYear()} ChikitosLandia. Todos los derechos
+        reservados.
       </div>
     </footer>
   );

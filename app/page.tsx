@@ -7,7 +7,7 @@ export default function Home() {
   return (
     <div className="bg-white">
       <Navbar />
-      <main className="max-w-7xl mx-auto px-4">
+      <main className="max-w-7xl mx-auto px-4 pb-20 md:pb-4">
         <Carrusel />
 
         <div className="mt-10 mb-10">
