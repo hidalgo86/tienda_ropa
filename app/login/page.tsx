@@ -11,13 +11,38 @@ export default function LoginPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
     // Aquí iría la lógica real de login
     if (!usuario || !password) {
       setError("Usuario y contraseña requeridos");
       return;
     }
-    // Simulación de login exitoso
-    router.push("/dashboard");
+
+    // Simulación de login exitoso - en producción esto vendría del backend
+    try {
+      // Simular datos del usuario autenticado
+      const userData = {
+        id: "1",
+        name: usuario,
+        email: `${usuario}@ejemplo.com`,
+        role: "user",
+      };
+
+      // Simular token de autenticación
+      const authToken = `token_${Date.now()}_${Math.random()}`;
+
+      // Guardar en localStorage (en producción usarías cookies httpOnly)
+      localStorage.setItem("authToken", authToken);
+      localStorage.setItem("userData", JSON.stringify(userData));
+
+      // Redirigir a la página que el usuario intentaba acceder o al dashboard
+      const redirectTo =
+        new URLSearchParams(window.location.search).get("redirect") ||
+        "/account";
+      router.push(redirectTo);
+    } catch {
+      setError("Error al iniciar sesión. Intenta nuevamente.");
+    }
   };
 
   return (
