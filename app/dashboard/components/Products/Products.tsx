@@ -12,6 +12,7 @@ import {
 } from "@/services/products.services";
 import { useEffect, useState } from "react";
 import { ProductServer } from "@/types/product.type";
+import { toast } from "sonner";
 
 export default function Products({ page = 1 }: { page?: number }) {
   const [items, setItems] = useState<ProductServer[]>([]);
@@ -61,19 +62,33 @@ export default function Products({ page = 1 }: { page?: number }) {
 
   // 🗑️ Soft delete
   async function handleSoftDelete(id: string) {
-    try {
-      if (!confirm("¿Seguro que deseas eliminar este producto?")) return;
+    toast("¿Seguro que deseas eliminar este producto?", {
+      description: "Esta acción no se puede deshacer.",
+      action: {
+        label: "Eliminar",
+        onClick: async () => {
+          try {
+            await softDeleteProduct(id);
+            toast.success("Producto eliminado correctamente");
 
-      await softDeleteProduct(id);
-      alert("✅ Producto eliminado correctamente");
-
-      // Refrescar lista tras eliminar
-      const { items, totalPages } = await getProducts(page);
-      setItems(items);
-      setTotalPages(totalPages);
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Error al eliminar producto");
-    }
+            // Refrescar lista tras eliminar
+            const { items, totalPages } = await getProducts(page);
+            setItems(items);
+            setTotalPages(totalPages);
+          } catch (err) {
+            toast.error(
+              err instanceof Error ? err.message : "Error al eliminar producto"
+            );
+          }
+        },
+      },
+      cancel: {
+        label: "Cancelar",
+        onClick: () => {
+          // No hacer nada, el toast se cierra automáticamente
+        },
+      },
+    });
   }
 
   // ♻️ Restaurar producto eliminado
@@ -83,7 +98,7 @@ export default function Products({ page = 1 }: { page?: number }) {
       // REST requiere minúsculas: 'disponible' | 'agotado'
       const targetStatus = totalStock > 0 ? "disponible" : "agotado";
       await restoreProduct(product.id, targetStatus);
-      alert(`✅ Producto habilitado como ${targetStatus.toUpperCase()}`);
+      toast.success(`Producto habilitado como ${targetStatus.toUpperCase()}`);
 
       if (statusFilter === "ELIMINADO") {
         const deletedResponse = await getAdminProducts(page, 20, {
@@ -103,7 +118,9 @@ export default function Products({ page = 1 }: { page?: number }) {
       setItems(refreshed.items);
       setTotalPages(refreshed.totalPages);
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Error al restaurar producto");
+      toast.error(
+        err instanceof Error ? err.message : "Error al restaurar producto"
+      );
     }
   }
 
@@ -206,54 +223,57 @@ export default function Products({ page = 1 }: { page?: number }) {
                   </div>
                 )}
                 {/* Botones superpuestos - más pequeños en móvil */}
-                <div className="absolute top-1 sm:top-2 right-1 sm:right-2 flex gap-1 sm:gap-2 z-10">
-                  <Link
-                    href={`/dashboard?option=products&form=edit&id=${product.id}`}
-                    className="bg-yellow-400 hover:bg-yellow-500 text-white p-1.5 sm:p-2 rounded-full flex items-center justify-center shadow transition"
-                    title="Editar"
-                    style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="12"
-                      height="12"
-                      className="sm:w-4 sm:h-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
+                {/* Solo mostrar botones de editar/eliminar si el producto NO está eliminado */}
+                {product.status !== "ELIMINADO" && (
+                  <div className="absolute top-1 sm:top-2 right-1 sm:right-2 flex gap-1 sm:gap-2 z-10">
+                    <Link
+                      href={`/dashboard?option=products&form=edit&id=${product.id}`}
+                      className="bg-yellow-400 hover:bg-yellow-500 text-white p-1.5 sm:p-2 rounded-full flex items-center justify-center shadow transition"
+                      title="Editar"
+                      style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}
                     >
-                      <path
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M16.475 5.408a2.357 2.357 0 1 1 3.336 3.336L7.5 21.055l-4.5 1.5 1.5-4.5 11.975-12.647Z"
-                      />
-                    </svg>
-                  </Link>
-                  <button
-                    onClick={() => handleSoftDelete(product.id)}
-                    className="bg-red-500 hover:bg-red-600 text-white p-1.5 sm:p-2 rounded-full flex items-center justify-center shadow transition"
-                    title="Eliminar"
-                    style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="12"
-                      height="12"
-                      className="sm:w-4 sm:h-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="12"
+                        height="12"
+                        className="sm:w-4 sm:h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M16.475 5.408a2.357 2.357 0 1 1 3.336 3.336L7.5 21.055l-4.5 1.5 1.5-4.5 11.975-12.647Z"
+                        />
+                      </svg>
+                    </Link>
+                    <button
+                      onClick={() => handleSoftDelete(product.id)}
+                      className="bg-red-500 hover:bg-red-600 text-white p-1.5 sm:p-2 rounded-full flex items-center justify-center shadow transition"
+                      title="Eliminar"
+                      style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}
                     >
-                      <path
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M18 6L6 18M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </div>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="12"
+                        height="12"
+                        className="sm:w-4 sm:h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M18 6L6 18M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                )}
                 {/* Badge de status (arriba izquierda) - más pequeño en móvil */}
                 {product.status && (
                   <div

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import ReduxProvider from "./components/ReduxProvider";
+import { Toaster } from "sonner";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -16,6 +17,29 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <ReduxProvider>{children}</ReduxProvider>
+        <Toaster
+          position="top-right"
+          expand={true}
+          richColors
+          closeButton
+          icons={{
+            success: undefined,
+            error: undefined,
+            warning: undefined,
+            info: undefined,
+          }}
+          toastOptions={{
+            style: {
+              fontSize: "14px",
+              minWidth: "320px",
+              maxWidth: "500px",
+              padding: "16px",
+            },
+            className: "text-sm sm:text-base",
+            duration: 4000,
+            unstyled: false,
+          }}
+        />
       </body>
     </html>
   );

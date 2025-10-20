@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { MdClose } from "react-icons/md";
+import { MdTune } from "react-icons/md";
 import Filtros from "./Filtros";
 
 interface FiltrosModalProps {
@@ -55,10 +56,11 @@ export default function FiltrosModal({ isOpen, onClose }: FiltrosModalProps) {
       <div className="fixed inset-y-0 right-0 w-full max-w-sm bg-white shadow-xl transform transition-transform duration-300 ease-in-out flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-pink-50">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">🔍 Filtros</h2>
-            <p className="text-sm text-gray-600">Refina tu búsqueda</p>
+          <div className="flex items-center gap-2">
+            <MdTune size={22} className="text-pink-500" />
+            <h2 className="text-lg font-semibold text-gray-900">Filtros</h2>
           </div>
+          <p className="text-sm text-gray-600 ml-1">Refina tu búsqueda</p>
           <button
             onClick={onClose}
             className="p-2 text-gray-500 hover:text-gray-700 hover:bg-pink-100 rounded-full transition-colors"

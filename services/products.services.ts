@@ -36,6 +36,28 @@ function transformProductWithTranslatedGenre(
   };
 }
 
+// Normaliza talla a formato backend (acepta 3M/M3 y 2T/T2 pero convierte al formato del backend)
+function canonicalizeSize(raw: string): string {
+  const s = String(raw || "")
+    .trim()
+    .toUpperCase();
+  if (s === "RN") return "RN";
+
+  // 3M o M3 -> 3M (formato backend)
+  const m1 = /^(\d+)M$/.exec(s);
+  if (m1) return `${m1[1]}M`;
+  const m2 = /^M(\d+)$/.exec(s);
+  if (m2) return `${m2[1]}M`;
+
+  // 2T o T2 -> 2T (formato backend)
+  const t1 = /^(\d+)T$/.exec(s);
+  if (t1) return `${t1[1]}T`;
+  const t2 = /^T(\d+)$/.exec(s);
+  if (t2) return `${t2[1]}T`;
+
+  return s;
+}
+
 // Tallas válidas según el enum Size del backend
 const VALID_SIZES = [
   "RN",
@@ -524,4 +546,5 @@ export {
   translateGenre,
   transformProductsWithTranslatedGenre,
   transformProductWithTranslatedGenre,
+  canonicalizeSize,
 };

@@ -1,27 +1,42 @@
-import Card from "../components/Card/Card";
-import Pagination from "../components/Pagination";
-import Filtros from "../components/Filtros";
+"use client";
 import Navbar from "../components/Navbar";
-import { notFound } from "next/navigation";
-import { getProducts } from "@/services/products.services";
+import FiltrosModal from "../components/FiltrosModal";
+import Filtros from "../components/Filtros";
+import Pagination from "../components/Pagination";
+import Card from "../components/Card/Card";
+import Link from "next/link";
+import { useState, useEffect } from "react";
 import { ProductServer } from "@/types/product.type";
-import FiltrosMobileButton from "./FiltrosMobileButton";
-export default async function ProductsPage({
-  searchParams,
+
+export default function ProductsLayout({
+  items,
+  totalPages,
+  page,
+  noProducts,
+  total,
 }: {
-  searchParams?: Promise<Record<string, string>>;
+  items: ProductServer[];
+  totalPages: number;
+  page: number;
+  noProducts: boolean;
+  total: number;
 }) {
-  const params = await searchParams;
-  const page = Number(params?.page) || 1;
-  const data = await getProducts(page);
-  const { items, totalPages } = data;
-  if (page < 1 || (totalPages && page > totalPages)) return notFound();
-  const noProducts = !items || items.length === 0;
+  const [showFiltrosModal, setShowFiltrosModal] = useState(false);
+
+  useEffect(() => {
+    const handler = () => setShowFiltrosModal(true);
+    window.addEventListener("openFiltrosModal", handler);
+    return () => window.removeEventListener("openFiltrosModal", handler);
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Navbar />
-      {/* Botón de filtros solo móvil */}
-      <FiltrosMobileButton />
+      {/* Modal de filtros móvil */}
+      <FiltrosModal
+        isOpen={showFiltrosModal}
+        onClose={() => setShowFiltrosModal(false)}
+      />
       <div className="flex flex-1 w-full">
         {/* Sidebar de filtros - Solo desktop */}
         <aside
@@ -32,7 +47,7 @@ export default async function ProductsPage({
         </aside>
         {/* Contenido principal responsivo */}
         <main className="flex-1 px-3 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 pb-20 sm:pb-24 lg:pb-8">
-          {/* ...aquí va el resto del contenido, como el título, filtros móviles, productos, paginación, etc... */}
+          {/* ...existing code for title, filters, etc... */}
           {noProducts ? (
             <div className="w-full text-center text-gray-500 py-8 sm:py-12 lg:py-16 px-4 sm:px-8">
               <div className="max-w-md mx-auto">
@@ -42,7 +57,7 @@ export default async function ProductsPage({
                 </p>
                 <div className="space-y-2 text-xs sm:text-sm text-gray-400">
                   <p>
-                    📊 Total productos: {data?.total || 0} • Página: {page}
+                    📊 Total productos: {total || 0} • Página: {page}
                   </p>
                   <p className="text-blue-600">
                     💡 Los productos necesitan variants con stock para aparecer

@@ -58,8 +58,8 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Título del sidebar */}
-      <div className="border-b border-gray-200 pb-3">
+      {/* Título del sidebar solo en desktop/tablet */}
+      <div className="border-b border-gray-200 pb-3 hidden sm:block">
         <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
           Filtros
         </h2>

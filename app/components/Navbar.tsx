@@ -33,82 +33,80 @@ export default function Navbar() {
   return (
     <>
       {/* Navbar superior */}
-      <nav className="w-full bg-pink-50 shadow-md border-b border-pink-200 flex items-center justify-between px-4 h-16 sm:h-16 md:h-14 transition-all">
+      <nav className="w-full bg-pink-50 shadow-md border-b border-pink-200 flex items-center justify-between px-4 sm:px-6 lg:px-8 xl:px-10 h-16 sm:h-20 md:h-24 lg:h-28 xl:h-32 2xl:h-36 transition-all">
         {/* Logo */}
-        <div className="flex items-center h-full overflow-hidden">
-          <Link
-            href="/"
-            className="relative h-46 w-44 sm:w-56 md:w-64 overflow-hidden"
-          >
-            <Image
-              src="/chikitoslandia.png"
-              alt="Logo"
-              fill
-              priority
-              unoptimized
-              className="object-contain object-bottom"
-            />
-          </Link>
+        <div className="flex items-center h-full min-w-0">
+          <Image
+            src="/chikitoslandia.png"
+            alt="Logo"
+            width={900}
+            height={260}
+            priority
+            unoptimized
+            className="object-contain object-left w-full h-32 sm:h-40 md:h-48 lg:h-56 xl:h-64 2xl:h-72 max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl xl:max-w-3xl 2xl:max-w-[900px]"
+          />
         </div>
-
         {/* Links en desktop */}
-        <div className="hidden md:flex flex-1 justify-center gap-8">
+        <div className="hidden md:flex flex-1 justify-center gap-6 lg:gap-10 xl:gap-12">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="flex items-center gap-1 text-gray-700 hover:text-pink-500 transition-colors"
+              className="flex items-center gap-2 text-gray-700 hover:text-pink-500 transition-colors text-sm lg:text-base xl:text-lg font-medium"
             >
-              {link.icon}
+              <span className="text-lg lg:text-xl xl:text-2xl">
+                {link.icon}
+              </span>
               <span>{link.label}</span>
             </Link>
           ))}
         </div>
 
         {/* Iconos a la derecha - Solo desktop */}
-        <div className="hidden md:flex gap-4 items-center">
-          <Link href="/favorites" title="Favoritos" className="relative">
+        <div className="hidden md:flex gap-4 lg:gap-6 items-center">
+          <Link href="/favorites" title="Favoritos" className="relative group">
             <MdFavorite
-              size={24}
-              className="text-pink-400 hover:text-pink-600 transition-colors"
+              size={28}
+              className="text-pink-400 hover:text-pink-600 transition-colors lg:w-8 lg:h-8 xl:w-9 xl:h-9"
             />
             {favoritesCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full px-1">
+              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs lg:text-sm rounded-full px-1.5 lg:px-2 min-w-[20px] lg:min-w-[24px] h-5 lg:h-6 flex items-center justify-center">
                 {favoritesCount}
               </span>
             )}
           </Link>
 
           {/* Carrito con badge */}
-          <Link href="/cart" title="Carrito" className="relative">
+          <Link href="/cart" title="Carrito" className="relative group">
             <MdShoppingCart
-              size={24}
-              className="text-sky-400 hover:text-sky-600 transition-colors"
+              size={28}
+              className="text-sky-400 hover:text-sky-600 transition-colors lg:w-8 lg:h-8 xl:w-9 xl:h-9"
             />
             {cartCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs rounded-full px-1">
+              <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs lg:text-sm rounded-full px-1.5 lg:px-2 min-w-[20px] lg:min-w-[24px] h-5 lg:h-6 flex items-center justify-center">
                 {cartCount}
               </span>
             )}
           </Link>
 
-          <Link href="/login" title="Login">
+          <Link href="/login" title="Login" className="group">
             <MdLogin
-              size={24}
-              className="text-gray-500 hover:text-gray-700 transition-colors"
+              size={28}
+              className="text-gray-500 hover:text-gray-700 transition-colors lg:w-8 lg:h-8 xl:w-9 xl:h-9"
             />
           </Link>
         </div>
 
         {/* Solo carrito visible en móvil */}
-        <div className="md:hidden">
+        <div className="md:hidden flex items-center gap-2">
+          {/* Carrito móvil */}
           <Link href="/cart" title="Carrito" className="relative">
             <MdShoppingCart
-              size={24}
+              size={26}
               className="text-sky-400 hover:text-sky-600 transition-colors"
             />
             {cartCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs rounded-full px-1">
+              <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs rounded-full px-1.5 min-w-[18px] h-5 flex items-center justify-center">
                 {cartCount}
               </span>
             )}

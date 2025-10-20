@@ -21,7 +21,7 @@ import Products from "./components/Products/Products";
 import Provider from "./components/Provider/Provider";
 import Clients from "./components/Clients/Clients";
 import Finance from "./components/Finance/Finance";
-import FormProduct from "./components/Products/Form";
+import FormProduct from "./components/Products/Form/Form";
 
 // Types
 import { ProductServer } from "@/types/product.type";

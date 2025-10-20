@@ -90,3 +90,115 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Estilos responsivos para toasts de Sonner */
+[data-sonner-toaster] [data-sonner-toast] {
+  min-width: 320px !important;
+  max-width: 500px !important;
+  font-size: 14px !important;
+  padding: 16px !important;
+  line-height: 1.5 !important;
+}
+
+/* Responsive breakpoints para toasts */
+@media (min-width: 640px) {
+  [data-sonner-toaster] [data-sonner-toast] {
+    min-width: 400px !important;
+    font-size: 15px !important;
+    padding: 18px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  [data-sonner-toaster] [data-sonner-toast] {
+    min-width: 450px !important;
+    font-size: 16px !important;
+    padding: 20px !important;
+  }
+}
+
+/* Mejores estilos para botones de acción en toasts */
+[data-sonner-toaster] [data-sonner-toast] button {
+  padding: 8px 16px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+}
+
+@media (min-width: 1024px) {
+  [data-sonner-toaster] [data-sonner-toast] button {
+    padding: 10px 20px !important;
+    font-size: 15px !important;
+  }
+}
+
+/* Solución para iconos de cierre y toast icons */
+[data-sonner-toaster] [data-close-button] {
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+  width: 20px !important;
+  height: 20px !important;
+  border: none !important;
+  background: transparent !important;
+  cursor: pointer !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 4px !important;
+  opacity: 0.7 !important;
+  transition: opacity 0.2s ease !important;
+}
+
+[data-sonner-toaster] [data-close-button]:hover {
+  opacity: 1 !important;
+  background: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Iconos de toast personalizados */
+[data-sonner-toaster] [data-icon] {
+  width: 20px !important;
+  height: 20px !important;
+  margin-right: 12px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Ocultar iconos rotos y reemplazar con texto */
+[data-sonner-toaster] [data-sonner-toast] svg {
+  display: none !important;
+}
+
+/* Agregar indicadores de estado con pseudo-elementos */
+[data-sonner-toaster] [data-sonner-toast][data-type="success"]::before {
+  content: "✅" !important;
+  margin-right: 8px !important;
+  font-size: 16px !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="error"]::before {
+  content: "❌" !important;
+  margin-right: 8px !important;
+  font-size: 16px !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="info"]::before {
+  content: "ℹ️" !important;
+  margin-right: 8px !important;
+  font-size: 16px !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="warning"]::before {
+  content: "⚠️" !important;
+  margin-right: 8px !important;
+  font-size: 16px !important;
+}
+
+/* Botón de cierre personalizado con texto */
+[data-sonner-toaster] [data-close-button]::after {
+  content: "×" !important;
+  font-size: 18px !important;
+  line-height: 1 !important;
+  color: #666 !important;
+  font-weight: bold !important;
+}
