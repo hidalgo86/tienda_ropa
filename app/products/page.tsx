@@ -1,5 +1,11 @@
 import ProductsClient from "./ProductsClient";
 
-export default function ProductsPage(props: any) {
+import { Metadata } from "next";
+
+interface ProductsPageProps {
+  searchParams?: Record<string, string>;
+}
+
+export default function ProductsPage(props: ProductsPageProps) {
   return <ProductsClient {...props} />;
 }
