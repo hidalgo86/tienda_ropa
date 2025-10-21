@@ -22,6 +22,7 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
   const [precioMax, setPrecioMax] = useState(
     searchParams?.get("precioMax") || ""
   );
+  const [talla, setTalla] = useState(searchParams?.get("talla") || "");
   const [search, setSearch] = useState(searchParams?.get("search") || "");
   const [isSearching, setIsSearching] = useState(false);
 
@@ -32,8 +33,8 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
       searchParams ? searchParams.toString() : ""
     );
     // Limpiar todos los filtros anteriores
-    ["genero", "precioMin", "precioMax", "search", "page"].forEach((key) =>
-      params.delete(key)
+    ["genero", "precioMin", "precioMax", "talla", "search", "page"].forEach(
+      (key) => params.delete(key)
     );
     // Agregar los nuevos filtros
     Object.entries(paramsObj).forEach(([key, value]) => {
@@ -53,7 +54,7 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateURL({ genero, precioMin, precioMax, search });
+    updateURL({ genero, precioMin, precioMax, talla, search });
   };
 
   return (
@@ -84,8 +85,14 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
-                  if (search.trim() || genero || precioMin || precioMax) {
-                    updateURL({ genero, precioMin, precioMax, search });
+                  if (
+                    search.trim() ||
+                    genero ||
+                    precioMin ||
+                    precioMax ||
+                    talla
+                  ) {
+                    updateURL({ genero, precioMin, precioMax, talla, search });
                   }
                 }
               }}
@@ -109,14 +116,20 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
               disabled={isSearching}
               onClick={async (e) => {
                 e.preventDefault();
-                if (!search.trim() && !genero && !precioMin && !precioMax) {
+                if (
+                  !search.trim() &&
+                  !genero &&
+                  !precioMin &&
+                  !precioMax &&
+                  !talla
+                ) {
                   alert("Por favor, ingresa algún criterio de búsqueda");
                   return;
                 }
 
                 setIsSearching(true);
                 try {
-                  updateURL({ genero, precioMin, precioMax, search });
+                  updateURL({ genero, precioMin, precioMax, talla, search });
                   // Simular pequeño delay para feedback visual
                   setTimeout(() => setIsSearching(false), 800);
                 } catch (error) {
@@ -155,6 +168,52 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
             <option value="niño">Niño 👦</option>
             <option value="niña">Niña 👧</option>
             <option value="unisex">Unisex 👶</option>
+          </select>
+        </div>
+        {/* Talla */}
+        <div>
+          <label
+            htmlFor="talla"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
+            📏 Talla
+          </label>
+          <select
+            id="talla"
+            value={talla}
+            onChange={(e) => {
+              const newTalla = e.target.value;
+              if (newTalla !== talla) {
+                setTalla(newTalla);
+                updateURL({
+                  genero,
+                  precioMin,
+                  precioMax,
+                  talla: newTalla,
+                  search,
+                });
+              }
+            }}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-300 text-sm bg-white transition-colors"
+          >
+            <option value="">Todas las tallas</option>
+            <option value="RN">RN (Recién nacido)</option>
+            <option value="3M">3M</option>
+            <option value="6M">6M</option>
+            <option value="9M">9M</option>
+            <option value="12M">12M</option>
+            <option value="18M">18M</option>
+            <option value="24M">24M</option>
+            <option value="2T">2T</option>
+            <option value="3T">3T</option>
+            <option value="4T">4T</option>
+            <option value="5T">5T</option>
+            <option value="6T">6T</option>
+            <option value="7T">7T</option>
+            <option value="8T">8T</option>
+            <option value="9T">9T</option>
+            <option value="10T">10T</option>
+            <option value="12T">12T</option>
           </select>
         </div>
 

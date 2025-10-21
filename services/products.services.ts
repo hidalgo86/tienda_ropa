@@ -381,7 +381,12 @@ export async function getProducts(
     | "NAME_ASC"
     | "NAME_DESC"
     | "CREATED_AT_ASC"
-    | "CREATED_AT_DESC"
+    | "CREATED_AT_DESC",
+  search?: string,
+  genre?: string,
+  minPrice?: number,
+  maxPrice?: number,
+  size?: string
 ) {
   const query = `
     query ($input: ProductsQueryInput) {
@@ -405,10 +410,36 @@ export async function getProducts(
     }
   `;
 
+  // Construir filtros dinámicamente
+  const filters: any = {};
+  if (search) filters.name = search;
+  // Mapeo seguro de género: español → backend
+  const genreMap: Record<string, string> = {
+    niño: "NINO",
+    nino: "NINO",
+    niña: "NINA",
+    nina: "NINA",
+    unisex: "UNISEX",
+    NINO: "NINO",
+    NINA: "NINA",
+    UNISEX: "UNISEX",
+  };
+  if (genre) {
+    const normalized = String(genre).trim().toLowerCase();
+    filters.genre = genreMap[normalized] || genre.toUpperCase();
+  }
+  if (typeof minPrice === "number" && !isNaN(minPrice)) {
+    filters.minPrice = minPrice;
+  }
+  if (typeof maxPrice === "number" && !isNaN(maxPrice)) {
+    filters.maxPrice = maxPrice;
+  }
+
   const variables: any = {
     input: {
       pagination: { page, limit },
       ...(sort && { sort }),
+      ...(Object.keys(filters).length > 0 && { filters }),
     },
   };
 
