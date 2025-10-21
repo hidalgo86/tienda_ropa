@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState, useMemo } from "react";
+import { MdPhotoLibrary } from "react-icons/md";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -351,38 +352,62 @@ export default function FormProducto({
             )}
           </div>
 
-          {/* Botón de editar (lápiz) */}
-          <button
-            type="button"
-            onClick={() => {
-              const input = document.createElement("input");
-              input.type = "file";
-              input.accept = "image/jpeg,image/png,image/webp";
-              input.onchange = (e) => {
-                const target = e.target as HTMLInputElement;
-                const f = target.files?.[0] || null;
-                setFile(f);
-              };
-              input.click();
-            }}
-            disabled={disabled}
-            className="absolute bottom-2 right-2 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full shadow-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Cambiar imagen"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          {/* Botones de cámara y lápiz, ambos en la esquina inferior derecha */}
+          <div className="absolute bottom-2 right-2 flex gap-2">
+            {/* Botón de cámara */}
+            <button
+              type="button"
+              onClick={() => {
+                const input = document.createElement("input");
+                input.type = "file";
+                input.accept = "image/*";
+                input.setAttribute("capture", "environment");
+                input.onchange = (e) => {
+                  const target = e.target as HTMLInputElement;
+                  const f = target.files?.[0] || null;
+                  setFile(f);
+                };
+                input.click();
+              }}
+              disabled={disabled}
+              className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-full shadow-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed block md:hidden"
+              title="Abrir cámara"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-              />
-            </svg>
-          </button>
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M3 7h2l2-3h10l2 3h2a1 1 0 011 1v11a1 1 0 01-1 1H3a1 1 0 01-1-1V8a1 1 0 011-1zm9 3a4 4 0 100 8 4 4 0 000-8z"
+                />
+              </svg>
+            </button>
+            {/* Botón de editar (lápiz) */}
+            <button
+              type="button"
+              onClick={() => {
+                const input = document.createElement("input");
+                input.type = "file";
+                input.accept = "image/*";
+                input.onchange = (e) => {
+                  const target = e.target as HTMLInputElement;
+                  const f = target.files?.[0] || null;
+                  setFile(f);
+                };
+                input.click();
+              }}
+              disabled={disabled}
+              className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full shadow-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Seleccionar imagen de la galería"
+            >
+              <MdPhotoLibrary className="w-5 h-5" />
+            </button>
+          </div>
 
           {/* Botón para quitar imagen (solo si hay preview que no sea la imagen original) */}
           {preview && preview !== form.imageUrl && (
