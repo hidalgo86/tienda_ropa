@@ -49,15 +49,24 @@ export default async function ProductsClient({
     : process.env.NEXT_PUBLIC_SITE_URL
     ? process.env.NEXT_PUBLIC_SITE_URL
     : "http://localhost:3000";
-    
+
   const res = await fetch(
     `${baseUrl}/api/products/get?${paramsApi.toString()}`
   );
+
+  console.log("Fetching products with params:", baseUrl);
+  
+
   if (!res.ok) return notFound();
+
   const data = await res.json();
+  console.log("Products data:", data);
+
   const { items, totalPages } = data;
+
   if (page < 1 || (totalPages && page > totalPages)) return notFound();
   const noProducts = !items || items.length === 0;
+
   return (
     <div className="min-h-screen flex flex-col bg-white">
       <Navbar />
