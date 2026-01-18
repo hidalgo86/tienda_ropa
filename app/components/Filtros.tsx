@@ -165,9 +165,9 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
                        transition-colors"
           >
             <option value="">Todos los géneros</option>
-            <option value="niño">Niño 👦</option>
-            <option value="niña">Niña 👧</option>
-            <option value="unisex">Unisex 👶</option>
+            <option value="NINO">Niño 👦</option>
+            <option value="NINA">Niña 👧</option>
+            <option value="UNISEX">Unisex 👶</option>
           </select>
         </div>
         {/* Talla */}
