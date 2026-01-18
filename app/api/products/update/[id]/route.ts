@@ -32,14 +32,26 @@ export async function PATCH(req: NextRequest) {
       const status = formData.get("status") as string | null;
       const variantsStr = formData.get("variants") as string | null; // JSON opcional
 
-      const input: any = {};
+      type UpdateProductInput = {
+        name?: string;
+        genre?: "NINO" | "NINA" | "UNISEX";
+        description?: string | null;
+        status?: string;
+        variants?: Array<{ size: string; stock: number; price: number }>;
+        imageUrl?: string;
+        imagePublicId?: string;
+      };
+      const input: UpdateProductInput = {};
       if (name) input.name = name;
       if (genre) {
-        input.genre = /niña/i.test(genre)
+        const g = /niña/i.test(genre)
           ? "NINA"
           : /niño/i.test(genre)
           ? "NINO"
           : String(genre).toUpperCase();
+        if (g === "NINA" || g === "NINO" || g === "UNISEX") {
+          input.genre = g;
+        }
       }
       if (description !== null && description !== undefined)
         input.description = description;
@@ -48,13 +60,20 @@ export async function PATCH(req: NextRequest) {
       // Normalizar variantes si llegan por form-data
       if (variantsStr) {
         try {
-          const parsed = JSON.parse(variantsStr);
-          if (!Array.isArray(parsed)) {
+          const parsedUnknown: unknown = JSON.parse(variantsStr);
+          if (!Array.isArray(parsedUnknown)) {
             return NextResponse.json(
               { error: "variants debe ser un arreglo" },
               { status: 400 }
             );
           }
+          const isVariant = (
+            v: unknown
+          ): v is { size: string; stock: number; price: number } =>
+            !!v &&
+            typeof (v as { size: unknown }).size === "string" &&
+            typeof (v as { stock: unknown }).stock === "number" &&
+            typeof (v as { price: unknown }).price === "number";
           const toGraphqlSize = (s: string): string => {
             const up = String(s).toUpperCase().trim();
             const m = up.match(/^(\d+)M$/);
@@ -63,14 +82,20 @@ export async function PATCH(req: NextRequest) {
             if (t) return `T${t[1]}`;
             return up;
           };
-          input.variants = parsed.map((v: any) => ({
-            size: toGraphqlSize(v.size),
-            stock: Number(v.stock),
-            price: Number(v.price),
-          }));
-        } catch (e: any) {
+          input.variants = (parsedUnknown as unknown[])
+            .filter(isVariant)
+            .map((v) => ({
+              size: toGraphqlSize((v as { size: string }).size),
+              stock: Number((v as { stock: number }).stock),
+              price: Number((v as { price: number }).price),
+            }));
+        } catch (e: unknown) {
+          const message =
+            e && typeof e === "object" && "message" in e
+              ? String((e as { message?: unknown }).message ?? "")
+              : "";
           return NextResponse.json(
-            { error: `Formato inválido de variants: ${e.message}` },
+            { error: `Formato inválido de variants: ${message}` },
             { status: 400 }
           );
         }
@@ -91,7 +116,7 @@ export async function PATCH(req: NextRequest) {
             { status: 500 }
           );
         }
-        if (!(file as any).type || !(file as any).type.startsWith("image")) {
+        if (!file.type || !file.type.startsWith("image")) {
           return NextResponse.json(
             { error: "El archivo debe ser una imagen válida" },
             { status: 400 }
@@ -128,17 +153,25 @@ export async function PATCH(req: NextRequest) {
 
         // Subir nueva imagen
         const buffer = Buffer.from(await file.arrayBuffer());
-        const uploadResult = await new Promise<any>((resolve, reject) => {
-          cloudinary.uploader
-            .upload_stream(
-              { folder: "products", resource_type: "image" },
-              (error, result) => {
-                if (error) reject(error);
-                else resolve(result);
-              }
-            )
-            .end(buffer);
-        });
+        interface CloudinaryUploadResult {
+          secure_url: string;
+          public_id: string;
+          [key: string]: unknown;
+        }
+        const uploadResult = await new Promise<CloudinaryUploadResult>(
+          (resolve, reject) => {
+            cloudinary.uploader
+              .upload_stream(
+                { folder: "products", resource_type: "image" },
+                (error, result) => {
+                  if (error) reject(error);
+                  else if (result) resolve(result as CloudinaryUploadResult);
+                  else reject(new Error("Cloudinary upload failed"));
+                }
+              )
+              .end(buffer);
+          }
+        );
 
         input.imageUrl = uploadResult.secure_url;
         input.imagePublicId = uploadResult.public_id;
@@ -182,10 +215,15 @@ export async function PATCH(req: NextRequest) {
         body: JSON.stringify(graphqlQuery),
       });
 
-      let backendData: any = null;
+      type GraphqlError = { message?: string };
+      type GraphqlResponse<T> = { data?: T; errors?: GraphqlError[] };
+      let backendData: GraphqlResponse<{ updateProduct: unknown }> | null =
+        null;
       try {
-        backendData = await backendRes.json();
-      } catch (e) {
+        backendData = (await backendRes.json()) as GraphqlResponse<{
+          updateProduct: unknown;
+        }>;
+      } catch {
         const text = await backendRes.text();
         return NextResponse.json(
           {
@@ -207,16 +245,23 @@ export async function PATCH(req: NextRequest) {
         );
       }
 
+      if (!backendData.data?.updateProduct) {
+        return NextResponse.json(
+          { error: "Respuesta inválida del backend" },
+          { status: 500 }
+        );
+      }
       return NextResponse.json(backendData.data.updateProduct);
     }
 
     // Rama JSON "application/json": actualizaciones sin imagen
     const body = (await req.json()) as UploadProduct;
     const { id, ...data } = body;
-    const { createdAt, updatedAt, ...input } = data as UploadProduct & {
-      createdAt?: string;
-      updatedAt?: string;
-    };
+    const input: Partial<UploadProduct> = { ...data };
+    // Remove server-managed fields to avoid sending them
+    const inputKeys = input as Record<string, unknown>;
+    delete inputKeys.createdAt;
+    delete inputKeys.updatedAt;
 
     if (input.status) {
       input.status = String(
@@ -266,10 +311,14 @@ export async function PATCH(req: NextRequest) {
       body: JSON.stringify(graphqlQuery),
     });
 
-    let backendData: any = null;
+    type GraphqlError = { message?: string };
+    type GraphqlResponse<T> = { data?: T; errors?: GraphqlError[] };
+    let backendData: GraphqlResponse<{ updateProduct: unknown }> | null = null;
     try {
-      backendData = await backendRes.json();
-    } catch (e) {
+      backendData = (await backendRes.json()) as GraphqlResponse<{
+        updateProduct: unknown;
+      }>;
+    } catch {
       const text = await backendRes.text();
       return NextResponse.json(
         {
@@ -291,11 +340,18 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
+    if (!backendData.data?.updateProduct) {
+      return NextResponse.json(
+        { error: "Respuesta inválida del backend" },
+        { status: 500 }
+      );
+    }
     return NextResponse.json(backendData.data.updateProduct);
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Error interno" },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    const message =
+      error && typeof error === "object" && "message" in error
+        ? String((error as { message?: unknown }).message ?? "Error interno")
+        : "Error interno";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

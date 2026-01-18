@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
-import { Product } from "@/types/product.type";
+import { Product, ProductServer } from "@/types/product.type";
 import ProductListPublic from "@/components/products/ProductListPublic";
 import { addToCart } from "@/store/slices/cartSlice";
 import { toggleFavorite } from "@/store/slices/favoriteSlice";
@@ -96,7 +96,7 @@ export default function Cards() {
     if (!size) return; // sin talla, no agregar
     dispatch(
       addToCart({
-        product: producto as any,
+        product: producto as ProductServer,
         quantity: 1,
         selectedSize: size,
       })
@@ -106,7 +106,7 @@ export default function Cards() {
   const handleFavorite = (id: string) => {
     const producto = productos.find((p) => p.id === id);
     if (!producto) return;
-    dispatch(toggleFavorite(producto as any));
+    dispatch(toggleFavorite(producto as ProductServer));
   };
 
   return (

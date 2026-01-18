@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Product, ProductStatus } from "@/types/product.type";
 import ProductListAdmin from "@/components/products/ProductListAdmin";
 import Pagination from "@/components/Pagination";
@@ -18,7 +18,7 @@ const Products: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -45,12 +45,13 @@ const Products: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [status, page, search]);
 
   useEffect(() => {
     fetchProducts();
-  }, [status, page, search]);
+  }, [fetchProducts]);
 
+  const router = useRouter();
   if (error) {
     return <div className="text-center py-10 text-red-600">{error}</div>;
   }
@@ -71,7 +72,7 @@ const Products: React.FC = () => {
           p.id === id ? { ...p, status: ProductStatus.ELIMINADO } : p
         )
       );
-    } catch (err) {
+    } catch {
       alert("No se pudo eliminar el producto");
     }
   };
@@ -90,13 +91,12 @@ const Products: React.FC = () => {
           p.id === id ? { ...p, status: ProductStatus.DISPONIBLE } : p
         )
       );
-    } catch (err) {
+    } catch {
       alert("No se pudo restaurar el producto");
     }
   };
 
   // Función para editar producto (redirecciona a la página de edición)
-  const router = useRouter();
   const handleEdit = (id: string) => {
     router.push(`/dashboard/products/edit/${id}`);
   };

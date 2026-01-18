@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Validar que el archivo sea una imagen
-    if (!(file as any).type || !(file as any).type.startsWith("image")) {
+    if (!file.type || !file.type.startsWith("image")) {
       return NextResponse.json(
         { error: "El archivo debe ser una imagen válida" },
         { status: 400 }
@@ -60,28 +60,27 @@ export async function POST(req: NextRequest) {
     }
 
     // Validar y parsear variantes
-    let parsedVariants: any;
+    type ParsedVariant = { size: string; stock: number; price: number };
+    const isParsedVariant = (v: unknown): v is ParsedVariant =>
+      !!v &&
+      typeof (v as ParsedVariant).size === "string" &&
+      typeof (v as ParsedVariant).stock === "number" &&
+      (v as ParsedVariant).stock >= 0 &&
+      typeof (v as ParsedVariant).price === "number" &&
+      (v as ParsedVariant).price >= 0;
+    let parsedVariants: ParsedVariant[];
     try {
-      parsedVariants = JSON.parse(variants);
-      if (!Array.isArray(parsedVariants)) {
+      const pvUnknown: unknown = JSON.parse(variants);
+      if (!Array.isArray(pvUnknown)) {
         throw new Error("variants debe ser un arreglo");
       }
-      // Debe contener al menos una variante
-      if (parsedVariants.length === 0) {
+      if (pvUnknown.length === 0) {
         return NextResponse.json(
           { error: "variants debe contener al menos una variante" },
           { status: 400 }
         );
       }
-      // Validar estructura mínima de cada variante
-      const isValidVariant = (v: any) =>
-        v &&
-        typeof v.size === "string" &&
-        typeof v.stock === "number" &&
-        v.stock >= 0 &&
-        typeof v.price === "number" &&
-        v.price >= 0;
-      const allValid = parsedVariants.every(isValidVariant);
+      const allValid = pvUnknown.every(isParsedVariant);
       if (!allValid) {
         return NextResponse.json(
           {
@@ -91,9 +90,14 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
-    } catch (e: any) {
+      parsedVariants = pvUnknown as ParsedVariant[];
+    } catch (e: unknown) {
+      const message =
+        e && typeof e === "object" && "message" in e
+          ? String((e as { message?: unknown }).message ?? "")
+          : "";
       return NextResponse.json(
-        { error: `Formato inválido de variants: ${e.message}` },
+        { error: `Formato inválido de variants: ${message}` },
         { status: 400 }
       );
     }
@@ -102,17 +106,25 @@ export async function POST(req: NextRequest) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    const uploadResult = await new Promise<any>((resolve, reject) => {
-      cloudinary.uploader
-        .upload_stream(
-          { folder: "products", resource_type: "image" },
-          (error, result) => {
-            if (error) reject(error);
-            else resolve(result);
-          }
-        )
-        .end(buffer);
-    });
+    interface CloudinaryUploadResult {
+      secure_url: string;
+      public_id: string;
+      [key: string]: unknown;
+    }
+    const uploadResult = await new Promise<CloudinaryUploadResult>(
+      (resolve, reject) => {
+        cloudinary.uploader
+          .upload_stream(
+            { folder: "products", resource_type: "image" },
+            (error, result) => {
+              if (error) reject(error);
+              else if (result) resolve(result as CloudinaryUploadResult);
+              else reject(new Error("Cloudinary upload failed"));
+            }
+          )
+          .end(buffer);
+      }
+    );
 
     // Construir el input para el backend
     // Normalizar género a enum GraphQL (NINO, NINA, UNISEX)
@@ -142,19 +154,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Normalizar tallas de variantes al enum GraphQL
-    const normalizeSize = (s: string) => {
-      const up = s.toUpperCase().trim();
-      // 10T -> T10, 2T -> T2, etc.
-      const tSuffix = up.match(/^(\d+)T$/);
-      if (tSuffix) return `T${tSuffix[1]}`;
-      // 3M -> M3, 12M -> M12, etc.
-      const mSuffix = up.match(/^(\d+)M$/);
-      if (mSuffix) return `M${mSuffix[1]}`;
-      // Ya en formato M3, M6, etc.
-      if (/^M\d+$/.test(up)) return up;
-      return up;
-    };
+    // Normalización de tallas al formato del cliente y GraphQL
 
     // Ajuste al tipado del cliente: tallas en formato RN, 3M, 6M, ..., 2T-12T
     const allowedClientSizes = new Set<string>([
@@ -191,7 +191,7 @@ export async function POST(req: NextRequest) {
       return up;
     };
 
-    const typedVariants: VariantProduct[] = parsedVariants.map((v: any) => {
+    const typedVariants: VariantProduct[] = parsedVariants.map((v) => {
       const clientSize = toClientSize(String(v.size));
       const stockNum = Number(v.stock);
       const priceNum = Number(v.price);
@@ -294,11 +294,14 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify(graphqlQuery),
     });
 
-    console.log("Backend response status:", backendRes);
-    let backendData: any = null;
+    type GraphqlError = { message?: string };
+    type GraphqlResponse<T> = { data?: T; errors?: GraphqlError[] };
+    let backendData: GraphqlResponse<{ createProduct: unknown }> | null = null;
     try {
-      backendData = await backendRes.json();
-    } catch (e) {
+      backendData = (await backendRes.json()) as GraphqlResponse<{
+        createProduct: unknown;
+      }>;
+    } catch {
       const text = await backendRes.text();
       return NextResponse.json(
         {
@@ -320,11 +323,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    return NextResponse.json(backendData.data.createProduct);
-  } catch (error: any) {
-    return NextResponse.json(
-      { error: error.message || "Error interno" },
-      { status: 500 }
-    );
+    return NextResponse.json(backendData.data?.createProduct);
+  } catch (error: unknown) {
+    const message =
+      error && typeof error === "object" && "message" in error
+        ? String((error as { message?: unknown }).message ?? "Error interno")
+        : "Error interno";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

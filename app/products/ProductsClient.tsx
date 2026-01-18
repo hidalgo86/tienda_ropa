@@ -1,5 +1,5 @@
 import PublicListWrapper from "./PublicListWrapper";
-import Pagination from "../components/Pagination";
+import Pagination from "./Pagination";
 import Filtros from "../components/Filtros";
 import Navbar from "../../components/Navbar";
 import { notFound } from "next/navigation";
@@ -95,11 +95,7 @@ export default async function ProductsClient({
       {/* Footer con paginación responsiva */}
       <footer className="sticky bottom-0 left-0 w-full bg-white/95 backdrop-blur-sm border-t border-gray-200 pt-2 pb-3 sm:pt-3 sm:pb-4 lg:pt-4 lg:pb-5 z-20">
         <div className="flex justify-center px-3 sm:px-6 lg:px-8">
-          <Pagination
-            currentPage={page}
-            totalPages={totalPages}
-            basePath="/products"
-          />
+          <Pagination currentPage={page} totalPages={totalPages} />
         </div>
       </footer>
     </div>

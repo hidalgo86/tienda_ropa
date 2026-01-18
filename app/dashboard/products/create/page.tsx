@@ -14,9 +14,9 @@
 // y en diferentes tamaños de pantalla
 "use client";
 import React, { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
-  Product,
   UploadProduct,
   VariantProduct,
   Size,
@@ -25,8 +25,6 @@ import {
 
 const CreateProductPage: React.FC = () => {
   const router = useRouter();
-  const params = useParams();
-  const id = params?.id as string;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<UploadProduct>>({
@@ -39,8 +37,9 @@ const CreateProductPage: React.FC = () => {
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   // Estado para variantes temporales
-  const [variant, setVariant] = useState<VariantProduct>({
-    size: undefined as any, // Ajuste para evitar error de tipo, asumiendo que se selecciona luego
+  type VariantDraft = { size?: Size; stock: number; price: number };
+  const [variant, setVariant] = useState<VariantDraft>({
+    size: undefined,
     stock: 0,
     price: 0,
   });
@@ -82,9 +81,12 @@ const CreateProductPage: React.FC = () => {
     if (!variant.size || variant.stock < 0 || variant.price < 0) return;
     setForm((prev) => ({
       ...prev,
-      variants: [...(prev.variants || []), { ...variant }],
+      variants: [
+        ...(prev.variants || []),
+        { ...variant, size: variant.size as Size },
+      ],
     }));
-    setVariant({ size: undefined as any, stock: 0, price: 0 });
+    setVariant({ size: undefined, stock: 0, price: 0 });
   };
 
   // Eliminar variante
@@ -160,9 +162,11 @@ const CreateProductPage: React.FC = () => {
         <div className="flex flex-col items-center gap-2">
           <div className="w-40 h-40 bg-gray-100 border border-gray-300 rounded flex items-center justify-center overflow-hidden">
             {imagePreview ? (
-              <img
+              <Image
                 src={imagePreview}
                 alt="Previsualización"
+                width={160}
+                height={160}
                 className="object-cover w-full h-full"
               />
             ) : (

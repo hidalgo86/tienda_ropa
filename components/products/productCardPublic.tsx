@@ -22,8 +22,7 @@ const ProductCardPublic: React.FC<ProductCardPublicProps> = ({
     variants.length > 0
       ? Math.min(...variants.map((v) => Number(v.price) || 0))
       : null;
-  const sizes =
-    variants.length > 0 ? variants.map((v) => v.size).join(", ") : null;
+  // Nota: 'sizes' no se usa en la UI actual
   const isEliminado = product.status?.toLowerCase() === "eliminado";
   const isFavorite = useSelector((state: RootState) =>
     state.favorites?.items?.some((item) => item.id === product.id)

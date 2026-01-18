@@ -1,8 +1,10 @@
-
 import { NextResponse } from "next/server";
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
-  const id = params.id;
+export async function GET(
+  req: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params;
   const query = `
     query ($id: String!) {
       product(id: $id) {
@@ -29,13 +31,25 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     });
     const data = await res.json();
 
-    if (data?.errors?.length) {
-      return NextResponse.json({ error: data.errors.map((e: any) => e.message).join(", ") }, { status: 500 });
+    const errors: Array<{ message?: string }> | undefined = Array.isArray(
+      data?.errors
+    )
+      ? data.errors
+      : undefined;
+    if (errors && errors.length) {
+      const message = errors
+        .map((e) => (typeof e?.message === "string" ? e.message : "Error"))
+        ?.join(", ");
+      return NextResponse.json({ error: message }, { status: 500 });
     }
 
     const product = data.data.product;
     return NextResponse.json(product);
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || "Error interno" }, { status: 500 });
+  } catch (error: unknown) {
+    const message =
+      error && typeof error === "object" && "message" in error
+        ? String((error as { message?: unknown }).message ?? "Error interno")
+        : "Error interno";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

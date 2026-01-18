@@ -7,7 +7,7 @@ import { toggleFavorite, clearFavorites } from "@/store/slices/favoriteSlice";
 import { addToCart } from "@/store/slices/cartSlice";
 import Navbar from "../../components/Navbar";
 import ProductListPublic from "@/components/products/ProductListPublic";
-import { Product } from "@/types/product.type";
+import { ProductServer, Product } from "@/types/product.type";
 import { MdDeleteSweep } from "react-icons/md";
 
 export default function FavoritesClient() {
@@ -17,23 +17,23 @@ export default function FavoritesClient() {
   );
 
   const handleFavorite = (productId: string) => {
-    const producto = favoriteItems.find((p: any) => p.id === productId);
+    const producto = favoriteItems.find((p) => p.id === productId);
     if (!producto) return;
-    dispatch(toggleFavorite(producto as any));
+    dispatch(toggleFavorite(producto));
   };
 
   const handleAddToCart = (productId: string) => {
-    const producto: any = favoriteItems.find((p: any) => p.id === productId);
+    const producto = favoriteItems.find((p) => p.id === productId);
     if (!producto) return;
     const variants = producto.variants || [];
     const size =
-      variants.find((v: any) => (v.stock || 0) > 0)?.size || variants[0]?.size;
+      variants.find((v) => (v.stock || 0) > 0)?.size || variants[0]?.size;
     if (!size) return;
     dispatch(
       addToCart({
-        product: producto as any,
+        product: producto as ProductServer,
         quantity: 1,
-        selectedSize: size,
+        selectedSize: String(size),
       })
     );
   };

@@ -74,15 +74,13 @@ export async function GET(req: Request) {
     }
     return NextResponse.json(data);
   } catch (error: unknown) {
-    let message = "Error al obtener productos";
-    if (
-      error &&
-      typeof error === "object" &&
-      "message" in error &&
-      typeof (error as any).message === "string"
-    ) {
-      message = (error as any).message;
-    }
+    const message =
+      error && typeof error === "object" && "message" in error
+        ? String(
+            (error as { message?: unknown }).message ??
+              "Error al obtener productos"
+          )
+        : "Error al obtener productos";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

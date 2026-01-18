@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import Image from "next/image";
 import { Product, UploadProduct, VariantProduct } from "@/types/product.type";
 
 const EditProductPage: React.FC = () => {
@@ -99,7 +100,7 @@ const EditProductPage: React.FC = () => {
       }
       if (!res.ok) throw new Error("Error al actualizar producto");
       router.push("/dashboard/products");
-    } catch (err) {
+    } catch {
       setError("No se pudo actualizar el producto");
     }
   };
@@ -115,9 +116,11 @@ const EditProductPage: React.FC = () => {
       <div className="flex justify-center mb-6">
         <div className="relative">
           {previewUrl || form.imageUrl ? (
-            <img
+            <Image
               src={previewUrl || String(form.imageUrl)}
               alt={form.name || "Imagen del producto"}
+              width={224}
+              height={224}
               className="max-h-56 rounded shadow object-contain"
             />
           ) : (

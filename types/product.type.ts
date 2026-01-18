@@ -51,6 +51,24 @@ export interface Product {
   updatedAt?: string;
 }
 
+// Producto tal como se usa en el cliente/Redux
+export interface ProductServer {
+  id: string;
+  name: string;
+  description?: string;
+  genre: Genre;
+  imageUrl?: string;
+  imagePublicId?: string;
+  variants?: Array<{
+    size: string | Size;
+    stock: number;
+    price: number;
+  }>;
+  status?: ProductStatus;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface PaginatedProducts {
   items: Product[];
   total: number;

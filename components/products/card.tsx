@@ -1,11 +1,5 @@
-import React from "react";
 import Image from "next/image";
-import {
-  Product,
-  Genre,
-  VariantProduct,
-  ProductStatus,
-} from "@/types/product.type";
+import { Product } from "@/types/product.type";
 
 interface CardProps {
   product: Product;
@@ -17,17 +11,15 @@ interface CardProps {
   onFavorite?: (id: string) => void;
 }
 
-// Colores para el estado
 const statusColors: Record<string, string> = {
   disponible: "bg-green-100 text-green-700 border-green-300",
   agotado: "bg-red-100 text-red-700 border-red-300",
   eliminado: "bg-gray-200 text-gray-500 border-gray-400",
 };
 
-// Imagen placeholder
 const PLACEHOLDER = "/placeholder.webp";
 
-const Card: React.FC<CardProps> = ({
+function Card({
   product,
   admin = false,
   onEdit,
@@ -35,13 +27,10 @@ const Card: React.FC<CardProps> = ({
   onRestore,
   onAddToCart,
   onFavorite,
-}) => {
+}: CardProps) {
   const status = product.status?.toLowerCase();
   const isEliminado = status === "eliminado";
-  const isAgotado = status === "agotado";
-  const isDisponible = status === "disponible";
 
-  // Precio mínimo y tallas
   const variants = product.variants ?? [];
   const minPrice =
     variants.length > 0
@@ -56,7 +45,6 @@ const Card: React.FC<CardProps> = ({
       tabIndex={0}
       aria-label={`Tarjeta producto ${product.name}`}
     >
-      {/* Imagen y estado (solo admin) */}
       <div className="w-full h-40 sm:h-48 bg-gray-100 flex items-center justify-center overflow-hidden relative">
         <Image
           src={product.imageUrl || PLACEHOLDER}
@@ -77,7 +65,6 @@ const Card: React.FC<CardProps> = ({
           </span>
         )}
       </div>
-
       {/* Botones de acción solo si admin */}
       {!isEliminado && admin && (
         <div className="absolute top-2 right-2 flex gap-2 z-10">
@@ -210,7 +197,7 @@ const Card: React.FC<CardProps> = ({
       </div>
     </div>
   );
-};
+}
 
 export default Card;
 // crear un componente de tarjeta reutilizable para el dashboard
