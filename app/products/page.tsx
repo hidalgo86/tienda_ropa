@@ -5,7 +5,7 @@ interface ProductsPageProps {
 }
 
 export default function ProductsPage(props: ProductsPageProps) {
-  return <> HOLA
-  {/* <ProductsClient {...props} />; */}
+  return <> 
+  <ProductsClient {...props} />;
   </>
 }
