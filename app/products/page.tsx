@@ -1,9 +1,10 @@
 import ProductsClient from "./ProductsClient";
 
-interface ProductsPageProps {
-  searchParams?: Record<string, string | string[] | undefined>;
-}
-
-export default function ProductsPage(props: ProductsPageProps) {
-  return <ProductsClient {...props} />;
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string>>;
+}) {
+  const params = await searchParams;
+  return <ProductsClient searchParams={params} />;
 }
