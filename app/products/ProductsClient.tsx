@@ -116,7 +116,8 @@ export default async function ProductsClient({
         </footer>
       </div>
     );
-  } catch (e) {
+  } catch (err) {
+    console.error("ProductsClient SSR error", err);
     return (
       <div className="min-h-screen flex flex-col bg-white">
         <Navbar />

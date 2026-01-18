@@ -1,7 +1,7 @@
 import ProductsClient from "./ProductsClient";
 
 interface ProductsPageProps {
-  searchParams?: Promise<Record<string, string>>;
+  searchParams?: Record<string, string | string[] | undefined>;
 }
 
 export default function ProductsPage(props: ProductsPageProps) {
