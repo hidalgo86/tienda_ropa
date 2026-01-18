@@ -64,10 +64,7 @@ export async function GET(req: Request) {
     });
     const response = await backendRes.json();
     const data = response.data.products as PaginatedProducts;
-    console.log("GraphQL Response Data:", data);
     const errors = response.errors;
-
-    console.log("GraphQL Response:", data);
 
     if (errors) {
       throw new Error(errors[0]?.message || "Error en GraphQL");
