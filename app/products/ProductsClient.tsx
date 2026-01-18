@@ -35,21 +35,30 @@ export default async function ProductsClient({
   const paramsApi = new URLSearchParams();
   paramsApi.append("page", String(page));
   paramsApi.append("limit", "20");
-  if (search) paramsApi.append("search", search);
+  // El endpoint espera 'name' en lugar de 'search'
+  if (search) paramsApi.append("name", search);
   if (genre) paramsApi.append("genre", genre);
   if (minPrice !== undefined) paramsApi.append("minPrice", String(minPrice));
   if (maxPrice !== undefined) paramsApi.append("maxPrice", String(maxPrice));
 
-  // Usar URL absoluta para fetch en server component
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : process.env.NEXT_PUBLIC_SITE_URL
-    ? process.env.NEXT_PUBLIC_SITE_URL
-    : "http://localhost:3000";
-  const res = await fetch(
-    `${baseUrl}/api/products/get?${paramsApi.toString()}`
-  );
-  if (!res.ok) return notFound();
+  // Usar ruta relativa; funciona en SSR tanto local como producción
+  const res = await fetch(`/api/products/get?${paramsApi.toString()}`);
+  if (!res.ok) {
+    const message = `Error al cargar productos (${res.status})`;
+    return (
+      <div className="min-h-screen flex flex-col bg-white">
+        <Navbar />
+        <main className="flex-1 px-6 py-10">
+          <div className="max-w-lg mx-auto text-center">
+            <h1 className="text-2xl font-bold mb-2">
+              No se pudieron cargar los productos
+            </h1>
+            <p className="text-gray-600">{message}</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
   const data = await res.json();
   const { items, totalPages } = data;
   if (page < 1 || (totalPages && page > totalPages)) return notFound();
