@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 
 // Importar Footer de forma dinámica sin SSR para evitar problemas con window
-const Footer = dynamic(() => import("./Footer"), {
+const Footer = dynamic(() => import("../../components/Footer"), {
   ssr: false,
   loading: () => (
     <footer className="bg-gray-100 mt-auto">

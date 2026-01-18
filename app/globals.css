@@ -169,7 +169,7 @@ body {
   display: none !important;
 }
 
-/* Agregar indicadores de estado con pseudo-elementos */
+/*  indicadores de estado con pseudo-elementos */
 [data-sonner-toaster] [data-sonner-toast][data-type="success"]::before {
   content: "✅" !important;
   margin-right: 8px !important;

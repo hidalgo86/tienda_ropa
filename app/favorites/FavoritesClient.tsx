@@ -3,14 +3,12 @@
 import { useSelector, useDispatch } from "react-redux";
 import Link from "next/link";
 import { RootState } from "@/store";
-import {
-  removeFromFavorites,
-  clearFavorites,
-} from "@/store/slices/favoriteSlice";
-import Navbar from "../components/Navbar";
-import Card from "../components/Card/Card";
-import { ProductServer } from "@/types/product.type";
-import { MdDelete, MdDeleteSweep } from "react-icons/md";
+import { toggleFavorite, clearFavorites } from "@/store/slices/favoriteSlice";
+import { addToCart } from "@/store/slices/cartSlice";
+import Navbar from "../../components/Navbar";
+import ProductListPublic from "@/components/products/ProductListPublic";
+import { Product } from "@/types/product.type";
+import { MdDeleteSweep } from "react-icons/md";
 
 export default function FavoritesClient() {
   const dispatch = useDispatch();
@@ -18,8 +16,26 @@ export default function FavoritesClient() {
     (state: RootState) => state.favorites.items
   );
 
-  const handleRemoveFromFavorites = (productId: string) => {
-    dispatch(removeFromFavorites(productId));
+  const handleFavorite = (productId: string) => {
+    const producto = favoriteItems.find((p: any) => p.id === productId);
+    if (!producto) return;
+    dispatch(toggleFavorite(producto as any));
+  };
+
+  const handleAddToCart = (productId: string) => {
+    const producto: any = favoriteItems.find((p: any) => p.id === productId);
+    if (!producto) return;
+    const variants = producto.variants || [];
+    const size =
+      variants.find((v: any) => (v.stock || 0) > 0)?.size || variants[0]?.size;
+    if (!size) return;
+    dispatch(
+      addToCart({
+        product: producto as any,
+        quantity: 1,
+        selectedSize: size,
+      })
+    );
   };
 
   const handleClearAllFavorites = () => {
@@ -113,23 +129,12 @@ export default function FavoritesClient() {
               </div>
             </div>
 
-            {/* Grid de productos favoritos */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 justify-items-center">
-              {favoriteItems.map((product: ProductServer) => (
-                <div key={product.id} className="relative w-full">
-                  <Card producto={product} priority={false} />
-
-                  {/* Botón de eliminar superpuesto */}
-                  <button
-                    onClick={() => handleRemoveFromFavorites(product.id)}
-                    className="absolute top-2 left-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-md z-10"
-                    title="Eliminar de favoritos"
-                  >
-                    <MdDelete size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
+            {/* Lista pública reutilizada para favoritos */}
+            <ProductListPublic
+              products={favoriteItems as unknown as Product[]}
+              onAddToCart={handleAddToCart}
+              onFavorite={handleFavorite}
+            />
           </div>
         )}
       </div>

@@ -1,0 +1,168 @@
+import React from "react";
+import Image from "next/image";
+import { Product } from "@/types/product.type";
+
+const statusColors: Record<string, string> = {
+  disponible: "bg-green-100 text-green-700 border-green-300",
+  agotado: "bg-gray-200 text-gray-700 border-gray-300",
+  eliminado: "bg-red-100 text-red-700 border-red-300",
+};
+
+interface ProductCardAdminProps {
+  product: Product;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
+  onRestore?: (id: string) => void;
+}
+
+const PLACEHOLDER = "/placeholder.webp";
+
+const ProductCardAdmin: React.FC<ProductCardAdminProps> = ({
+  product,
+  onEdit,
+  onDelete,
+  onRestore,
+}) => {
+  const status = product.status?.toLowerCase();
+  const isEliminado = status === "eliminado";
+  const variants = product.variants ?? [];
+  const minPrice =
+    variants.length > 0
+      ? Math.min(...variants.map((v) => Number(v.price) || 0))
+      : null;
+  const sizes =
+    variants.length > 0 ? variants.map((v) => v.size).join(", ") : null;
+
+  return (
+    <div
+      className="relative bg-white rounded-xl shadow-sm hover:shadow-lg transition-shadow duration-200 border flex flex-col overflow-hidden group"
+      tabIndex={0}
+      aria-label={`Tarjeta producto ${product.name}`}
+    >
+      {/* Imagen y estado */}
+      <div className="w-full h-40 sm:h-48 bg-gray-100 flex items-center justify-center overflow-hidden relative">
+        <Image
+          src={product.imageUrl || PLACEHOLDER}
+          alt={product.name}
+          width={224}
+          height={192}
+          className="object-cover w-full h-full"
+        />
+        <span
+          className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-semibold border shadow ${
+            statusColors[status || ""] ||
+            "bg-gray-100 text-gray-500 border-gray-300"
+          }`}
+          style={{ zIndex: 2 }}
+        >
+          {product.status}
+        </span>
+      </div>
+      {/* Botones de acción admin o restaurar */}
+      {!isEliminado && (
+        <div className="absolute top-2 right-2 flex gap-2 z-10">
+          {onEdit && (
+            <button
+              onClick={() => onEdit(product.id)}
+              className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded-full shadow focus:outline-none"
+              title="Editar producto"
+              aria-label="Editar producto"
+            >
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+                <path
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M16.475 5.408a2.357 2.357 0 1 1 3.336 3.336L7.5 21.055l-4.5 1.5 1.5-4.5 11.975-12.647Z"
+                />
+              </svg>
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={() => onDelete(product.id)}
+              className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow focus:outline-none"
+              title="Eliminar producto"
+              aria-label="Eliminar producto"
+            >
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+                <path
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M18 6L6 18M6 6l12 12"
+                />
+              </svg>
+            </button>
+          )}
+        </div>
+      )}
+      {isEliminado && onRestore && (
+        <div className="absolute top-2 right-2 z-10">
+          <button
+            onClick={() => onRestore(product.id)}
+            className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full shadow"
+            title="Restablecer producto"
+            aria-label="Restablecer producto"
+          >
+            {/* Ícono restaurar (undo) */}
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+              <path
+                d="M12 5v2a7 7 0 1 1-6.93 6H7"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M3 8l4-4 4 4"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
+      )}
+      {/* Info principal */}
+      <div className="p-4 flex-1 flex flex-col">
+        <div className="font-bold text-base text-gray-900 mb-1 relative group">
+          <span
+            tabIndex={0}
+            className="cursor-pointer"
+            aria-label={product.description || "Sin descripción"}
+          >
+            {product.name}
+          </span>
+          {product.description && (
+            <span className="absolute left-0 top-full mt-1 w-max max-w-xs bg-black text-white text-xs rounded px-2 py-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-20">
+              {product.description}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-xs text-gray-400">{product.genre}</span>
+        </div>
+        <div className="mt-auto pt-2 text-sm text-gray-700 flex justify-between items-end">
+          {variants.length > 0 ? (
+            <>
+              <div>
+                <span className="font-semibold">Tallas:</span> {sizes}
+              </div>
+              <div className="font-bold text-lg text-gray-900 text-right min-w-[80px]">
+                ${minPrice?.toFixed(2)}
+              </div>
+            </>
+          ) : (
+            <div className="text-gray-400">Sin variantes disponibles</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ProductCardAdmin;

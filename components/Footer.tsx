@@ -3,8 +3,20 @@
 import Link from "next/link";
 import Image from "next/image";
 import { FaFacebook, FaInstagram, FaTiktok } from "react-icons/fa";
+import { useEffect, useState } from "react";
 
 export default function Footer() {
+  const [iconSize, setIconSize] = useState(24);
+
+  useEffect(() => {
+    const updateSize = () => {
+      const w = typeof window !== "undefined" ? window.innerWidth : 1024;
+      setIconSize(w < 640 ? 20 : w < 1024 ? 22 : 24);
+    };
+    updateSize();
+    window.addEventListener("resize", updateSize);
+    return () => window.removeEventListener("resize", updateSize);
+  }, []);
   return (
     <footer
       className="bg-pink-50 border-t border-pink-200 
@@ -59,13 +71,7 @@ export default function Footer() {
               className="p-2 sm:p-1 hover:bg-pink-100 rounded-full transition-all duration-200"
             >
               <FaFacebook
-                size={
-                  window?.innerWidth < 640
-                    ? 20
-                    : window?.innerWidth < 1024
-                    ? 22
-                    : 24
-                }
+                size={iconSize}
                 className="hover:text-pink-700 transition-colors"
               />
             </Link>
@@ -76,13 +82,7 @@ export default function Footer() {
               className="p-2 sm:p-1 hover:bg-pink-100 rounded-full transition-all duration-200"
             >
               <FaInstagram
-                size={
-                  window?.innerWidth < 640
-                    ? 20
-                    : window?.innerWidth < 1024
-                    ? 22
-                    : 24
-                }
+                size={iconSize}
                 className="hover:text-pink-700 transition-colors"
               />
             </Link>
@@ -93,13 +93,7 @@ export default function Footer() {
               className="p-2 sm:p-1 hover:bg-pink-100 rounded-full transition-all duration-200"
             >
               <FaTiktok
-                size={
-                  window?.innerWidth < 640
-                    ? 20
-                    : window?.innerWidth < 1024
-                    ? 22
-                    : 24
-                }
+                size={iconSize}
                 className="hover:text-pink-700 transition-colors"
               />
             </Link>

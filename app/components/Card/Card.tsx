@@ -176,7 +176,7 @@ export default function Card({ producto, priority = false }: CardProps) {
           </div>
         )}
 
-        {/* Botón agregar al carrito */}
+        {/* Botón  al carrito */}
         <div className="mt-3 pt-2">
           <button
             onClick={handleAddToCart}

@@ -9,7 +9,7 @@ import {
   updateQuantity,
   clearCart,
 } from "@/store/slices/cartSlice";
-import Navbar from "../components/Navbar";
+import Navbar from "../../components/Navbar";
 import {
   MdDelete,
   MdDeleteSweep,

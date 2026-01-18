@@ -19,16 +19,24 @@ const navLinks = [
   { href: "/", icon: <MdHome />, label: "Inicio" },
   { href: "/products", icon: <MdStore />, label: "Productos" },
   { href: "/account", icon: <MdPerson />, label: "Cuenta" },
-  { href: "/dashboard", icon: <MdBarChart />, label: "Dashboard" },
+  { href: "/dashboard/products", icon: <MdBarChart />, label: "Dashboard" },
   { href: "/acerca", icon: <MdInfo />, label: "Acerca" },
 ];
 
 export default function Navbar() {
-  // Obtener contadores desde Redux
+  // Hooks siempre en el mismo orden
   const cartCount = useSelector((state: RootState) => state.cart.totalItems);
-  const favoritesCount = useSelector(
-    (state: RootState) => state.favorites.items.length
+  const favoritesCount = useSelector((state: RootState) =>
+    state.favorites && Array.isArray(state.favorites.items)
+      ? state.favorites.items.length
+      : 0
   );
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+  const displayCart = mounted ? cartCount : 0;
+  const displayFav = mounted ? favoritesCount : 0;
 
   return (
     <>
@@ -69,9 +77,9 @@ export default function Navbar() {
               size={28}
               className="text-pink-400 hover:text-pink-600 transition-colors lg:w-8 lg:h-8 xl:w-9 xl:h-9"
             />
-            {favoritesCount > 0 && (
+            {displayFav > 0 && (
               <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs lg:text-sm rounded-full px-1.5 lg:px-2 min-w-[20px] lg:min-w-[24px] h-5 lg:h-6 flex items-center justify-center">
-                {favoritesCount}
+                {displayFav}
               </span>
             )}
           </Link>
@@ -82,9 +90,9 @@ export default function Navbar() {
               size={28}
               className="text-sky-400 hover:text-sky-600 transition-colors lg:w-8 lg:h-8 xl:w-9 xl:h-9"
             />
-            {cartCount > 0 && (
+            {displayCart > 0 && (
               <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs lg:text-sm rounded-full px-1.5 lg:px-2 min-w-[20px] lg:min-w-[24px] h-5 lg:h-6 flex items-center justify-center">
-                {cartCount}
+                {displayCart}
               </span>
             )}
           </Link>
@@ -99,15 +107,14 @@ export default function Navbar() {
 
         {/* Solo carrito visible en móvil */}
         <div className="md:hidden flex items-center gap-2">
-          {/* Carrito móvil */}
           <Link href="/cart" title="Carrito" className="relative">
             <MdShoppingCart
               size={26}
               className="text-sky-400 hover:text-sky-600 transition-colors"
             />
-            {cartCount > 0 && (
+            {displayCart > 0 && (
               <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs rounded-full px-1.5 min-w-[18px] h-5 flex items-center justify-center">
-                {cartCount}
+                {displayCart}
               </span>
             )}
           </Link>
@@ -150,9 +157,9 @@ export default function Navbar() {
           >
             <div className="p-2 rounded-full hover:bg-pink-100 transition-colors relative">
               <MdFavorite size={20} />
-              {favoritesCount > 0 && (
+              {displayFav > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center text-[10px]">
-                  {favoritesCount > 9 ? "9+" : favoritesCount}
+                  {displayFav > 9 ? "9+" : displayFav}
                 </span>
               )}
             </div>
@@ -160,7 +167,6 @@ export default function Navbar() {
               Favoritos
             </span>
           </Link>
-
           {/* Cuenta */}
           <Link
             href="/account"
@@ -173,10 +179,9 @@ export default function Navbar() {
               Cuenta
             </span>
           </Link>
-
           {/* Dashboard */}
           <Link
-            href="/dashboard"
+            href="/dashboard/products"
             className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500"
           >
             <div className="p-2 rounded-full hover:bg-pink-100 transition-colors">

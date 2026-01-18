@@ -1,20 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Card from "../Card/Card";
-import { ProductServer } from "@/types/product.type";
-import { getProducts } from "@/services/products.services";
+import { useDispatch } from "react-redux";
+import { Product } from "@/types/product.type";
+import ProductListPublic from "@/components/products/ProductListPublic";
+import { addToCart } from "@/store/slices/cartSlice";
+import { toggleFavorite } from "@/store/slices/favoriteSlice";
+import Link from "next/link";
 
 export default function Cards() {
-  const [productos, setProductos] = useState<ProductServer[]>([]);
+  const [productos, setProductos] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const dispatch = useDispatch();
 
   const loadProducts = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await getProducts(1);
+      // Consultar productos usando el endpoint API interno
+      const res = await fetch("/api/products/get?page=1&limit=20");
+      if (!res.ok) throw new Error("Error al consultar productos");
+      const response = await res.json();
       setProductos(response.items);
     } catch (err) {
       console.error("Error cargando productos:", err);
@@ -80,9 +87,30 @@ export default function Cards() {
     );
   }
 
+  const handleAddToCart = (id: string) => {
+    const producto = productos.find((p) => p.id === id);
+    if (!producto) return;
+    const variants = producto.variants || [];
+    const size =
+      variants.find((v) => (v.stock || 0) > 0)?.size || variants[0]?.size;
+    if (!size) return; // sin talla, no agregar
+    dispatch(
+      addToCart({
+        product: producto as any,
+        quantity: 1,
+        selectedSize: size,
+      })
+    );
+  };
+
+  const handleFavorite = (id: string) => {
+    const producto = productos.find((p) => p.id === id);
+    if (!producto) return;
+    dispatch(toggleFavorite(producto as any));
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6 lg:space-y-8">
-      {/* Título responsivo */}
       <div className="text-center sm:text-left">
         <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 sm:mb-0">
           Nuestros Productos
@@ -92,11 +120,29 @@ export default function Cards() {
         </p>
       </div>
 
-      {/* Grid de productos completamente responsivo */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 justify-items-center">
-        {productos.map((producto) => (
-          <Card key={producto.id ?? Math.random()} producto={producto} />
-        ))}
+      <ProductListPublic
+        products={productos.slice(0, 4)}
+        onAddToCart={handleAddToCart}
+        onFavorite={handleFavorite}
+      />
+
+      <div className="flex justify-center">
+        <Link
+          href="/products"
+          className="inline-flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm sm:text-base shadow"
+          aria-label="Ver todos los productos"
+        >
+          Ver todos
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M5 12h14M12 5l7 7-7 7"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </Link>
       </div>
     </div>
   );

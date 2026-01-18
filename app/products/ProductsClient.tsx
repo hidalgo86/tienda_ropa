@@ -1,10 +1,9 @@
-import Card from "../components/Card/Card";
+import PublicListWrapper from "./PublicListWrapper";
 import Pagination from "../components/Pagination";
 import Filtros from "../components/Filtros";
-import Navbar from "../components/Navbar";
+import Navbar from "../../components/Navbar";
 import { notFound } from "next/navigation";
-import { getProducts } from "@/services/products.services";
-import { ProductServer } from "@/types/product.type";
+import { Product } from "@/types/product.type";
 import FiltrosMobileButton from "./FiltrosMobileButton";
 
 export default async function ProductsClient({
@@ -32,15 +31,26 @@ export default async function ProductsClient({
     const normalized = String(genre).trim().toLowerCase();
     genre = genreMap[normalized] || genre.toUpperCase();
   }
-  const data = await getProducts(
-    page,
-    20,
-    undefined,
-    search,
-    genre,
-    minPrice,
-    maxPrice
+  // Construir query params para la API interna
+  const paramsApi = new URLSearchParams();
+  paramsApi.append("page", String(page));
+  paramsApi.append("limit", "20");
+  if (search) paramsApi.append("search", search);
+  if (genre) paramsApi.append("genre", genre);
+  if (minPrice !== undefined) paramsApi.append("minPrice", String(minPrice));
+  if (maxPrice !== undefined) paramsApi.append("maxPrice", String(maxPrice));
+
+  // Usar URL absoluta para fetch en server component
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : process.env.NEXT_PUBLIC_SITE_URL
+    ? process.env.NEXT_PUBLIC_SITE_URL
+    : "http://localhost:3000";
+  const res = await fetch(
+    `${baseUrl}/api/products/get?${paramsApi.toString()}`
   );
+  if (!res.ok) return notFound();
+  const data = await res.json();
   const { items, totalPages } = data;
   if (page < 1 || (totalPages && page > totalPages)) return notFound();
   const noProducts = !items || items.length === 0;
@@ -78,15 +88,7 @@ export default async function ProductsClient({
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-6 justify-items-center">
-              {items.map((product: ProductServer, index: number) => (
-                <Card
-                  key={product.id}
-                  producto={product}
-                  priority={index === 0}
-                />
-              ))}
-            </div>
+            <PublicListWrapper products={items as Product[]} />
           )}
         </main>
       </div>

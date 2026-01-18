@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import Image from "next/image";
-import { ProductServer } from "@/types/product.type";
+import { Product } from "@/types/product.type";
 import { RootState } from "@/store";
 import { addToCart } from "@/store/slices/cartSlice";
 import { toggleFavorite } from "@/store/slices/favoriteSlice";
@@ -19,7 +19,7 @@ import {
 } from "react-icons/md";
 
 interface ProductDetailClientProps {
-  producto: ProductServer;
+  producto: Product;
 }
 
 export default function ProductDetailClient({
@@ -130,7 +130,7 @@ export default function ProductDetailClient({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-6 lg:p-8">
             {/* Imagen del producto */}
             <div className="space-y-4">
-              <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+              <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center relative">
                 <Image
                   src={producto.imageUrl || "/placeholder.webp"}
                   alt={producto.name || "Producto"}
@@ -139,6 +139,18 @@ export default function ProductDetailClient({
                   className="object-contain max-w-full max-h-full"
                   priority
                 />
+                {/* Carrito superpuesto en esquina inferior derecha */}
+                <div className="absolute bottom-3 right-3">
+                  <button
+                    onClick={handleAddToCart}
+                    disabled={!selectedSize || availableStock === 0}
+                    className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Agregar al carrito"
+                    aria-label="Agregar al carrito"
+                  >
+                    <MdShoppingCart size={20} />
+                  </button>
+                </div>
               </div>
 
               {/* Botones de acción secundarios */}
@@ -302,15 +314,6 @@ export default function ProductDetailClient({
 
               {/* Botones de acción principales */}
               <div className="space-y-3 pt-4">
-                <button
-                  onClick={handleAddToCart}
-                  disabled={!selectedSize || availableStock === 0}
-                  className="w-full flex items-center justify-center gap-2 bg-pink-500 text-white py-3 px-6 rounded-lg font-medium hover:bg-pink-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <MdShoppingCart size={20} />
-                  Agregar al carrito
-                </button>
-
                 <button
                   onClick={handleBuyNow}
                   disabled={!selectedSize || availableStock === 0}

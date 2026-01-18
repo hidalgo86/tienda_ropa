@@ -1,41 +1,99 @@
-// types/product.type.ts
+// src/types/product.type.ts
 
-export interface ProductVariant {
-  size: string; // REST usa "3M"/"2T"; GraphQL tokens se mapean por el backend
-  stock: number; // entero no negativo
-  price: number; // >= 0
+export enum ProductStatus {
+  DISPONIBLE = "disponible",
+  AGOTADO = "agotado",
+  ELIMINADO = "eliminado",
 }
 
-export interface ProductServer {
+export enum Genre {
+  NINA = "niña",
+  NINO = "niño",
+  UNISEX = "unisex",
+}
+
+export enum Size {
+  RN = "RN",
+  M3 = "3M",
+  M6 = "6M",
+  M9 = "9M",
+  M12 = "12M",
+  M18 = "18M",
+  M24 = "24M",
+  T2 = "2T",
+  T3 = "3T",
+  T4 = "4T",
+  T5 = "5T",
+  T6 = "6T",
+  T7 = "7T",
+  T8 = "8T",
+  T9 = "9T",
+  T10 = "10T",
+  T12 = "12T",
+}
+
+export interface VariantProduct {
+  size: Size;
+  stock: number;
+  price: number;
+}
+
+export interface Product {
   id: string;
   name: string;
+  genre: Genre;
   description?: string;
-  // Nota: GraphQL devuelve enums en MAYÚSCULAS (NINA/NINO/UNISEX),
-  // pero en REST se envía en minúsculas ("niña"|"niño"|"unisex").
-  genre: string;
-  variants?: ProductVariant[];
+  variants?: VariantProduct[];
   imageUrl?: string;
   imagePublicId?: string;
-  status?: "DISPONIBLE" | "AGOTADO" | "ELIMINADO";
+  status?: ProductStatus;
   createdAt?: string;
   updatedAt?: string;
 }
 
-// Tipo de formulario/cliente (UI) para construir variants a partir de talla(s), precio y stock comunes
-export interface ProductClient {
+export interface PaginatedProducts {
+  items: Product[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface ProductFiltersModel {
+  name?: string;
+  genre?: string;
+  size?: Size[];
+  minPrice?: number;
+  maxPrice?: number;
+  status?: ProductStatus;
+}
+
+export interface PaginationModel {
+  page: number;
+  limit: number;
+}
+
+export interface ProductsQueryModel {
+  filters: ProductFiltersModel;
+  pagination: PaginationModel;
+}
+
+export interface CreateProduct {
   id: string;
   name: string;
-  description: string;
-  genre: "niña" | "niño" | "unisex";
-  variants: ProductVariant[];
+  genre: Genre;
+  description?: string;
+  variants?: VariantProduct[];
   imageUrl?: string;
   imagePublicId?: string;
 }
 
-// Paginación de productos (GraphQL)
-export interface PaginatedProducts {
-  items: ProductServer[];
-  total: number;
-  page: number;
-  totalPages: number;
+export interface UploadProduct {
+  id: string;
+  name?: string;
+  genre?: Genre;
+  description?: string;
+  variants?: VariantProduct[];
+  imageUrl?: string;
+  imagePublicId?: string;
+  status?: ProductStatus;
 }

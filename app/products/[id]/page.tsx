@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
-import { getProductoById } from "@/services/products.services";
-import { ProductServer } from "@/types/product.type";
+import { Product } from "@/types/product.type";
 import ProductDetailClient from "./ProductDetailClient";
 
 interface ProductPageProps {
@@ -15,7 +14,14 @@ export default async function ProductPage({ params }: ProductPageProps) {
   }
 
   try {
-    const producto: ProductServer | null = await getProductoById(id);
+    // Consultar el producto usando el endpoint API interno
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_SITE_URL || ""}/api/products/get/${id}`
+    );
+    if (!res.ok) {
+      return notFound();
+    }
+    const producto: Product | null = await res.json();
 
     if (!producto) {
       return notFound();
