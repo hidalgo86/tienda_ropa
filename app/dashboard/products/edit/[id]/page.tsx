@@ -31,7 +31,7 @@ const EditProductPage: React.FC = () => {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    fetch(`/api/products/get/${id}`)
+    fetch(`https://tienda-ropa-tan.vercel.app/api/products/get/${id}`)
       .then((res) => res.json())
       .then((data) => {
         setProduct(data);
@@ -87,12 +87,12 @@ const EditProductPage: React.FC = () => {
           fd.append("variants", JSON.stringify(form.variants));
         }
 
-        res = await fetch(`/api/products/update/${id}`, {
+        res = await fetch(`https://tienda-ropa-tan.vercel.app/api/products/update/${id}`, {
           method: "PATCH",
           body: fd,
         });
       } else {
-        res = await fetch(`/api/products/update/${id}`, {
+        res = await fetch(`https://tienda-ropa-tan.vercel.app/api/products/update/${id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...form, id }),

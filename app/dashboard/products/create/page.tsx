@@ -105,7 +105,7 @@ const CreateProductPage: React.FC = () => {
       if (!form.variants || form.variants.length === 0) {
         throw new Error("Agrega al menos una variante (talla, stock y precio)");
       }
-      const res = await fetch(`/api/products/create`, {
+      const res = await fetch(`https://tienda-ropa-tan.vercel.app/api/products/create`, {
         method: "POST",
         body: createFormData(),
       });
