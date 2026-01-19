@@ -50,8 +50,10 @@ export default async function ProductsClient({
     ? process.env.NEXT_PUBLIC_SITE_URL
     : "http://localhost:3000";
 
+    console.log('Base URL:', baseUrl);
+
   const res = await fetch(
-    `${baseUrl}/api/products/get?${paramsApi.toString()}`
+    `https://tienda-ropa-tan.vercel.app/api/products/get?${paramsApi.toString()}`
   );
   
   if (!res.ok) return notFound();
