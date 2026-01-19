@@ -44,9 +44,14 @@ export default async function ProductsClient({
   if (maxPrice !== undefined) paramsApi.append("maxPrice", String(maxPrice));
 
   // Usar URL absoluta para fetch en server component
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : process.env.NEXT_PUBLIC_SITE_URL
+    ? process.env.NEXT_PUBLIC_SITE_URL
+    : "http://localhost:3000";
 
   const res = await fetch(
-    `https://tienda-ropa-tan.vercel.app/api/products/get?${paramsApi.toString()}`
+    `${baseUrl}/api/products/get?${paramsApi.toString()}`
   );
   
   if (!res.ok) return notFound();
