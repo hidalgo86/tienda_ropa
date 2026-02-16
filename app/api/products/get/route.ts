@@ -6,6 +6,7 @@ import {
   Size,
 } from "@/types/product.type";
 import { NextResponse } from "next/server";
+export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
   try {
@@ -61,6 +62,7 @@ export async function GET(req: Request) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ query, variables: { input } }),
+      cache: "no-store",
     });
     const response = await backendRes.json();
     const data = response.data.products as PaginatedProducts;
@@ -75,7 +77,7 @@ export async function GET(req: Request) {
       error && typeof error === "object" && "message" in error
         ? String(
             (error as { message?: unknown }).message ??
-              "Error al obtener productos"
+              "Error al obtener productos",
           )
         : "Error al obtener productos";
     return NextResponse.json({ error: message }, { status: 500 });

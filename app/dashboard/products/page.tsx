@@ -25,7 +25,8 @@ const Products: React.FC = () => {
 
       const params = new URLSearchParams();
 
-      params.append("status", status || "");
+      // Normalizar a mayúsculas para el backend GraphQL
+      params.append("status", String(status).toUpperCase());
       params.append("page", String(page));
       params.append("limit", String(limit));
 
@@ -33,8 +34,10 @@ const Products: React.FC = () => {
         params.append("name", search.trim());
       }
 
-      // Cliente: usar ruta relativa para el mismo origen
-      const res = await fetch(`/api/products/get?${params.toString()}`);
+      // Cliente: usar ruta relativa y desactivar cache
+      const res = await fetch(`/api/products/get?${params.toString()}`, {
+        cache: "no-store",
+      });
 
       if (!res.ok) throw new Error();
 
