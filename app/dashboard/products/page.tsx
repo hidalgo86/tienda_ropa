@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 
 const Products: React.FC = () => {
   const [status, setStatus] = useState<Product["status"]>(
-    ProductStatus.DISPONIBLE
+    ProductStatus.DISPONIBLE,
   );
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -33,14 +33,8 @@ const Products: React.FC = () => {
         params.append("name", search.trim());
       }
 
-        // Usar URL absoluta para fetch en server component
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : process.env.NEXT_PUBLIC_SITE_URL
-    ? process.env.NEXT_PUBLIC_SITE_URL
-    : "http://localhost:3000";
-
-      const res = await fetch(`${baseUrl}/api/products/get?${params.toString()}`);
+      // Cliente: usar ruta relativa para el mismo origen
+      const res = await fetch(`/api/products/get?${params.toString()}`);
 
       if (!res.ok) throw new Error();
 
@@ -68,13 +62,7 @@ const Products: React.FC = () => {
     if (!window.confirm("¿Estás seguro de que deseas eliminar este producto?"))
       return;
     try {
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : process.env.NEXT_PUBLIC_SITE_URL
-    ? process.env.NEXT_PUBLIC_SITE_URL
-    : "http://localhost:3000";
-
-      const res = await fetch(`${baseUrl}/api/products/update/${id}`, {
+      const res = await fetch(`/api/products/update/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, status: ProductStatus.ELIMINADO }),
@@ -82,8 +70,8 @@ const Products: React.FC = () => {
       if (!res.ok) throw new Error("Error al eliminar producto");
       setProducts((prev) =>
         prev.map((p) =>
-          p.id === id ? { ...p, status: ProductStatus.ELIMINADO } : p
-        )
+          p.id === id ? { ...p, status: ProductStatus.ELIMINADO } : p,
+        ),
       );
     } catch {
       alert("No se pudo eliminar el producto");
@@ -93,13 +81,7 @@ const Products: React.FC = () => {
   // Función para restaurar producto
   const handleRestore = async (id: string) => {
     try {
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : process.env.NEXT_PUBLIC_SITE_URL
-    ? process.env.NEXT_PUBLIC_SITE_URL
-    : "http://localhost:3000";
-
-      const res = await fetch(`${baseUrl}/api/products/update/${id}`, {
+      const res = await fetch(`/api/products/update/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, status: ProductStatus.DISPONIBLE }),
@@ -107,8 +89,8 @@ const Products: React.FC = () => {
       if (!res.ok) throw new Error("Error al restaurar producto");
       setProducts((prev) =>
         prev.map((p) =>
-          p.id === id ? { ...p, status: ProductStatus.DISPONIBLE } : p
-        )
+          p.id === id ? { ...p, status: ProductStatus.DISPONIBLE } : p,
+        ),
       );
     } catch {
       alert("No se pudo restaurar el producto");
