@@ -129,9 +129,9 @@ const Products: React.FC = () => {
           }}
           className="border rounded px-3 py-2 text-sm"
         >
-          <option value={ProductStatus.DISPONIBLE}>Disponibles</option>
-          <option value={ProductStatus.AGOTADO}>Agotados</option>
-          <option value={ProductStatus.ELIMINADO}>Eliminados</option>
+          <option value="DISPONIBLE">Disponibles</option>
+          <option value="AGOTADO">Agotados</option>
+          <option value="ELIMINADO">Eliminados</option>
         </select>
         <input
           type="text"
