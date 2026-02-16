@@ -65,12 +65,26 @@ export async function GET(req: Request) {
       cache: "no-store",
     });
     const response = await backendRes.json();
-    const data = response.data.products as PaginatedProducts;
+    let data = response.data.products as PaginatedProducts;
     const errors = response.errors;
 
     if (errors) {
       throw new Error(errors[0]?.message || "Error en GraphQL");
     }
+
+    // Fallback: si el backend ignora el filtro de status, aplicar en server
+    const requestedStatus = status?.toUpperCase();
+    if (requestedStatus) {
+      const items = (data.items || []).filter(
+        (p) => String(p.status).toUpperCase() === requestedStatus,
+      );
+      const total = items.length;
+      const totalPages = Math.max(1, Math.ceil(total / limit));
+      const start = (page - 1) * limit;
+      const pageItems = items.slice(start, start + limit);
+      data = { items: pageItems, total, page, totalPages };
+    }
+
     return NextResponse.json(data);
   } catch (error: unknown) {
     const message =
