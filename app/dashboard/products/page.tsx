@@ -40,6 +40,8 @@ const Products: React.FC = () => {
     ? process.env.NEXT_PUBLIC_SITE_URL
     : "http://localhost:3000";
 
+    console.log("baseUrl:", baseUrl);
+
       const res = await fetch(`${baseUrl}/api/products/get?${params.toString()}`);
 
       if (!res.ok) throw new Error();
