@@ -106,13 +106,7 @@ const CreateProductPage: React.FC = () => {
         throw new Error("Agrega al menos una variante (talla, stock y precio)");
       }
 
-      const baseUrl = process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : process.env.NEXT_PUBLIC_SITE_URL
-          ? process.env.NEXT_PUBLIC_SITE_URL
-          : "http://localhost:3000";
-
-      const res = await fetch(`${baseUrl}/api/products/create`, {
+      const res = await fetch(`/api/products/create`, {
         method: "POST",
         body: createFormData(),
       });

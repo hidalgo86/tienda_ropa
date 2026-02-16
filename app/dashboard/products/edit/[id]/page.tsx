@@ -33,16 +33,12 @@ const EditProductPage: React.FC = () => {
     input.click();
   };
 
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : process.env.NEXT_PUBLIC_SITE_URL
-      ? process.env.NEXT_PUBLIC_SITE_URL
-      : "http://localhost:3000";
+  // En componente cliente, usar rutas relativas (mismo origen)
 
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    fetch(`${baseUrl}/api/products/get/${id}`)
+    fetch(`/api/products/get/${id}`)
       .then((res) => res.json())
       .then((data) => {
         setProduct(data);
@@ -107,12 +103,12 @@ const EditProductPage: React.FC = () => {
           fd.append("variants", JSON.stringify(form.variants));
         }
 
-        res = await fetch(`${baseUrl}/api/products/update/${id}`, {
+        res = await fetch(`/api/products/update/${id}`, {
           method: "PATCH",
           body: fd,
         });
       } else {
-        res = await fetch(`${baseUrl}/api/products/update/${id}`, {
+        res = await fetch(`/api/products/update/${id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           // Enviar status calculado por stock
