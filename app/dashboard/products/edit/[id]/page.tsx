@@ -2,7 +2,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
-import { Product, UploadProduct, VariantProduct } from "@/types/product.type";
+import {
+  Product,
+  UploadProduct,
+  VariantProduct,
+  ProductStatus,
+} from "@/types/product.type";
 
 const EditProductPage: React.FC = () => {
   const router = useRouter();
@@ -28,10 +33,16 @@ const EditProductPage: React.FC = () => {
     input.click();
   };
 
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : process.env.NEXT_PUBLIC_SITE_URL
+      ? process.env.NEXT_PUBLIC_SITE_URL
+      : "http://localhost:3000";
+
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    fetch(`https://tienda-ropa-tan.vercel.app/api/products/get/${id}`)
+    fetch(`${baseUrl}/api/products/get/${id}`)
       .then((res) => res.json())
       .then((data) => {
         setProduct(data);
@@ -54,7 +65,7 @@ const EditProductPage: React.FC = () => {
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
+    >,
   ) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -64,6 +75,14 @@ const EditProductPage: React.FC = () => {
     e.preventDefault();
     setError(null);
     try {
+      // Determinar status según stock total de variantes
+      const totalStock = (form.variants || []).reduce(
+        (sum, v) => sum + (Number(v?.stock) || 0),
+        0,
+      );
+      const nextStatus: ProductStatus =
+        totalStock > 0 ? ProductStatus.DISPONIBLE : ProductStatus.AGOTADO;
+
       let res: Response;
       if (selectedFile) {
         // Requiere oldImagePublicId para borrar en Cloudinary
@@ -82,20 +101,22 @@ const EditProductPage: React.FC = () => {
         if (form.description !== undefined && form.description !== null) {
           fd.append("description", String(form.description));
         }
-        if (form.status) fd.append("status", String(form.status));
+        // Enviar status calculado por stock
+        fd.append("status", String(nextStatus));
         if (form.variants) {
           fd.append("variants", JSON.stringify(form.variants));
         }
 
-        res = await fetch(`https://tienda-ropa-tan.vercel.app/api/products/update/${id}`, {
+        res = await fetch(`${baseUrl}/api/products/update/${id}`, {
           method: "PATCH",
           body: fd,
         });
       } else {
-        res = await fetch(`https://tienda-ropa-tan.vercel.app/api/products/update/${id}`, {
+        res = await fetch(`${baseUrl}/api/products/update/${id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...form, id }),
+          // Enviar status calculado por stock
+          body: JSON.stringify({ ...form, status: nextStatus, id }),
         });
       }
       if (!res.ok) throw new Error("Error al actualizar producto");
@@ -271,7 +292,7 @@ const EditProductPage: React.FC = () => {
                   setForm((prev) => ({
                     ...prev,
                     variants: (prev.variants || []).map((v, i) =>
-                      i === idx ? { ...v, size: value } : v
+                      i === idx ? { ...v, size: value } : v,
                     ),
                   }));
                 }}
@@ -299,7 +320,7 @@ const EditProductPage: React.FC = () => {
                   "T12",
                 ].map((size) => {
                   const isUsed = form.variants?.some(
-                    (v, i) => v.size === size && i !== idx
+                    (v, i) => v.size === size && i !== idx,
                   );
                   return (
                     <option key={size} value={size} disabled={isUsed}>
@@ -318,7 +339,7 @@ const EditProductPage: React.FC = () => {
                   setForm((prev) => ({
                     ...prev,
                     variants: (prev.variants || []).map((v, i) =>
-                      i === idx ? { ...v, stock: value } : v
+                      i === idx ? { ...v, stock: value } : v,
                     ),
                   }));
                 }}
@@ -337,7 +358,7 @@ const EditProductPage: React.FC = () => {
                   setForm((prev) => ({
                     ...prev,
                     variants: (prev.variants || []).map((v, i) =>
-                      i === idx ? { ...v, price: value } : v
+                      i === idx ? { ...v, price: value } : v,
                     ),
                   }));
                 }}
@@ -386,7 +407,7 @@ const EditProductPage: React.FC = () => {
                 "T12",
               ];
               const availableSize = allSizes.find(
-                (size) => !usedSizes.includes(size as VariantProduct["size"])
+                (size) => !usedSizes.includes(size as VariantProduct["size"]),
               );
               if (!availableSize) return;
               setForm((prev) => ({

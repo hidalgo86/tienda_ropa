@@ -33,7 +33,14 @@ const Products: React.FC = () => {
         params.append("name", search.trim());
       }
 
-      const res = await fetch(`https://tienda-ropa-tan.vercel.app/api/products/get?${params.toString()}`);
+        // Usar URL absoluta para fetch en server component
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : process.env.NEXT_PUBLIC_SITE_URL
+    ? process.env.NEXT_PUBLIC_SITE_URL
+    : "http://localhost:3000";
+
+      const res = await fetch(`${baseUrl}/api/products/get?${params.toString()}`);
 
       if (!res.ok) throw new Error();
 
@@ -61,7 +68,13 @@ const Products: React.FC = () => {
     if (!window.confirm("¿Estás seguro de que deseas eliminar este producto?"))
       return;
     try {
-      const res = await fetch(`https://tienda-ropa-tan.vercel.app/api/products/update/${id}`, {
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : process.env.NEXT_PUBLIC_SITE_URL
+    ? process.env.NEXT_PUBLIC_SITE_URL
+    : "http://localhost:3000";
+
+      const res = await fetch(`${baseUrl}/api/products/update/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, status: ProductStatus.ELIMINADO }),
@@ -80,7 +93,13 @@ const Products: React.FC = () => {
   // Función para restaurar producto
   const handleRestore = async (id: string) => {
     try {
-      const res = await fetch(`https://tienda-ropa-tan.vercel.app/api/products/update/${id}`, {
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : process.env.NEXT_PUBLIC_SITE_URL
+    ? process.env.NEXT_PUBLIC_SITE_URL
+    : "http://localhost:3000";
+
+      const res = await fetch(`${baseUrl}/api/products/update/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, status: ProductStatus.DISPONIBLE }),

@@ -184,6 +184,15 @@ export async function PATCH(req: NextRequest) {
         );
       }
 
+      // Ajustar status automáticamente según stock total si hay variantes
+      if (Array.isArray(input.variants)) {
+        const totalStock = input.variants.reduce(
+          (sum, v) => sum + (Number(v?.stock) || 0),
+          0
+        );
+        input.status = totalStock > 0 ? "DISPONIBLE" : "AGOTADO";
+      }
+
       if (!process.env.API_URL) {
         return NextResponse.json(
           { error: "Falta API_URL en variables de entorno" },
@@ -263,10 +272,18 @@ export async function PATCH(req: NextRequest) {
     delete inputKeys.createdAt;
     delete inputKeys.updatedAt;
 
-    if (input.status) {
-      input.status = String(
-        input.status
-      ).toUpperCase() as UploadProduct["status"];
+    // Si se proporcionan variantes, ajustar status automáticamente según stock.
+    if (Array.isArray(input.variants)) {
+      const totalStock = input.variants.reduce(
+        (sum, v) => sum + (Number(v?.stock) || 0),
+        0
+      );
+      input.status = (
+        totalStock > 0 ? "DISPONIBLE" : "AGOTADO"
+      ) as unknown as UploadProduct["status"];
+    } else if (input.status) {
+      // Normalización si viene explícito
+      input.status = String(input.status).toUpperCase() as UploadProduct["status"];
     }
 
     if (!id) {

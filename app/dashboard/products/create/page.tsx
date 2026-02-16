@@ -46,7 +46,7 @@ const CreateProductPage: React.FC = () => {
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
+    >,
   ) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
@@ -66,7 +66,7 @@ const CreateProductPage: React.FC = () => {
 
   // Manejar cambios en los campos de variante
   const handleVariantChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
     setVariant((prev) => ({
@@ -105,7 +105,14 @@ const CreateProductPage: React.FC = () => {
       if (!form.variants || form.variants.length === 0) {
         throw new Error("Agrega al menos una variante (talla, stock y precio)");
       }
-      const res = await fetch(`https://tienda-ropa-tan.vercel.app/api/products/create`, {
+
+      const baseUrl = process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : process.env.NEXT_PUBLIC_SITE_URL
+          ? process.env.NEXT_PUBLIC_SITE_URL
+          : "http://localhost:3000";
+
+      const res = await fetch(`${baseUrl}/api/products/create`, {
         method: "POST",
         body: createFormData(),
       });
@@ -123,7 +130,7 @@ const CreateProductPage: React.FC = () => {
       router.push("/dashboard/products");
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "No se pudo crear el producto"
+        err instanceof Error ? err.message : "No se pudo crear el producto",
       );
     }
     setLoading(false);
