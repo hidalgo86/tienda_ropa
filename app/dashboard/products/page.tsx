@@ -1,59 +1,90 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Product, ProductStatus } from "@/types/product.type";
 import ProductListAdmin from "@/components/products/ProductListAdmin";
 import Pagination from "@/components/Pagination";
-import { useRouter } from "next/navigation";
 
 const Products: React.FC = () => {
+  const searchParams = useSearchParams();
+  const initialLimit = Number(searchParams.get("limit")) || 50;
+  const [limit] = useState(initialLimit);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<Product["status"]>(
     ProductStatus.DISPONIBLE,
   );
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(1);
-  const limit = 50;
-  const [products, setProducts] = useState<Product[]>([]);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Debounce de la búsqueda para evitar múltiples requests por tecla
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [search]);
 
   const fetchProducts = useCallback(async () => {
+    // Abortar cualquier request previo antes de iniciar uno nuevo
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setLoading(true);
+    setError(null);
+
+    const params = new URLSearchParams();
+    params.append("status", String(status));
+    params.append("page", String(page));
+    params.append("limit", String(limit));
+    if (debouncedSearch.trim()) {
+      params.append("name", debouncedSearch.trim());
+    }
+
     try {
-      setLoading(true);
-      setError(null);
-
-      const params = new URLSearchParams();
-
-      // Normalizar a mayúsculas para el backend GraphQL
-      params.append("status", String(status).toUpperCase());
-      params.append("page", String(page));
-      params.append("limit", String(limit));
-
-      if (search.trim()) {
-        params.append("name", search.trim());
-      }
-
-      // Cliente: usar ruta relativa y desactivar cache
       const res = await fetch(`/api/products/get?${params.toString()}`, {
         cache: "no-store",
+        signal: controller.signal,
       });
 
-      if (!res.ok) throw new Error();
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(
+          (data && (data.message || data.error)) || "Error al cargar productos",
+        );
+      }
 
-      const data = await res.json();
-      setProducts(data.items || []);
-      setTotalPages(data.totalPages || 1);
-    } catch {
-      setError("Error al cargar productos");
-    } finally {
+      setProducts((data && data.items) || []);
+      setTotalPages((data && data.totalPages) || 1);
+      setLoading(false);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") {
+        // Request abortado por cambio rápido de filtros/paginación
+        return;
+      }
+      setError(
+        err instanceof Error ? err.message : "Error al cargar productos",
+      );
       setLoading(false);
     }
-  }, [status, page, search]);
+  }, [status, page, debouncedSearch, limit]);
 
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
+
+  // Abortar en desmontaje del componente
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
 
   const router = useRouter();
   if (error) {
@@ -70,14 +101,18 @@ const Products: React.FC = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, status: ProductStatus.ELIMINADO }),
       });
-      if (!res.ok) throw new Error("Error al eliminar producto");
-      setProducts((prev) =>
-        prev.map((p) =>
-          p.id === id ? { ...p, status: ProductStatus.ELIMINADO } : p,
-        ),
+      const data = await res.json().catch(() => null);
+      if (!res.ok)
+        throw new Error(
+          (data && (data.message || data.error)) ||
+            "Error al eliminar producto",
+        );
+      // Tras eliminar, refrescar la lista para mantener paginación consistente
+      await fetchProducts();
+    } catch (err) {
+      alert(
+        err instanceof Error ? err.message : "No se pudo eliminar el producto",
       );
-    } catch {
-      alert("No se pudo eliminar el producto");
     }
   };
 
@@ -89,20 +124,36 @@ const Products: React.FC = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, status: ProductStatus.DISPONIBLE }),
       });
-      if (!res.ok) throw new Error("Error al restaurar producto");
-      setProducts((prev) =>
-        prev.map((p) =>
-          p.id === id ? { ...p, status: ProductStatus.DISPONIBLE } : p,
-        ),
+      const data = await res.json().catch(() => null);
+      if (!res.ok)
+        throw new Error(
+          (data && (data.message || data.error)) ||
+            "Error al restaurar producto",
+        );
+      // Tras restaurar, refrescar la lista
+      await fetchProducts();
+    } catch (err) {
+      alert(
+        err instanceof Error ? err.message : "No se pudo restaurar el producto",
       );
-    } catch {
-      alert("No se pudo restaurar el producto");
     }
   };
 
   // Función para editar producto (redirecciona a la página de edición)
   const handleEdit = (id: string) => {
     router.push(`/dashboard/products/edit/${id}`);
+  };
+
+  const handleStatusChange = (value: Product["status"]) => {
+    // Evitar re-fetch doble y resetear página
+    setPage(1);
+    setStatus(value);
+  };
+
+  const handleSearchChange = (value: string) => {
+    // Resetear página y aplicar debounce para requests
+    setPage(1);
+    setSearch(value);
   };
 
   return (
@@ -126,10 +177,9 @@ const Products: React.FC = () => {
         </button>
         <select
           value={status}
-          onChange={(e) => {
-            setStatus(e.target.value as Product["status"]);
-            setPage(1);
-          }}
+          onChange={(e) =>
+            handleStatusChange(e.target.value as Product["status"])
+          }
           className="border rounded px-3 py-2 text-sm"
         >
           <option value="DISPONIBLE">Disponibles</option>
@@ -140,10 +190,7 @@ const Products: React.FC = () => {
           type="text"
           placeholder="Buscar por nombre..."
           value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
+          onChange={(e) => handleSearchChange(e.target.value)}
           className="border rounded px-3 py-2 text-sm w-full sm:w-64 md:w-80 lg:w-96 min-w-0"
         />
       </div>

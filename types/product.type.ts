@@ -1,35 +1,35 @@
 // src/types/product.type.ts
 
 export enum ProductStatus {
-  DISPONIBLE = "disponible",
-  AGOTADO = "agotado",
-  ELIMINADO = "eliminado",
+  DISPONIBLE = "DISPONIBLE",
+  AGOTADO = "AGOTADO",
+  ELIMINADO = "ELIMINADO",
 }
 
 export enum Genre {
-  NINA = "niña",
-  NINO = "niño",
-  UNISEX = "unisex",
+  NINA = "NIÑA",
+  NINO = "NIÑO",
+  UNISEX = "UNISEX",
 }
 
 export enum Size {
   RN = "RN",
-  M3 = "3M",
-  M6 = "6M",
-  M9 = "9M",
-  M12 = "12M",
-  M18 = "18M",
-  M24 = "24M",
-  T2 = "2T",
-  T3 = "3T",
-  T4 = "4T",
-  T5 = "5T",
-  T6 = "6T",
-  T7 = "7T",
-  T8 = "8T",
-  T9 = "9T",
-  T10 = "10T",
-  T12 = "12T",
+  M3 = "M3",
+  M6 = "M6",
+  M9 = "M9",
+  M12 = "M12",
+  M18 = "M18",
+  M24 = "M24",
+  T2 = "T2",
+  T3 = "T3",
+  T4 = "T4",
+  T5 = "T5",
+  T6 = "T6",
+  T7 = "T7",
+  T8 = "T8",
+  T9 = "T9",
+  T10 = "T10",
+  T12 = "T12",
 }
 
 export interface VariantProduct {

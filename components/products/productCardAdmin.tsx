@@ -44,9 +44,9 @@ const ProductCardAdmin: React.FC<ProductCardAdminProps> = ({
         <Image
           src={product.imageUrl || PLACEHOLDER}
           alt={product.name}
-          width={224}
-          height={192}
-          className="object-cover w-full h-full"
+          fill
+          className="object-cover"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         />
         <span
           className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-semibold border shadow ${

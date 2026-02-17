@@ -25,7 +25,7 @@ const ProductCardPublic: React.FC<ProductCardPublicProps> = ({
   // Nota: 'sizes' no se usa en la UI actual
   const isEliminado = product.status?.toLowerCase() === "eliminado";
   const isFavorite = useSelector((state: RootState) =>
-    state.favorites?.items?.some((item) => item.id === product.id)
+    state.favorites?.items?.some((item) => item.id === product.id),
   );
 
   return (
@@ -39,9 +39,9 @@ const ProductCardPublic: React.FC<ProductCardPublicProps> = ({
         <Image
           src={product.imageUrl || PLACEHOLDER}
           alt={product.name}
-          width={224}
-          height={192}
-          className="object-cover w-full h-full"
+          fill
+          className="object-cover"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         />
       </div>
       {/* Botón de favorito arriba a la derecha: sin círculo */}
