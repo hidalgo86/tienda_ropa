@@ -7,6 +7,7 @@ interface ProductListAdminProps {
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
   onRestore?: (id: string) => void;
+  actionLoadingId?: string | null;
 }
 
 const ProductListAdmin: React.FC<ProductListAdminProps> = ({
@@ -14,6 +15,7 @@ const ProductListAdmin: React.FC<ProductListAdminProps> = ({
   onEdit,
   onDelete,
   onRestore,
+  actionLoadingId,
 }) => {
   if (!products || products.length === 0) {
     return (
@@ -31,6 +33,7 @@ const ProductListAdmin: React.FC<ProductListAdminProps> = ({
           onEdit={onEdit}
           onDelete={onDelete}
           onRestore={onRestore}
+          actionLoadingId={actionLoadingId}
         />
       ))}
     </div>

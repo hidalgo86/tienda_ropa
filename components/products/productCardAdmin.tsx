@@ -13,6 +13,7 @@ interface ProductCardAdminProps {
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
   onRestore?: (id: string) => void;
+  actionLoadingId?: string | null;
 }
 
 const PLACEHOLDER = "/placeholder.webp";
@@ -22,9 +23,11 @@ const ProductCardAdmin: React.FC<ProductCardAdminProps> = ({
   onEdit,
   onDelete,
   onRestore,
+  actionLoadingId,
 }) => {
   const status = product.status?.toLowerCase();
   const isEliminado = status === "eliminado";
+  const isActionLoading = actionLoadingId === product.id;
   const variants = product.variants ?? [];
   const minPrice =
     variants.length > 0
@@ -64,7 +67,8 @@ const ProductCardAdmin: React.FC<ProductCardAdminProps> = ({
           {onEdit && (
             <button
               onClick={() => onEdit(product.id)}
-              className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded-full shadow focus:outline-none"
+              disabled={isActionLoading}
+              className="bg-yellow-400 hover:bg-yellow-500 text-white p-2 rounded-full shadow focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
               title="Editar producto"
               aria-label="Editar producto"
             >
@@ -82,7 +86,8 @@ const ProductCardAdmin: React.FC<ProductCardAdminProps> = ({
           {onDelete && (
             <button
               onClick={() => onDelete(product.id)}
-              className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow focus:outline-none"
+              disabled={isActionLoading}
+              className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
               title="Eliminar producto"
               aria-label="Eliminar producto"
             >
@@ -103,7 +108,8 @@ const ProductCardAdmin: React.FC<ProductCardAdminProps> = ({
         <div className="absolute top-2 right-2 z-10">
           <button
             onClick={() => onRestore(product.id)}
-            className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full shadow"
+            disabled={isActionLoading}
+            className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full shadow disabled:opacity-60 disabled:cursor-not-allowed"
             title="Restablecer producto"
             aria-label="Restablecer producto"
           >
