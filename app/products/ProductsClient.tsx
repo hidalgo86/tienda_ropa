@@ -51,7 +51,7 @@ export default async function ProductsClient({
     : "http://localhost:3000";
 
   const res = await fetch(
-    `https://tienda-ropa-tan.vercel.app/api/products/get?${paramsApi.toString()}`
+    `${baseUrl}/api/products/get?${paramsApi.toString()}`
   );
   
   if (!res.ok) return notFound();

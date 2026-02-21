@@ -1,12 +1,12 @@
 "use client";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Product, ProductStatus } from "@/types/product.type";
 import ProductListAdmin from "@/components/products/ProductListAdmin";
 import Pagination from "@/components/Pagination";
 import { useAdminProducts } from "./useAdminProducts";
 
-const Products: React.FC = () => {
+const ProductsContent: React.FC = () => {
   // Dependencias de navegación para sincronizar estado <-> URL
   const router = useRouter();
   const pathname = usePathname();
@@ -272,4 +272,19 @@ const Products: React.FC = () => {
   );
 };
 
-export default Products;
+const ProductsPage: React.FC = () => {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex justify-center items-center py-6">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 mr-2"></div>
+          <span className="text-gray-500">Cargando...</span>
+        </div>
+      }
+    >
+      <ProductsContent />
+    </Suspense>
+  );
+};
+
+export default ProductsPage;
