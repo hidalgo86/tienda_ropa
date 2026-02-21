@@ -7,8 +7,8 @@ export enum ProductStatus {
 }
 
 export enum Genre {
-  NINA = "NIÑA",
-  NINO = "NIÑO",
+  NINA = "NINA",
+  NINO = "NINO",
   UNISEX = "UNISEX",
 }
 
@@ -78,7 +78,7 @@ export interface PaginatedProducts {
 
 export interface ProductFiltersModel {
   name?: string;
-  genre?: string;
+  genre?: Genre;
   size?: Size[];
   minPrice?: number;
   maxPrice?: number;

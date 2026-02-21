@@ -17,10 +17,34 @@ const EditProductPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<UploadProduct>>({});
+  const [variantFieldErrors, setVariantFieldErrors] = useState<
+    Record<number, { stock?: string; price?: string }>
+  >({});
+  const [variantDraftValues, setVariantDraftValues] = useState<
+    Record<number, { stock: string; price: string }>
+  >({});
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const preventStockInvalidKeys = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (["e", "E", "+", "-", ".", ","].includes(e.key)) {
+      e.preventDefault();
+    }
+  };
+
+  const preventPriceInvalidKeys = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (["e", "E", "+", "-", ","].includes(e.key)) {
+      e.preventDefault();
+    }
+  };
+
   const openCamera = () => {
     const input = cameraInputRef.current;
     if (!input) return;
@@ -43,6 +67,22 @@ const EditProductPage: React.FC = () => {
       .then((data) => {
         setProduct(data);
         setForm({ ...data });
+        const drafts = ((data?.variants || []) as VariantProduct[]).reduce<
+          Record<number, { stock: string; price: string }>
+        >((acc, variant, idx) => {
+          acc[idx] = {
+            stock:
+              variant?.stock !== undefined && variant?.stock !== null
+                ? String(variant.stock)
+                : "",
+            price:
+              variant?.price !== undefined && variant?.price !== null
+                ? String(variant.price)
+                : "",
+          };
+          return acc;
+        }, {});
+        setVariantDraftValues(drafts);
       })
       .catch(() => setError("No se pudo cargar el producto"))
       .finally(() => setLoading(false));
@@ -71,8 +111,30 @@ const EditProductPage: React.FC = () => {
     e.preventDefault();
     setError(null);
     try {
+      const normalizedVariants = (
+        (form.variants || []) as VariantProduct[]
+      ).map((variant, idx) => {
+        const stockRaw = variantDraftValues[idx]?.stock ?? "";
+        const priceRaw = variantDraftValues[idx]?.price ?? "";
+
+        if (!/^\d+$/.test(stockRaw)) {
+          throw new Error("Stock inválido: usa enteros no negativos");
+        }
+        if (!/^\d*\.?\d+$/.test(priceRaw)) {
+          throw new Error(
+            "Precio inválido: usa números enteros o decimales no negativos",
+          );
+        }
+
+        return {
+          ...variant,
+          stock: Number(stockRaw),
+          price: Number(priceRaw),
+        };
+      });
+
       // Determinar status según stock total de variantes
-      const totalStock = (form.variants || []).reduce(
+      const totalStock = normalizedVariants.reduce(
         (sum, v) => sum + (Number(v?.stock) || 0),
         0,
       );
@@ -99,8 +161,8 @@ const EditProductPage: React.FC = () => {
         }
         // Enviar status calculado por stock
         fd.append("status", String(nextStatus));
-        if (form.variants) {
-          fd.append("variants", JSON.stringify(form.variants));
+        if (normalizedVariants) {
+          fd.append("variants", JSON.stringify(normalizedVariants));
         }
 
         res = await fetch(`/api/products/update/${id}`, {
@@ -112,13 +174,22 @@ const EditProductPage: React.FC = () => {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           // Enviar status calculado por stock
-          body: JSON.stringify({ ...form, status: nextStatus, id }),
+          body: JSON.stringify({
+            ...form,
+            variants: normalizedVariants,
+            status: nextStatus,
+            id,
+          }),
         });
       }
       if (!res.ok) throw new Error("Error al actualizar producto");
       router.push("/dashboard/products");
-    } catch {
-      setError("No se pudo actualizar el producto");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "No se pudo actualizar el producto",
+      );
     }
   };
 
@@ -277,105 +348,229 @@ const EditProductPage: React.FC = () => {
 
         {/* Edición de variantes (tallas) */}
         <div className="space-y-2">
-          <label className="block font-semibold">Tallas y stock</label>
+          <label className="block font-semibold">Detalle por talla</label>
+          <p className="text-xs text-gray-600">
+            Ajusta Talla, Stock y Precio en cada fila.
+          </p>
+          <div className="flex gap-2 items-center text-xs font-medium text-gray-600">
+            <span className="flex-1">Talla</span>
+            <span className="w-20">Stock</span>
+            <span className="w-24">Precio</span>
+            <span className="w-8 sr-only">Acción</span>
+          </div>
           {(form.variants || []).map((variant, idx) => (
-            <div key={idx} className="flex gap-2 items-center">
-              <select
-                name={`variant-size-${idx}`}
-                value={variant.size || ""}
-                onChange={(e) => {
-                  const value = e.target.value as VariantProduct["size"];
-                  setForm((prev) => ({
-                    ...prev,
-                    variants: (prev.variants || []).map((v, i) =>
-                      i === idx ? { ...v, size: value } : v,
-                    ),
-                  }));
-                }}
-                className="border rounded px-2 py-1"
-                required
-              >
-                <option value="">Talla</option>
-                {[
-                  "RN",
-                  "M3",
-                  "M6",
-                  "M9",
-                  "M12",
-                  "M18",
-                  "M24",
-                  "T2",
-                  "T3",
-                  "T4",
-                  "T5",
-                  "T6",
-                  "T7",
-                  "T8",
-                  "T9",
-                  "T10",
-                  "T12",
-                ].map((size) => {
-                  const isUsed = form.variants?.some(
-                    (v, i) => v.size === size && i !== idx,
-                  );
-                  return (
-                    <option key={size} value={size} disabled={isUsed}>
-                      {size}
-                    </option>
-                  );
-                })}
-              </select>
-              <input
-                type="number"
-                min="0"
-                name={`variant-stock-${idx}`}
-                value={variant.stock ?? 0}
-                onChange={(e) => {
-                  const value = Number(e.target.value);
-                  setForm((prev) => ({
-                    ...prev,
-                    variants: (prev.variants || []).map((v, i) =>
-                      i === idx ? { ...v, stock: value } : v,
-                    ),
-                  }));
-                }}
-                className="border rounded px-2 py-1 w-20"
-                placeholder="Stock"
-                required
-              />
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                name={`variant-price-${idx}`}
-                value={variant.price ?? 0}
-                onChange={(e) => {
-                  const value = Number(e.target.value);
-                  setForm((prev) => ({
-                    ...prev,
-                    variants: (prev.variants || []).map((v, i) =>
-                      i === idx ? { ...v, price: value } : v,
-                    ),
-                  }));
-                }}
-                className="border rounded px-2 py-1 w-24"
-                placeholder="Precio"
-                required
-              />
-              <button
-                type="button"
-                className="text-red-600 font-bold px-2"
-                onClick={() => {
-                  setForm((prev) => ({
-                    ...prev,
-                    variants: (prev.variants || []).filter((_, i) => i !== idx),
-                  }));
-                }}
-                title="Eliminar variante"
-              >
-                ×
-              </button>
-            </div>
+            <React.Fragment key={idx}>
+              <div className="flex gap-2 items-center">
+                <select
+                  name={`variant-size-${idx}`}
+                  value={variant.size || ""}
+                  onChange={(e) => {
+                    const value = e.target.value as VariantProduct["size"];
+                    setForm((prev) => ({
+                      ...prev,
+                      variants: (prev.variants || []).map((v, i) =>
+                        i === idx ? { ...v, size: value } : v,
+                      ),
+                    }));
+                  }}
+                  className="border rounded px-2 py-1 flex-1"
+                  required
+                >
+                  <option value="">Talla</option>
+                  {[
+                    "RN",
+                    "M3",
+                    "M6",
+                    "M9",
+                    "M12",
+                    "M18",
+                    "M24",
+                    "T2",
+                    "T3",
+                    "T4",
+                    "T5",
+                    "T6",
+                    "T7",
+                    "T8",
+                    "T9",
+                    "T10",
+                    "T12",
+                  ].map((size) => {
+                    const isUsed = form.variants?.some(
+                      (v, i) => v.size === size && i !== idx,
+                    );
+                    return (
+                      <option key={size} value={size} disabled={isUsed}>
+                        {size}
+                      </option>
+                    );
+                  })}
+                </select>
+                <input
+                  type="number"
+                  min="0"
+                  step={1}
+                  inputMode="numeric"
+                  name={`variant-stock-${idx}`}
+                  value={
+                    variantDraftValues[idx]?.stock ??
+                    String(variant.stock ?? "")
+                  }
+                  onKeyDown={preventStockInvalidKeys}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (raw !== "" && !/^\d+$/.test(raw)) {
+                      setVariantFieldErrors((prev) => ({
+                        ...prev,
+                        [idx]: {
+                          ...prev[idx],
+                          stock: "Stock: solo enteros no negativos",
+                        },
+                      }));
+                      return;
+                    }
+                    setVariantDraftValues((prev) => ({
+                      ...prev,
+                      [idx]: {
+                        stock: raw,
+                        price: prev[idx]?.price ?? String(variant.price ?? ""),
+                      },
+                    }));
+                    setVariantFieldErrors((prev) => ({
+                      ...prev,
+                      [idx]: {
+                        ...prev[idx],
+                        stock: undefined,
+                      },
+                    }));
+                    if (raw !== "") {
+                      const value = Number(raw);
+                      setForm((prev) => ({
+                        ...prev,
+                        variants: (prev.variants || []).map((v, i) =>
+                          i === idx ? { ...v, stock: value } : v,
+                        ),
+                      }));
+                    }
+                  }}
+                  className="border rounded px-2 py-1 w-20"
+                  placeholder="Stock"
+                  required
+                />
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  inputMode="decimal"
+                  name={`variant-price-${idx}`}
+                  value={
+                    variantDraftValues[idx]?.price ??
+                    String(variant.price ?? "")
+                  }
+                  onKeyDown={preventPriceInvalidKeys}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) {
+                      setVariantFieldErrors((prev) => ({
+                        ...prev,
+                        [idx]: {
+                          ...prev[idx],
+                          price: "Precio: solo números no negativos",
+                        },
+                      }));
+                      return;
+                    }
+                    setVariantDraftValues((prev) => ({
+                      ...prev,
+                      [idx]: {
+                        stock: prev[idx]?.stock ?? String(variant.stock ?? ""),
+                        price: raw,
+                      },
+                    }));
+                    setVariantFieldErrors((prev) => ({
+                      ...prev,
+                      [idx]: {
+                        ...prev[idx],
+                        price: undefined,
+                      },
+                    }));
+                    if (raw !== "") {
+                      const value = Number(raw);
+                      setForm((prev) => ({
+                        ...prev,
+                        variants: (prev.variants || []).map((v, i) =>
+                          i === idx ? { ...v, price: value } : v,
+                        ),
+                      }));
+                    }
+                  }}
+                  className="border rounded px-2 py-1 w-24"
+                  placeholder="Precio"
+                  required
+                />
+                <button
+                  type="button"
+                  className="text-red-600 font-bold px-2"
+                  onClick={() => {
+                    setVariantDraftValues((prev) => {
+                      const next: Record<
+                        number,
+                        { stock: string; price: string }
+                      > = {};
+                      Object.entries(prev).forEach(([key, value]) => {
+                        const keyNumber = Number(key);
+                        if (keyNumber < idx) next[keyNumber] = value;
+                        if (keyNumber > idx) next[keyNumber - 1] = value;
+                      });
+                      return next;
+                    });
+                    setVariantFieldErrors((prev) => {
+                      const next: Record<
+                        number,
+                        { stock?: string; price?: string }
+                      > = {};
+                      Object.entries(prev).forEach(([key, value]) => {
+                        const keyNumber = Number(key);
+                        if (keyNumber < idx) next[keyNumber] = value;
+                        if (keyNumber > idx) next[keyNumber - 1] = value;
+                      });
+                      return next;
+                    });
+                    setForm((prev) => ({
+                      ...prev,
+                      variants: (prev.variants || []).filter(
+                        (_, i) => i !== idx,
+                      ),
+                    }));
+                  }}
+                  title="Eliminar variante"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="-mt-1 mb-1 space-y-1">
+                <p
+                  className={`text-xs ${
+                    variantFieldErrors[idx]?.stock
+                      ? "text-red-600"
+                      : "text-gray-500"
+                  }`}
+                >
+                  {variantFieldErrors[idx]?.stock ||
+                    "Stock: solo enteros no negativos"}
+                </p>
+                <p
+                  className={`text-xs ${
+                    variantFieldErrors[idx]?.price
+                      ? "text-red-600"
+                      : "text-gray-500"
+                  }`}
+                >
+                  {variantFieldErrors[idx]?.price ||
+                    "Precio: números enteros o decimales no negativos"}
+                </p>
+              </div>
+            </React.Fragment>
           ))}
           <button
             type="button"
@@ -406,6 +601,7 @@ const EditProductPage: React.FC = () => {
                 (size) => !usedSizes.includes(size as VariantProduct["size"]),
               );
               if (!availableSize) return;
+              const nextIndex = (form.variants || []).length;
               setForm((prev) => ({
                 ...prev,
                 variants: [
@@ -416,6 +612,10 @@ const EditProductPage: React.FC = () => {
                     price: 0,
                   },
                 ],
+              }));
+              setVariantDraftValues((prev) => ({
+                ...prev,
+                [nextIndex]: { stock: "0", price: "0" },
               }));
             }}
           >
