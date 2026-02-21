@@ -17,7 +17,7 @@ export default async function ProductsClient({
   const minPrice = params?.precioMin ? Number(params.precioMin) : undefined;
   const maxPrice = params?.precioMax ? Number(params.precioMax) : undefined;
   const genre = params?.genero || "";
-  
+
   // Normalizar el género
   // if (genre) {
   //   const genreMap: Record<string, string> = {
@@ -47,13 +47,13 @@ export default async function ProductsClient({
   const baseUrl = process.env.VERCEL_URL
     ? `https://${process.env.VERCEL_URL}`
     : process.env.NEXT_PUBLIC_SITE_URL
-    ? process.env.NEXT_PUBLIC_SITE_URL
-    : "http://localhost:3000";
+      ? process.env.NEXT_PUBLIC_SITE_URL
+      : "http://localhost:3000";
 
   const res = await fetch(
-    `${baseUrl}/api/products/get?${paramsApi.toString()}`
+    `${baseUrl}/api/products/get?${paramsApi.toString()}`,
   );
-  
+
   if (!res.ok) return notFound();
 
   const data = await res.json();
