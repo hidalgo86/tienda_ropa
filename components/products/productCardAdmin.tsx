@@ -8,6 +8,12 @@ const statusColors: Record<string, string> = {
   eliminado: "bg-red-100 text-red-700 border-red-300",
 };
 
+const genreLabels: Record<string, string> = {
+  NINA: "Niña",
+  NINO: "Niño",
+  UNISEX: "Unisex",
+};
+
 interface ProductCardAdminProps {
   product: Product;
   onEdit?: (id: string) => void;
@@ -35,6 +41,12 @@ const ProductCardAdmin: React.FC<ProductCardAdminProps> = ({
       : null;
   const sizes =
     variants.length > 0 ? variants.map((v) => v.size).join(", ") : null;
+  const rawGenre = String(product.genre ?? "");
+  const normalizedGenre = rawGenre
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase();
+  const displayGenre = genreLabels[normalizedGenre] || rawGenre;
 
   return (
     <div
@@ -148,7 +160,7 @@ const ProductCardAdmin: React.FC<ProductCardAdminProps> = ({
           )}
         </div>
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-xs text-gray-400">{product.genre}</span>
+          <span className="text-xs text-gray-400">{displayGenre}</span>
         </div>
         <div className="mt-auto pt-2 text-sm text-gray-700 flex justify-between items-end">
           {variants.length > 0 ? (

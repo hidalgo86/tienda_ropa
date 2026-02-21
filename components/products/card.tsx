@@ -17,6 +17,12 @@ const statusColors: Record<string, string> = {
   eliminado: "bg-gray-200 text-gray-500 border-gray-400",
 };
 
+const genreLabels: Record<string, string> = {
+  NINA: "Niña",
+  NINO: "Niño",
+  UNISEX: "Unisex",
+};
+
 const PLACEHOLDER = "/placeholder.webp";
 
 function Card({
@@ -38,6 +44,12 @@ function Card({
       : null;
   const sizes =
     variants.length > 0 ? variants.map((v) => v.size).join(", ") : null;
+  const rawGenre = String(product.genre ?? "");
+  const normalizedGenre = rawGenre
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase();
+  const displayGenre = genreLabels[normalizedGenre] || rawGenre;
 
   return (
     <div
@@ -177,7 +189,7 @@ function Card({
           )}
         </div>
         <div className="flex items-center gap-2 mb-2">
-          <span className="text-xs text-gray-400">{product.genre}</span>
+          <span className="text-xs text-gray-400">{displayGenre}</span>
         </div>
         {/* Variantes */}
         <div className="mt-auto pt-2 text-sm text-gray-700 flex justify-between items-end">
@@ -200,46 +212,3 @@ function Card({
 }
 
 export default Card;
-// crear un componente de tarjeta reutilizable para el dashboard
-// que acepte props del producto y muestre la información relevante
-// Product {
-//   id: string;
-//   name: string;
-//   genre: Genre;
-//   description?: string;
-//   variants?: VariantProduct[];
-//   imageUrl?: string;
-//   imagePublicId?: string;
-//   status: ProductStatus;
-//   createdAt: string;
-//   updatedAt: string;
-// }
-// Mostrar imagen, nombre, género, precio mínimo, tallas disponibles, estado
-// Usar Tailwind CSS para estilos responsivos y modernos
-// Incluir un botón de acción para editar o eliminar el producto
-// Asegurarse de que el componente sea accesible y siga buenas prácticas de UI/UX
-// Exportar el componente para su uso en otras partes del dashboard
-// Incluir manejo de estados de carga o error si es necesario
-// Asegurarse de que el componente sea probado y funcione correctamente
-// con diferentes tipos de datos de productos
-// y en diferentes tamaños de pantalla
-// Incluir comentarios en el código para mayor claridad
-// Asegurarse de que el componente sea compatible con TypeScript
-// el tipado esta en types/product.type.ts
-// el boton de editar y eliminar debe ir en la esquina superior derecha de la tarjeta
-// el estado del producto debe mostrarse con un color diferente segun el estado
-// (disponible: verde, agotado: rojo, eliminado: gris)
-// el precio minimo y tallas disponibles deben mostrarse en la parte inferior de la tarjeta
-// la descripcion del producto debe mostrarse en un tooltip al pasar el mouse sobre el nombre del producto
-// la imagen del producto debe tener un tamaño fijo y mantener la proporción
-// el componente debe ser responsivo y adaptarse a diferentes tamaños de pantalla
-// el componente debe tener una sombra sutil y un borde redondeado
-// el componente debe tener una animación suave al pasar el mouse sobre él
-// el componente debe tener un diseño limpio y moderno
-// si el estado del producto es eliminado, el boton de editar y  eliminar no debe mostrarse
-// debe aparecer un boton para restablecer el producto si su estado es eliminado
-// si esta en estado agotado o disponible, el boton de restablecer no debe mostrarse
-// si el producto no tiene imagen, debe mostrarse una imagen placeholder
-// si el producto no tiene variantes, debe mostrarse "Sin variantes disponibles" en lugar del precio y tallas
-// el componente debe ser exportado como default
-// el componente debe estar en la carpeta app/dashboard/components/Card.ts
