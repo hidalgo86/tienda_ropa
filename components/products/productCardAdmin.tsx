@@ -113,19 +113,17 @@ const ProductCardAdmin: React.FC<ProductCardAdminProps> = ({
             title="Restablecer producto"
             aria-label="Restablecer producto"
           >
-            {/* Ícono restaurar (undo) */}
-            <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+            <svg
+              width="18"
+              height="18"
+              fill="none"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              stroke="currentColor"
+              strokeWidth="1.5"
+            >
               <path
-                d="M12 5v2a7 7 0 1 1-6.93 6H7"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M3 8l4-4 4 4"
-                stroke="currentColor"
-                strokeWidth="2"
+                d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3"
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
