@@ -3,6 +3,7 @@ import Pagination from "./Pagination";
 import Filtros from "../components/Filtros";
 import Navbar from "../../components/Navbar";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { Product } from "@/types/product.type";
 import FiltrosMobileButton from "./FiltrosMobileButton";
 
@@ -18,22 +19,6 @@ export default async function ProductsClient({
   const maxPrice = params?.precioMax ? Number(params.precioMax) : undefined;
   const genre = params?.genero || "";
 
-  // Normalizar el género
-  // if (genre) {
-  //   const genreMap: Record<string, string> = {
-  //     niño: "NINO",
-  //     nino: "NINO",
-  //     niña: "NINA",
-  //     nina: "NINA",
-  //     unisex: "UNISEX",
-  //     NINO: "NINO",
-  //     NINA: "NINA",
-  //     UNISEX: "UNISEX",
-  //   };
-  //   const normalized = String(genre).trim().toLowerCase();
-  //   genre = genreMap[normalized] || genre.toUpperCase();
-  // }
-
   // Construir query params para la API interna
   const paramsApi = new URLSearchParams();
   paramsApi.append("page", String(page));
@@ -43,12 +28,17 @@ export default async function ProductsClient({
   if (minPrice !== undefined) paramsApi.append("minPrice", String(minPrice));
   if (maxPrice !== undefined) paramsApi.append("maxPrice", String(maxPrice));
 
-  // Usar URL absoluta para fetch en server component
-  const baseUrl = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
+  const reqHeaders = await headers();
+  const host = reqHeaders.get("x-forwarded-host") ?? reqHeaders.get("host");
+  const protocol = reqHeaders.get("x-forwarded-proto") ?? "https";
+
+  const baseUrl = host
+    ? `${protocol}://${host}`
     : process.env.NEXT_PUBLIC_SITE_URL
       ? process.env.NEXT_PUBLIC_SITE_URL
-      : "http://localhost:3000";
+      : process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "http://localhost:3000";
 
   const res = await fetch(
     `${baseUrl}/api/products/get?${paramsApi.toString()}`,
