@@ -5,7 +5,7 @@ import Image from "next/image";
 import { MdFavorite, MdFavoriteBorder, MdShoppingCart } from "react-icons/md";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { ProductServer } from "@/types/product.type";
+import { formatSizeLabel, ProductServer } from "@/types/product.type";
 import { RootState } from "@/store";
 import { toggleFavorite } from "@/store/slices/favoriteSlice";
 import { addToCart } from "@/store/slices/cartSlice";
@@ -19,12 +19,12 @@ export default function Card({ producto, priority = false }: CardProps) {
   const router = useRouter();
   const dispatch = useDispatch();
   const [imgSrc, setImgSrc] = useState(
-    producto.imageUrl ?? "/placeholder.webp"
+    producto.imageUrl ?? "/placeholder.webp",
   );
 
   // Verificar si el producto está en favoritos
   const isFavorite = useSelector((state: RootState) =>
-    state.favorites.items.some((item) => item.id === producto.id)
+    state.favorites.items.some((item) => item.id === producto.id),
   );
 
   const variants = producto.variants;
@@ -34,12 +34,12 @@ export default function Card({ producto, priority = false }: CardProps) {
         .filter((n) => Number.isFinite(n))
         .reduce(
           (min, n) => (min === null ? n : Math.min(min, n)),
-          null as number | null
+          null as number | null,
         )
     : null;
   const sizesCsv = Array.isArray(variants)
     ? variants
-        .map((v) => v?.size)
+        .map((v) => formatSizeLabel(v?.size))
         .filter(Boolean)
         .join(", ")
     : "";
@@ -71,7 +71,7 @@ export default function Card({ producto, priority = false }: CardProps) {
         product: producto,
         quantity: 1,
         selectedSize: firstSize,
-      })
+      }),
     );
   };
 

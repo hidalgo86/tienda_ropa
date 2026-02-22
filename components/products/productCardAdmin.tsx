@@ -1,7 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Product } from "@/types/product.type";
+import { formatSizeLabel, Product } from "@/types/product.type";
 
 const statusColors: Record<string, string> = {
   disponible: "bg-green-100 text-green-700 border-green-300",
@@ -41,7 +41,9 @@ const ProductCardAdmin: React.FC<ProductCardAdminProps> = ({
       ? Math.min(...variants.map((v) => Number(v.price) || 0))
       : null;
   const sizes =
-    variants.length > 0 ? variants.map((v) => v.size).join(", ") : null;
+    variants.length > 0
+      ? variants.map((v) => formatSizeLabel(v.size)).join(", ")
+      : null;
   const rawGenre = String(product.genre ?? "");
   const normalizedGenre = rawGenre
     .normalize("NFD")

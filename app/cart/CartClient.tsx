@@ -18,11 +18,12 @@ import {
   MdShoppingBag,
 } from "react-icons/md";
 import { useState } from "react";
+import { formatSizeLabel } from "@/types/product.type";
 
 export default function CartClient() {
   const dispatch = useDispatch();
   const { items, totalItems, totalPrice } = useSelector(
-    (state: RootState) => state.cart
+    (state: RootState) => state.cart,
   );
   const [isClearing, setIsClearing] = useState(false);
 
@@ -30,7 +31,7 @@ export default function CartClient() {
     productId: string,
     newQuantity: number,
     selectedSize?: string,
-    selectedColor?: string
+    selectedColor?: string,
   ) => {
     dispatch(
       updateQuantity({
@@ -38,14 +39,14 @@ export default function CartClient() {
         quantity: newQuantity,
         selectedSize,
         selectedColor,
-      })
+      }),
     );
   };
 
   const handleRemoveItem = (
     productId: string,
     selectedSize?: string,
-    selectedColor?: string
+    selectedColor?: string,
   ) => {
     dispatch(removeFromCart({ productId, selectedSize, selectedColor }));
   };
@@ -131,7 +132,7 @@ export default function CartClient() {
                 const itemPrice = Array.isArray(item.variants)
                   ? Number(
                       item.variants.find((v) => v.size === item.selectedSize)
-                        ?.price || 0
+                        ?.price || 0,
                     )
                   : 0;
                 const itemTotal = itemPrice * item.quantity;
@@ -165,7 +166,7 @@ export default function CartClient() {
                             <div className="flex flex-wrap gap-2 mt-2">
                               {item.selectedSize && (
                                 <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
-                                  Talla: {item.selectedSize}
+                                  Talla: {formatSizeLabel(item.selectedSize)}
                                 </span>
                               )}
                               {item.selectedColor && (
@@ -187,7 +188,7 @@ export default function CartClient() {
                               handleRemoveItem(
                                 item.id,
                                 item.selectedSize,
-                                item.selectedColor
+                                item.selectedColor,
                               )
                             }
                             className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
@@ -210,7 +211,7 @@ export default function CartClient() {
                                     item.id,
                                     Math.max(0, item.quantity - 1),
                                     item.selectedSize,
-                                    item.selectedColor
+                                    item.selectedColor,
                                   )
                                 }
                                 className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
@@ -229,7 +230,7 @@ export default function CartClient() {
                                     item.id,
                                     item.quantity + 1,
                                     item.selectedSize,
-                                    item.selectedColor
+                                    item.selectedColor,
                                   )
                                 }
                                 className="p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"

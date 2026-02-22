@@ -32,6 +32,32 @@ export enum Size {
   T12 = "T12",
 }
 
+export const sizeLabels: Record<string, string> = {
+  RN: "RN",
+  M3: "3M",
+  M6: "6M",
+  M9: "9M",
+  M12: "12M",
+  M18: "18M",
+  M24: "24M",
+  T2: "2T",
+  T3: "3T",
+  T4: "4T",
+  T5: "5T",
+  T6: "6T",
+  T7: "7T",
+  T8: "8T",
+  T9: "9T",
+  T10: "10T",
+  T12: "12T",
+};
+
+export const formatSizeLabel = (size?: string | Size | null): string => {
+  if (!size) return "";
+  const normalized = String(size).trim().toUpperCase();
+  return sizeLabels[normalized] || String(size);
+};
+
 export interface VariantProduct {
   size: Size;
   stock: number;

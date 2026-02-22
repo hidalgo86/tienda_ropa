@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import Image from "next/image";
-import { Product } from "@/types/product.type";
+import { formatSizeLabel, Product } from "@/types/product.type";
 import { RootState } from "@/store";
 import { addToCart } from "@/store/slices/cartSlice";
 import { toggleFavorite } from "@/store/slices/favoriteSlice";
@@ -284,7 +284,7 @@ export default function ProductDetailClient({
                             }
                           `}
                         >
-                          <div>{variant.size}</div>
+                          <div>{formatSizeLabel(variant.size)}</div>
                           <div className="text-xs text-gray-500">
                             {hasStock ? `(${variant.stock})` : "Agotado"}
                           </div>
@@ -297,8 +297,10 @@ export default function ProductDetailClient({
                     <div className="mt-3 p-3 bg-gray-50 rounded-lg">
                       <div className="text-sm text-gray-600">
                         Talla seleccionada:{" "}
-                        <span className="font-medium">{selectedSize}</span> -
-                        Stock disponible:{" "}
+                        <span className="font-medium">
+                          {formatSizeLabel(selectedSize)}
+                        </span>{" "}
+                        - Stock disponible:{" "}
                         <span className="font-medium">
                           {currentVariant.stock}
                         </span>{" "}
