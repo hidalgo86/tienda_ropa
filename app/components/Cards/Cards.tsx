@@ -19,7 +19,9 @@ export default function Cards() {
       setLoading(true);
       setError(null);
       // Consultar productos usando el endpoint API interno
-      const res = await fetch("/api/products/get?page=1&limit=20");
+      const res = await fetch(
+        "/api/products/get?page=1&limit=20&status=DISPONIBLE",
+      );
       if (!res.ok) throw new Error("Error al consultar productos");
       const response = await res.json();
       setProductos(response.items);
@@ -99,7 +101,7 @@ export default function Cards() {
         product: producto as ProductServer,
         quantity: 1,
         selectedSize: size,
-      })
+      }),
     );
   };
 

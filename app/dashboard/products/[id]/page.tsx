@@ -1,18 +1,19 @@
 import { headers } from "next/headers";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { Product } from "@/types/product.type";
-import ProductDetailClient from "../products/[id]/ProductDetailClient";
+import ProductDetailClient from "../../../products/[id]/ProductDetailClient";
 
-interface DetallePageProps {
-  searchParams?: Promise<{ id?: string }>;
+interface DashboardProductDetailPageProps {
+  params: Promise<{ id: string }>;
 }
 
-export default async function DetallePage({ searchParams }: DetallePageProps) {
-  const params = await searchParams;
-  const id = params?.id;
+export default async function DashboardProductDetailPage({
+  params,
+}: DashboardProductDetailPageProps) {
+  const { id } = await params;
 
   if (!id) {
-    redirect("/products");
+    return notFound();
   }
 
   try {
@@ -42,9 +43,9 @@ export default async function DetallePage({ searchParams }: DetallePageProps) {
       return notFound();
     }
 
-    return <ProductDetailClient producto={producto} />;
+    return <ProductDetailClient producto={producto} mode="admin" />;
   } catch (error) {
-    console.error("Error fetching product detail:", error);
+    console.error("Error fetching dashboard product detail:", error);
     return notFound();
   }
 }

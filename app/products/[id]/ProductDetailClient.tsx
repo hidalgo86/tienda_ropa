@@ -20,20 +20,23 @@ import {
 
 interface ProductDetailClientProps {
   producto: Product;
+  mode?: "public" | "admin";
 }
 
 export default function ProductDetailClient({
   producto,
+  mode = "public",
 }: ProductDetailClientProps) {
   const router = useRouter();
   const dispatch = useDispatch();
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [quantity, setQuantity] = useState(1);
   const [showAddedToCart, setShowAddedToCart] = useState(false);
+  const isAdminMode = mode === "admin";
 
   // Verificar si el producto está en favoritos
   const isFavorite = useSelector((state: RootState) =>
-    state.favorites.items.some((item) => item.id === producto.id)
+    state.favorites.items.some((item) => item.id === producto.id),
   );
 
   // Inicializar con la primera talla disponible
@@ -50,14 +53,14 @@ export default function ProductDetailClient({
   const variants = producto.variants || [];
   const totalStock = variants.reduce(
     (sum, v) => sum + (Number(v?.stock) || 0),
-    0
+    0,
   );
   const currentVariant = variants.find((v) => v.size === selectedSize);
   const displayPrice =
     currentVariant?.price ??
     (variants.length > 0
       ? Math.min(
-          ...variants.map((v) => Number(v?.price) || 0).filter((n) => n > 0)
+          ...variants.map((v) => Number(v?.price) || 0).filter((n) => n > 0),
         )
       : 0);
   const availableStock = currentVariant?.stock || 0;
@@ -77,7 +80,7 @@ export default function ProductDetailClient({
         product: producto,
         quantity,
         selectedSize,
-      })
+      }),
     );
 
     // Mostrar confirmación visual
@@ -105,7 +108,7 @@ export default function ProductDetailClient({
       quantity,
     });
     alert(
-      `Redirigiendo a checkout (Talla: ${selectedSize}, Cantidad: ${quantity})`
+      `Redirigiendo a checkout (Talla: ${selectedSize}, Cantidad: ${quantity})`,
     );
   };
 
@@ -113,14 +116,28 @@ export default function ProductDetailClient({
     <div className="min-h-screen bg-gray-50">
       {/* Header con navegación */}
       <div className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-wrap items-center justify-between gap-2">
           <button
             className="flex items-center gap-2 text-gray-600 hover:text-pink-500 transition-colors"
-            onClick={() => router.back()}
+            onClick={() =>
+              isAdminMode ? router.push("/dashboard/products") : router.back()
+            }
           >
             <MdArrowBack size={20} />
             <span className="text-sm font-medium">Volver</span>
           </button>
+          {isAdminMode && (
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() =>
+                  router.push(`/dashboard/products/edit/${producto.id}`)
+                }
+                className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                Editar producto
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -139,39 +156,38 @@ export default function ProductDetailClient({
                   className="object-contain max-w-full max-h-full"
                   priority
                 />
-                {/* Carrito superpuesto en esquina inferior derecha */}
-                <div className="absolute bottom-3 right-3">
-                  <button
-                    onClick={handleAddToCart}
-                    disabled={!selectedSize || availableStock === 0}
-                    className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Agregar al carrito"
-                    aria-label="Agregar al carrito"
-                  >
-                    <MdShoppingCart size={20} />
-                  </button>
-                </div>
               </div>
 
               {/* Botones de acción secundarios */}
-              <div className="flex gap-2 justify-center">
-                <button
-                  onClick={handleFavoriteToggle}
-                  className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                  title={
-                    isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"
-                  }
-                >
-                  {isFavorite ? (
-                    <MdFavorite className="text-red-500" size={20} />
-                  ) : (
-                    <MdFavoriteBorder className="text-gray-600" size={20} />
-                  )}
-                </button>
-                <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                  <MdShare className="text-gray-600" size={20} />
-                </button>
-              </div>
+              {!isAdminMode && (
+                <div className="flex gap-2 justify-center">
+                  <button
+                    onClick={handleFavoriteToggle}
+                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    title={
+                      isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"
+                    }
+                  >
+                    {isFavorite ? (
+                      <MdFavorite className="text-red-500" size={20} />
+                    ) : (
+                      <MdFavoriteBorder className="text-gray-600" size={20} />
+                    )}
+                  </button>
+                  <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    <MdShare className="text-gray-600" size={20} />
+                  </button>
+                  <button
+                    onClick={handleAddToCart}
+                    disabled={!selectedSize || availableStock === 0}
+                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Agregar al carrito"
+                    aria-label="Agregar al carrito"
+                  >
+                    <MdShoppingCart className="text-gray-600" size={20} />
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Detalles del producto */}
@@ -251,8 +267,8 @@ export default function ProductDetailClient({
                               isSelected && hasStock
                                 ? "border-pink-500 bg-pink-50 text-pink-700"
                                 : hasStock
-                                ? "border-gray-300 hover:border-pink-400 hover:bg-pink-50"
-                                : "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
+                                  ? "border-gray-300 hover:border-pink-400 hover:bg-pink-50"
+                                  : "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
                             }
                           `}
                         >
@@ -284,55 +300,59 @@ export default function ProductDetailClient({
                 </div>
               )}
 
-              {/* Selector de cantidad */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                  Cantidad
-                </h3>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                    disabled={quantity <= 1}
-                  >
-                    <MdRemove size={18} />
-                  </button>
-                  <span className="w-16 text-center font-medium">
-                    {quantity}
-                  </span>
-                  <button
-                    onClick={() =>
-                      setQuantity(Math.min(availableStock, quantity + 1))
-                    }
-                    disabled={quantity >= availableStock}
-                    className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
-                  >
-                    <MdAdd size={18} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Botones de acción principales */}
-              <div className="space-y-3 pt-4">
-                <button
-                  onClick={handleBuyNow}
-                  disabled={!selectedSize || availableStock === 0}
-                  className="w-full bg-gray-900 text-white py-3 px-6 rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Comprar ahora
-                </button>
-              </div>
-
-              {/* Notificación de agregado al carrito */}
-              {showAddedToCart && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 animate-pulse">
-                  <div className="flex items-center gap-2 text-green-800">
-                    <MdShoppingCart size={20} />
-                    <span className="font-medium">
-                      ¡Producto agregado al carrito!
-                    </span>
+              {!isAdminMode && (
+                <>
+                  {/* Selector de cantidad */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                      Cantidad
+                    </h3>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                        disabled={quantity <= 1}
+                      >
+                        <MdRemove size={18} />
+                      </button>
+                      <span className="w-16 text-center font-medium">
+                        {quantity}
+                      </span>
+                      <button
+                        onClick={() =>
+                          setQuantity(Math.min(availableStock, quantity + 1))
+                        }
+                        disabled={quantity >= availableStock}
+                        className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                      >
+                        <MdAdd size={18} />
+                      </button>
+                    </div>
                   </div>
-                </div>
+
+                  {/* Botones de acción principales */}
+                  <div className="space-y-3 pt-4">
+                    <button
+                      onClick={handleBuyNow}
+                      disabled={!selectedSize || availableStock === 0}
+                      className="w-full bg-gray-900 text-white py-3 px-6 rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Comprar ahora
+                    </button>
+                  </div>
+
+                  {/* Notificación de agregado al carrito */}
+                  {showAddedToCart && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 animate-pulse">
+                      <div className="flex items-center gap-2 text-green-800">
+                        <MdShoppingCart size={20} />
+                        <span className="font-medium">
+                          ¡Producto agregado al carrito!
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
 
               {/* Información adicional */}

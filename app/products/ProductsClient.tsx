@@ -23,6 +23,7 @@ export default async function ProductsClient({
   const paramsApi = new URLSearchParams();
   paramsApi.append("page", String(page));
   paramsApi.append("limit", "20");
+  paramsApi.append("status", "DISPONIBLE");
   if (search) paramsApi.append("search", search);
   if (genre) paramsApi.append("genre", genre);
   if (minPrice !== undefined) paramsApi.append("minPrice", String(minPrice));

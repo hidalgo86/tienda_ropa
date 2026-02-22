@@ -1,5 +1,6 @@
 import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Product } from "@/types/product.type";
 
 const statusColors: Record<string, string> = {
@@ -55,7 +56,11 @@ const ProductCardAdmin: React.FC<ProductCardAdminProps> = ({
       aria-label={`Tarjeta producto ${product.name}`}
     >
       {/* Imagen y estado */}
-      <div className="w-full h-40 sm:h-48 bg-gray-100 flex items-center justify-center overflow-hidden relative">
+      <Link
+        href={`/dashboard/products/${product.id}`}
+        className="w-full h-40 sm:h-48 bg-gray-100 flex items-center justify-center overflow-hidden relative"
+        aria-label={`Ver detalle de ${product.name}`}
+      >
         <Image
           src={product.imageUrl || PLACEHOLDER}
           alt={product.name}
@@ -72,7 +77,7 @@ const ProductCardAdmin: React.FC<ProductCardAdminProps> = ({
         >
           {product.status}
         </span>
-      </div>
+      </Link>
       {/* Botones de acción admin o restaurar */}
       {!isEliminado && (
         <div className="absolute top-2 right-2 flex gap-2 z-10">

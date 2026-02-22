@@ -1,5 +1,6 @@
 import React from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Product } from "@/types/product.type";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
@@ -35,7 +36,11 @@ const ProductCardPublic: React.FC<ProductCardPublicProps> = ({
       aria-label={`Tarjeta producto ${product.name}`}
     >
       {/* Imagen */}
-      <div className="w-full h-40 sm:h-48 bg-gray-100 flex items-center justify-center overflow-hidden relative">
+      <Link
+        href={`/detalle?id=${product.id}`}
+        className="w-full h-40 sm:h-48 bg-gray-100 flex items-center justify-center overflow-hidden relative"
+        aria-label={`Ver detalle de ${product.name}`}
+      >
         <Image
           src={product.imageUrl || PLACEHOLDER}
           alt={product.name}
@@ -43,7 +48,7 @@ const ProductCardPublic: React.FC<ProductCardPublicProps> = ({
           className="object-cover"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         />
-      </div>
+      </Link>
       {/* Botón de favorito arriba a la derecha: sin círculo */}
       {!isEliminado && onFavorite && (
         <div className="absolute top-2 right-2 z-10">
