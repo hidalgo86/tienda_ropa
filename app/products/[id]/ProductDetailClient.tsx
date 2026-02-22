@@ -18,6 +18,12 @@ import {
   MdRemove,
 } from "react-icons/md";
 
+const genreLabels: Record<string, string> = {
+  NINA: "Niña",
+  NINO: "Niño",
+  UNISEX: "Unisex",
+};
+
 interface ProductDetailClientProps {
   producto: Product;
   mode?: "public" | "admin";
@@ -64,6 +70,12 @@ export default function ProductDetailClient({
         )
       : 0);
   const availableStock = currentVariant?.stock || 0;
+  const rawGenre = String(producto.genre ?? "");
+  const normalizedGenre = rawGenre
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase();
+  const displayGenre = genreLabels[normalizedGenre] || rawGenre;
 
   const handleAddToCart = () => {
     if (!selectedSize) {
@@ -231,7 +243,7 @@ export default function ProductDetailClient({
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="font-medium text-gray-900">Género:</span>
-                  <span className="ml-2 text-gray-600">{producto.genre}</span>
+                  <span className="ml-2 text-gray-600">{displayGenre}</span>
                 </div>
                 <div>
                   <span className="font-medium text-gray-900">
