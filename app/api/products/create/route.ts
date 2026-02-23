@@ -33,21 +33,22 @@ export async function POST(req: NextRequest) {
     ) {
       return NextResponse.json(
         { error: "Faltan credenciales de Cloudinary en variables de entorno" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
-    if (!process.env.NEST_GRAPHQL_URL) {
+    const apiUrl = process.env.API_URL?.trim();
+    if (!apiUrl) {
       return NextResponse.json(
-        { error: "Falta NEST_GRAPHQL_URL en variables de entorno" },
-        { status: 500 }
+        { error: "Falta API_URL en variables de entorno" },
+        { status: 500 },
       );
     }
 
     if (!file || !name || !genre || !variants) {
       return NextResponse.json(
         { error: "Faltan campos obligatorios" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
     if (!file.type || !file.type.startsWith("image")) {
       return NextResponse.json(
         { error: "El archivo debe ser una imagen válida" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -77,7 +78,7 @@ export async function POST(req: NextRequest) {
       if (pvUnknown.length === 0) {
         return NextResponse.json(
           { error: "variants debe contener al menos una variante" },
-          { status: 400 }
+          { status: 400 },
         );
       }
       const allValid = pvUnknown.every(isParsedVariant);
@@ -87,7 +88,7 @@ export async function POST(req: NextRequest) {
             error:
               "Cada variante debe incluir size (string), stock (>=0) y price (>=0)",
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
       parsedVariants = pvUnknown as ParsedVariant[];
@@ -98,7 +99,7 @@ export async function POST(req: NextRequest) {
           : "";
       return NextResponse.json(
         { error: `Formato inválido de variants: ${message}` },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -120,10 +121,10 @@ export async function POST(req: NextRequest) {
               if (error) reject(error);
               else if (result) resolve(result as CloudinaryUploadResult);
               else reject(new Error("Cloudinary upload failed"));
-            }
+            },
           )
           .end(buffer);
-      }
+      },
     );
 
     // Construir el input para el backend
@@ -150,7 +151,7 @@ export async function POST(req: NextRequest) {
         {
           error: `Género inválido: ${genre}. Valores permitidos: NINO, NINA, UNISEX`,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -208,7 +209,7 @@ export async function POST(req: NextRequest) {
           error:
             "Talla inválida en variants. Usa RN, 3M, 6M, 9M, 12M, 18M, 24M, 2T-12T.",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -219,8 +220,8 @@ export async function POST(req: NextRequest) {
       genre: (/niña/i.test(genre)
         ? "NINA"
         : /niño/i.test(genre)
-        ? "NINO"
-        : "UNISEX") as Genre,
+          ? "NINO"
+          : "UNISEX") as Genre,
       description,
       variants: typedVariants,
       imageUrl: uploadResult.secure_url,
@@ -288,7 +289,7 @@ export async function POST(req: NextRequest) {
       variables: { input: productInput },
     };
 
-    const backendRes = await fetch(process.env.API_URL + "/graphql", {
+    const backendRes = await fetch(apiUrl + "/graphql", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(graphqlQuery),
@@ -297,29 +298,42 @@ export async function POST(req: NextRequest) {
     type GraphqlError = { message?: string };
     type GraphqlResponse<T> = { data?: T; errors?: GraphqlError[] };
     let backendData: GraphqlResponse<{ createProduct: unknown }> | null = null;
+    const backendRaw = await backendRes.text();
     try {
-      backendData = (await backendRes.json()) as GraphqlResponse<{
-        createProduct: unknown;
-      }>;
+      backendData = backendRaw
+        ? (JSON.parse(backendRaw) as GraphqlResponse<{
+            createProduct: unknown;
+          }>)
+        : null;
     } catch {
-      const text = await backendRes.text();
       return NextResponse.json(
         {
           error: "Respuesta inválida del backend",
           status: backendRes.status,
-          body: text,
+          body: backendRaw,
         },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     if (!backendRes.ok || backendData?.errors) {
       return NextResponse.json(
         {
-          error: backendData?.errors || backendData,
+          error: backendData?.errors || backendData || backendRaw,
           status: backendRes.status,
         },
-        { status: 500 }
+        { status: 500 },
+      );
+    }
+
+    if (!backendData?.data?.createProduct) {
+      return NextResponse.json(
+        {
+          error: "Respuesta inválida del backend",
+          status: backendRes.status,
+          body: backendRaw,
+        },
+        { status: 500 },
       );
     }
 
