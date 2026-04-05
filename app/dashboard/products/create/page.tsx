@@ -10,7 +10,7 @@ import {
   Genre,
   formatSizeLabel,
 } from "@/types/product.type";
-import { createProduct } from "@/services/products";
+import { createProduct, uploadProductImage } from "@/services/products";
 
 const MAX_IMAGES = 4;
 
@@ -269,53 +269,9 @@ const CreateProductPage: React.FC = () => {
         }
       }
 
-      const uploadSingleImage = async (file: File) => {
-        const signRes = await fetch("/api/cloudinary/sign", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ folder: "products" }),
-        });
-
-        const signData = await signRes.json().catch(() => null);
-        if (!signRes.ok || !signData?.signature) {
-          throw new Error(
-            signData?.error || "No se pudo obtener firma para subir imagen",
-          );
-        }
-
-        const uploadFormData = new FormData();
-        uploadFormData.append("file", file);
-        uploadFormData.append("api_key", String(signData.apiKey));
-        uploadFormData.append("timestamp", String(signData.timestamp));
-        uploadFormData.append("signature", String(signData.signature));
-        uploadFormData.append("folder", String(signData.folder || "products"));
-
-        const uploadRes = await fetch(
-          `https://api.cloudinary.com/v1_1/${signData.cloudName}/image/upload`,
-          {
-            method: "POST",
-            body: uploadFormData,
-          },
-        );
-
-        const uploadData = await uploadRes.json().catch(() => null);
-        if (
-          !uploadRes.ok ||
-          !uploadData?.secure_url ||
-          !uploadData?.public_id
-        ) {
-          throw new Error(
-            uploadData?.error?.message || "Error subiendo imagen",
-          );
-        }
-
-        return {
-          url: String(uploadData.secure_url),
-          publicId: String(uploadData.public_id),
-        };
-      };
-
-      const uploadedImages = await Promise.all(images.map(uploadSingleImage));
+      const uploadedImages = await Promise.all(
+        images.map((image) => uploadProductImage(image)),
+      );
 
       const payload: CreateProduct = {
         name: String(form.name || "").trim(),

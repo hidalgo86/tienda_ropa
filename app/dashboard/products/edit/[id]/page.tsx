@@ -1,3 +1,4 @@
+// src/app/dashboard/products/edit/[id]/page.tsx
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
@@ -7,198 +8,254 @@ import {
   UploadProduct,
   VariantProduct,
   ProductStatus,
+  ProductCategory,
   Size,
   Genre,
   formatSizeLabel,
 } from "@/types/product.type";
-import { getProductById, updateProduct } from "@/services/products";
+import {
+  getProductById,
+  updateProduct,
+  uploadProductImage,
+} from "@/services/products";
+
+const MAX_IMAGES = 4;
 
 const EditProductPage: React.FC = () => {
   const router = useRouter();
   const params = useParams();
   const id = params?.id as string;
+
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<UploadProduct>>({});
-  const [variantFieldErrors, setVariantFieldErrors] = useState<
-    Record<number, { stock?: string; price?: string }>
-  >({});
   const [variantDraftValues, setVariantDraftValues] = useState<
     Record<number, { stock: string; price: string }>
   >({});
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
-  const preventStockInvalidKeys = (
+
+  // Función genérica para bloquear teclas inválidas
+  const preventInvalidKeys = (
     e: React.KeyboardEvent<HTMLInputElement>,
+    allowDecimal: boolean = false,
   ) => {
     if (e.ctrlKey || e.metaKey || e.altKey) return;
-    if (["e", "E", "+", "-", ".", ","].includes(e.key)) {
-      e.preventDefault();
-    }
+    const invalidKeys = ["e", "E", "+", "-", ","];
+    if (!allowDecimal) invalidKeys.push(".");
+    if (invalidKeys.includes(e.key)) e.preventDefault();
   };
 
-  const preventPriceInvalidKeys = (
-    e: React.KeyboardEvent<HTMLInputElement>,
-  ) => {
-    if (e.ctrlKey || e.metaKey || e.altKey) return;
-    if (["e", "E", "+", "-", ","].includes(e.key)) {
-      e.preventDefault();
-    }
-  };
-
+  // Abrir cámara
   const openCamera = () => {
     const input = cameraInputRef.current;
     if (!input) return;
-    // Refuerza atributos para maximizar compatibilidad (iOS/Android)
     try {
       input.setAttribute("capture", "environment");
-      // Sugerir cámara directa en navegadores que lo soportan
       input.setAttribute("accept", "image/*;capture=camera");
     } catch {}
     input.click();
   };
 
-  // En componente cliente, usar rutas relativas (mismo origen)
-
+  // Cargar producto al montar
   useEffect(() => {
     if (!id) return;
     setLoading(true);
     getProductById(id)
       .then((data) => {
         setProduct(data);
-        setForm({ ...data });
-        const drafts = ((data?.variants || []) as VariantProduct[]).reduce<
-          Record<number, { stock: string; price: string }>
-        >((acc, variant, idx) => {
-          acc[idx] = {
-            stock:
-              variant?.stock !== undefined && variant?.stock !== null
-                ? String(variant.stock)
-                : "",
-            price:
-              variant?.price !== undefined && variant?.price !== null
-                ? String(variant.price)
-                : "",
+        setForm({
+          ...data,
+          variants: data.variants?.map((v) => ({ ...v })) || [],
+        });
+
+        // Inicializar draftValues para inputs
+        const drafts: Record<number, { stock: string; price: string }> = {};
+        data.variants?.forEach((v, idx) => {
+          drafts[idx] = {
+            stock: v.stock != null ? String(v.stock) : "",
+            price: v.price != null ? String(v.price) : "",
           };
-          return acc;
-        }, {});
+        });
         setVariantDraftValues(drafts);
       })
       .catch(() => setError("No se pudo cargar el producto"))
       .finally(() => setLoading(false));
   }, [id]);
 
+  // Generar preview de imágenes seleccionadas
   useEffect(() => {
-    if (!selectedFile) {
-      setPreviewUrl(null);
+    if (selectedFiles.length === 0) {
+      setPreviewUrls([]);
       return;
     }
-    const url = URL.createObjectURL(selectedFile);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [selectedFile]);
 
+    const urls = selectedFiles.map((file) => URL.createObjectURL(file));
+    setPreviewUrls(urls);
+
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [selectedFiles]);
+
+  const handleImageSelection = (files: FileList | null) => {
+    const incomingFiles = Array.from(files || []);
+    if (!incomingFiles.length) return;
+
+    const currentImagesCount = form.images?.length || 0;
+    const availableSlots =
+      MAX_IMAGES - currentImagesCount - selectedFiles.length;
+
+    if (availableSlots <= 0) {
+      setError(`Máximo ${MAX_IMAGES} imágenes permitidas.`);
+      return;
+    }
+
+    const filesToAdd = incomingFiles.slice(0, availableSlots);
+    if (filesToAdd.length < incomingFiles.length) {
+      setError(`Solo puedes subir hasta ${MAX_IMAGES} imágenes.`);
+    } else {
+      setError(null);
+    }
+
+    setSelectedFiles((prev) => [...prev, ...filesToAdd]);
+  };
+
+  const removeExistingImage = (index: number) => {
+    setForm((prev) => ({
+      ...prev,
+      images: (prev.images || []).filter(
+        (_, currentIndex) => currentIndex !== index,
+      ),
+    }));
+    setError(null);
+  };
+
+  // Manejar cambios de inputs generales
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >,
   ) => {
     const { name, value } = e.target;
+
+    if (name === "stock" || name === "price") {
+      setForm((prev) => ({
+        ...prev,
+        [name]: value === "" ? undefined : Number(value),
+      }));
+      return;
+    }
+
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Manejar submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     try {
-      const normalizedVariants = (
-        (form.variants || []) as VariantProduct[]
-      ).map((variant, idx) => {
-        const stockRaw = variantDraftValues[idx]?.stock ?? "";
-        const priceRaw = variantDraftValues[idx]?.price ?? "";
-
-        if (!/^\d+$/.test(stockRaw)) {
-          throw new Error("Stock inválido: usa enteros no negativos");
-        }
-        if (!/^\d*\.?\d+$/.test(priceRaw)) {
-          throw new Error(
-            "Precio inválido: usa números enteros o decimales no negativos",
-          );
-        }
-
-        return {
-          ...variant,
-          stock: Number(stockRaw),
-          price: Number(priceRaw),
-        };
-      });
-
-      // Determinar status según stock total de variantes
-      const totalStock = normalizedVariants.reduce(
-        (sum, v) => sum + (Number(v?.stock) || 0),
-        0,
-      );
-      const nextStatus: ProductStatus =
-        totalStock > 0 ? ProductStatus.DISPONIBLE : ProductStatus.AGOTADO;
+      const resolvedCategory = form.category ?? product?.category;
+      if (!resolvedCategory) {
+        throw new Error("No se pudo determinar la categoría del producto");
+      }
 
       let nextImages = form.images;
-      if (selectedFile) {
-        const signRes = await fetch("/api/cloudinary/sign", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ folder: "products" }),
-        });
+      if (selectedFiles.length > 0) {
+        const uploadedImages = await Promise.all(
+          selectedFiles.map((file) => uploadProductImage(file)),
+        );
 
-        const signData = await signRes.json().catch(() => null);
-        if (!signRes.ok || !signData?.signature) {
-          throw new Error(
-            signData?.error || "No se pudo obtener firma para subir imagen",
-          );
+        nextImages = [...(form.images || []), ...uploadedImages];
+
+        if (nextImages.length > MAX_IMAGES) {
+          throw new Error(`Máximo ${MAX_IMAGES} imágenes permitidas.`);
+        }
+      }
+
+      if (!nextImages || nextImages.length === 0) {
+        throw new Error("Agrega al menos una imagen");
+      }
+
+      const payload: Partial<UploadProduct> = {
+        ...form,
+        name: String(form.name || "").trim(),
+        description: form.description ? String(form.description) : undefined,
+        category: resolvedCategory,
+        images: nextImages,
+      };
+
+      if (resolvedCategory === ProductCategory.ROPA) {
+        if (!form.genre) {
+          throw new Error("Selecciona un género para productos de ropa");
         }
 
-        const uploadFormData = new FormData();
-        uploadFormData.append("file", selectedFile);
-        uploadFormData.append("api_key", String(signData.apiKey));
-        uploadFormData.append("timestamp", String(signData.timestamp));
-        uploadFormData.append("signature", String(signData.signature));
-        uploadFormData.append("folder", String(signData.folder || "products"));
+        const normalizedVariants: VariantProduct[] = (form.variants || []).map(
+          (variant, idx) => {
+            const stockRaw = variantDraftValues[idx]?.stock ?? "";
+            const priceRaw = variantDraftValues[idx]?.price ?? "";
 
-        const uploadRes = await fetch(
-          `https://api.cloudinary.com/v1_1/${signData.cloudName}/image/upload`,
-          {
-            method: "POST",
-            body: uploadFormData,
+            if (!/^\d+$/.test(stockRaw)) {
+              throw new Error("Stock inválido: usa enteros no negativos");
+            }
+            if (!/^\d*\.?\d+$/.test(priceRaw)) {
+              throw new Error("Precio inválido: usa números no negativos");
+            }
+
+            return {
+              ...variant,
+              stock: Number(stockRaw),
+              price: Number(priceRaw),
+            };
           },
         );
 
-        const uploadData = await uploadRes.json().catch(() => null);
-        if (
-          !uploadRes.ok ||
-          !uploadData?.secure_url ||
-          !uploadData?.public_id
-        ) {
+        if (!normalizedVariants.length) {
           throw new Error(
-            uploadData?.error?.message || "Error subiendo imagen",
+            "Agrega al menos una variante (talla, stock y precio)",
           );
         }
 
-        nextImages = [
-          {
-            url: String(uploadData.secure_url),
-            publicId: String(uploadData.public_id),
-          },
-        ];
+        const totalStock = normalizedVariants.reduce(
+          (sum, variant) => sum + variant.stock,
+          0,
+        );
+
+        payload.genre = form.genre;
+        payload.variants = normalizedVariants;
+        payload.stock = undefined;
+        payload.price = undefined;
+        payload.status =
+          totalStock > 0 ? ProductStatus.DISPONIBLE : ProductStatus.AGOTADO;
+      } else {
+        const nextStock = Number(form.stock ?? product?.stock);
+        const nextPrice = Number(form.price ?? product?.price);
+
+        if (
+          !Number.isFinite(nextStock) ||
+          nextStock < 0 ||
+          !Number.isInteger(nextStock)
+        ) {
+          throw new Error("Stock inválido: usa enteros no negativos");
+        }
+
+        if (!Number.isFinite(nextPrice) || nextPrice < 0) {
+          throw new Error("Precio inválido: usa números no negativos");
+        }
+
+        payload.genre = undefined;
+        payload.variants = undefined;
+        payload.stock = nextStock;
+        payload.price = nextPrice;
+        payload.status =
+          nextStock > 0 ? ProductStatus.DISPONIBLE : ProductStatus.AGOTADO;
       }
 
-      await updateProduct(id, {
-        ...form,
-        variants: normalizedVariants,
-        status: nextStatus,
-        images: nextImages,
-      });
+      await updateProduct(id, payload);
 
       router.push("/dashboard/products");
     } catch (err) {
@@ -216,95 +273,71 @@ const EditProductPage: React.FC = () => {
   if (!product)
     return <div className="py-10 text-center">Producto no encontrado</div>;
 
+  const resolvedCategory = form.category ?? product.category;
+  const isClothingProduct = resolvedCategory === ProductCategory.ROPA;
+  const currentImagesCount = form.images?.length || 0;
+  const totalSelectedCount = currentImagesCount + selectedFiles.length;
   const currentImageUrl =
-    previewUrl || form.images?.[0]?.url || product.images?.[0]?.url || "";
+    previewUrls[0] || form.images?.[0]?.url || product.images?.[0]?.url || "";
 
   return (
     <div className="max-w-xl mx-auto py-8">
-      <div className="flex justify-center mb-6">
-        <div className="relative">
-          {currentImageUrl ? (
-            <Image
-              src={currentImageUrl}
-              alt={form.name || "Imagen del producto"}
-              width={224}
-              height={224}
-              className="max-h-56 rounded shadow object-contain"
-            />
-          ) : (
-            <div className="h-56 w-56 bg-gray-100 rounded shadow flex items-center justify-center text-gray-400">
-              Sin imagen
-            </div>
-          )}
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-3">
-            <button
-              type="button"
-              aria-label="Subir desde galería"
-              title="Subir desde galería"
-              className="group relative bg-white/90 hover:bg-white text-emerald-600 hover:text-emerald-700 rounded-full p-3 shadow backdrop-blur"
-              onClick={() => galleryInputRef.current?.click()}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  galleryInputRef.current?.click();
-                }
-              }}
-            >
-              <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs bg-black text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity">
-                Subir desde galería
-              </span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="h-5 w-5"
-              >
-                <path d="M4 5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4zm3.5 3a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zM4 17l4.5-4.5 3 3L15 12l5 5H4z" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              aria-label="Tomar foto"
-              title="Tomar foto"
-              className="group relative bg-white/90 hover:bg-white text-blue-600 hover:text-blue-700 rounded-full p-3 shadow backdrop-blur"
-              onClick={openCamera}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  openCamera();
-                }
-              }}
-            >
-              <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs bg-black text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity">
-                Tomar foto
-              </span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="h-5 w-5"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M9.25 4.5a1.75 1.75 0 0 0-1.49.833L6.86 6.75H5A2.75 2.75 0 0 0 2.25 9.5v7A2.75 2.75 0 0 0 5 19.25h14A2.75 2.75 0 0 0 21.75 16.5v-7A2.75 2.75 0 0 0 19 6.75h-1.86l-.9-1.417A1.75 1.75 0 0 0 14.75 4.5h-5.5Zm2.75 11.75a4 4 0 1 1 0-8 4 4 0 0 1 0 8Zm0-1.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </button>
+      <button
+        type="button"
+        onClick={() => router.push("/dashboard/products")}
+        className="flex items-center gap-2 text-gray-600 hover:text-pink-500 transition-colors mb-4"
+      >
+        <span aria-hidden="true">←</span>
+        <span className="text-sm font-medium">Volver</span>
+      </button>
+      <div className="flex justify-center mb-6 relative">
+        {currentImageUrl ? (
+          <Image
+            src={currentImageUrl}
+            alt={form.name || "Imagen del producto"}
+            width={224}
+            height={224}
+            className="max-h-56 rounded shadow object-contain"
+          />
+        ) : (
+          <div className="h-56 w-56 bg-gray-100 rounded shadow flex items-center justify-center text-gray-400">
+            Sin imagen
           </div>
+        )}
+
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-3">
+          <button
+            type="button"
+            title="Subir desde galería"
+            className="group relative bg-white/90 hover:bg-white text-emerald-600 hover:text-emerald-700 rounded-full p-3 shadow backdrop-blur"
+            onClick={() => galleryInputRef.current?.click()}
+          >
+            📁
+          </button>
+          <button
+            type="button"
+            title="Tomar foto"
+            className="group relative bg-white/90 hover:bg-white text-blue-600 hover:text-blue-700 rounded-full p-3 shadow backdrop-blur"
+            onClick={openCamera}
+          >
+            📷
+          </button>
         </div>
       </div>
-      <h1 className="text-2xl font-bold mb-6">Editar producto</h1>
+
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">Editar producto</h1>
+      </div>
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Inputs ocultos para galería y cámara */}
         <input
           type="file"
           accept="image/*"
+          multiple
           className="hidden"
           ref={galleryInputRef}
           onChange={(e) => {
-            const file = e.target.files?.[0] || null;
-            setSelectedFile(file);
+            handleImageSelection(e.target.files);
+            e.currentTarget.value = "";
           }}
         />
         <input
@@ -314,29 +347,84 @@ const EditProductPage: React.FC = () => {
           className="hidden"
           ref={cameraInputRef}
           onChange={(e) => {
-            const file = e.target.files?.[0] || null;
-            setSelectedFile(file);
+            handleImageSelection(e.target.files);
+            e.currentTarget.value = "";
           }}
         />
-        {selectedFile && (
+        {currentImagesCount > 0 && (
           <div className="space-y-2">
             <p className="text-sm text-gray-600">
-              Nueva imagen seleccionada: {selectedFile.name}
+              Imágenes actuales: {currentImagesCount} de {MAX_IMAGES}
             </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {(form.images || []).map((image, idx) => (
+                <div key={`${image.publicId}-${idx}`} className="relative">
+                  <Image
+                    src={image.url}
+                    alt={`Imagen actual ${idx + 1}`}
+                    width={96}
+                    height={96}
+                    className="w-24 h-24 object-cover rounded border"
+                  />
+                  <button
+                    type="button"
+                    className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 text-xs"
+                    onClick={() => removeExistingImage(idx)}
+                    aria-label={`Quitar imagen actual ${idx + 1}`}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {selectedFiles.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-sm text-gray-600">
+              Nuevas imágenes seleccionadas
+            </p>
+            <p className="text-xs text-gray-500">
+              Se agregarán a las imágenes actuales al guardar.
+            </p>
+            <p className="text-xs text-gray-500">
+              Total previsto: {totalSelectedCount} de {MAX_IMAGES}
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {previewUrls.map((preview, idx) => (
+                <div key={`${preview}-${idx}`} className="relative">
+                  <Image
+                    src={preview}
+                    alt={`Nueva imagen ${idx + 1}`}
+                    width={96}
+                    height={96}
+                    className="w-24 h-24 object-cover rounded border"
+                  />
+                  <button
+                    type="button"
+                    className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 text-xs"
+                    onClick={() => {
+                      setSelectedFiles((prev) =>
+                        prev.filter((_, i) => i !== idx),
+                      );
+                    }}
+                    aria-label={`Quitar imagen ${idx + 1}`}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
             <button
               type="button"
               className="bg-gray-200 text-gray-800 px-3 py-1 rounded"
-              onClick={() => {
-                setSelectedFile(null);
-                setPreviewUrl(null);
-                if (galleryInputRef.current) galleryInputRef.current.value = "";
-                if (cameraInputRef.current) cameraInputRef.current.value = "";
-              }}
+              onClick={() => setSelectedFiles([])}
             >
-              Restablecer imagen
+              Restablecer imágenes
             </button>
           </div>
         )}
+
         <input
           type="text"
           name="name"
@@ -353,259 +441,177 @@ const EditProductPage: React.FC = () => {
           placeholder="Descripción"
           className="w-full border rounded px-3 py-2"
         />
-        <select
-          name="genre"
-          value={form.genre || ""}
-          onChange={handleChange}
-          className="w-full border rounded px-3 py-2"
-          required
-        >
-          <option value="">Selecciona un género</option>
-          <option value={Genre.NINA}>Niña</option>
-          <option value={Genre.NINO}>Niño</option>
-          <option value={Genre.UNISEX}>Unisex</option>
-        </select>
+        <input
+          type="text"
+          value={resolvedCategory}
+          className="w-full border rounded px-3 py-2 bg-gray-100 text-gray-600"
+          readOnly
+        />
 
-        {/* Edición de variantes (tallas) */}
-        <div className="space-y-2">
-          <label className="block font-semibold">Detalle por talla</label>
-          <p className="text-xs text-gray-600">
-            Ajusta Talla, Stock y Precio en cada fila.
-          </p>
-          <div className="flex gap-2 items-center text-xs font-medium text-gray-600">
-            <span className="flex-1">Talla</span>
-            <span className="w-20">Stock</span>
-            <span className="w-24">Precio</span>
-            <span className="w-8 sr-only">Acción</span>
+        {isClothingProduct ? (
+          <>
+            <select
+              name="genre"
+              value={form.genre || ""}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2"
+              required
+            >
+              <option value="">Selecciona un género</option>
+              <option value={Genre.NINA}>Niña</option>
+              <option value={Genre.NINO}>Niño</option>
+              <option value={Genre.UNISEX}>Unisex</option>
+            </select>
+
+            <div className="space-y-2">
+              <label className="block font-semibold">Detalle por talla</label>
+              {(form.variants || []).map((variant, idx) => (
+                <div key={idx} className="flex gap-2 items-center">
+                  <select
+                    value={variant.size || ""}
+                    onChange={(e) => {
+                      const value = e.target.value as VariantProduct["size"];
+                      setForm((prev) => ({
+                        ...prev,
+                        variants: (prev.variants || []).map((v, i) =>
+                          i === idx ? { ...v, size: value } : v,
+                        ),
+                      }));
+                    }}
+                    className="border rounded px-2 py-1 flex-1"
+                  >
+                    <option value="">Talla</option>
+                    {Object.values(Size).map((size) => {
+                      const isUsed = form.variants?.some(
+                        (v, i) => v.size === size && i !== idx,
+                      );
+                      return (
+                        <option key={size} value={size} disabled={isUsed}>
+                          {formatSizeLabel(size)}
+                        </option>
+                      );
+                    })}
+                  </select>
+
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={variantDraftValues[idx]?.stock || ""}
+                    onKeyDown={(e) => preventInvalidKeys(e)}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      setVariantDraftValues((prev) => ({
+                        ...prev,
+                        [idx]: { ...prev[idx], stock: raw },
+                      }));
+                    }}
+                    className="border rounded px-2 py-1 w-20"
+                    placeholder="Stock"
+                    required
+                  />
+
+                  <input
+                    type="number"
+                    min={0}
+                    step="any"
+                    value={variantDraftValues[idx]?.price || ""}
+                    onKeyDown={(e) => preventInvalidKeys(e, true)}
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      setVariantDraftValues((prev) => ({
+                        ...prev,
+                        [idx]: { ...prev[idx], price: raw },
+                      }));
+                    }}
+                    className="border rounded px-2 py-1 w-24"
+                    placeholder="Precio"
+                    required
+                  />
+
+                  <button
+                    type="button"
+                    className="text-red-600 font-bold px-2"
+                    onClick={() => {
+                      setForm((prev) => ({
+                        ...prev,
+                        variants: (prev.variants || []).filter(
+                          (_, i) => i !== idx,
+                        ),
+                      }));
+                      setVariantDraftValues((prev) => {
+                        const next = { ...prev };
+                        delete next[idx];
+                        return next;
+                      });
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                className="bg-green-600 text-white px-3 py-1 rounded"
+                onClick={() => {
+                  const usedSizes = (form.variants || []).map((v) => v.size);
+                  const availableSize = Object.values(Size).find(
+                    (size) => !usedSizes.includes(size),
+                  );
+                  if (!availableSize) return;
+                  const nextIndex = (form.variants || []).length;
+                  setForm((prev) => ({
+                    ...prev,
+                    variants: [
+                      ...(prev.variants || []),
+                      {
+                        size: availableSize as VariantProduct["size"],
+                        stock: 0,
+                        price: 0,
+                      },
+                    ],
+                  }));
+                  setVariantDraftValues((prev) => ({
+                    ...prev,
+                    [nextIndex]: { stock: "0", price: "0" },
+                  }));
+                }}
+              >
+                + Añadir talla
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <input
+              type="number"
+              name="stock"
+              value={form.stock ?? ""}
+              onChange={handleChange}
+              onKeyDown={(e) => preventInvalidKeys(e)}
+              placeholder="Stock"
+              min={0}
+              step={1}
+              inputMode="numeric"
+              className="w-full border rounded px-3 py-2"
+              required
+            />
+            <input
+              type="number"
+              name="price"
+              value={form.price ?? ""}
+              onChange={handleChange}
+              onKeyDown={(e) => preventInvalidKeys(e, true)}
+              placeholder="Precio"
+              min={0}
+              step="any"
+              inputMode="decimal"
+              className="w-full border rounded px-3 py-2"
+              required
+            />
           </div>
-          {(form.variants || []).map((variant, idx) => (
-            <React.Fragment key={idx}>
-              <div className="flex gap-2 items-center">
-                <select
-                  name={`variant-size-${idx}`}
-                  value={variant.size || ""}
-                  onChange={(e) => {
-                    const value = e.target.value as VariantProduct["size"];
-                    setForm((prev) => ({
-                      ...prev,
-                      variants: (prev.variants || []).map((v, i) =>
-                        i === idx ? { ...v, size: value } : v,
-                      ),
-                    }));
-                  }}
-                  className="border rounded px-2 py-1 flex-1"
-                  required
-                >
-                  <option value="">Talla</option>
-                  {Object.values(Size).map((size) => {
-                    const isUsed = form.variants?.some(
-                      (v, i) => v.size === size && i !== idx,
-                    );
-                    return (
-                      <option key={size} value={size} disabled={isUsed}>
-                        {formatSizeLabel(size)}
-                      </option>
-                    );
-                  })}
-                </select>
-                <input
-                  type="number"
-                  min="0"
-                  step={1}
-                  inputMode="numeric"
-                  name={`variant-stock-${idx}`}
-                  value={
-                    variantDraftValues[idx]?.stock ??
-                    String(variant.stock ?? "")
-                  }
-                  onKeyDown={preventStockInvalidKeys}
-                  onChange={(e) => {
-                    const raw = e.target.value;
-                    if (raw !== "" && !/^\d+$/.test(raw)) {
-                      setVariantFieldErrors((prev) => ({
-                        ...prev,
-                        [idx]: {
-                          ...prev[idx],
-                          stock: "Stock: solo enteros no negativos",
-                        },
-                      }));
-                      return;
-                    }
-                    setVariantDraftValues((prev) => ({
-                      ...prev,
-                      [idx]: {
-                        stock: raw,
-                        price: prev[idx]?.price ?? String(variant.price ?? ""),
-                      },
-                    }));
-                    setVariantFieldErrors((prev) => ({
-                      ...prev,
-                      [idx]: {
-                        ...prev[idx],
-                        stock: undefined,
-                      },
-                    }));
-                    if (raw !== "") {
-                      const value = Number(raw);
-                      setForm((prev) => ({
-                        ...prev,
-                        variants: (prev.variants || []).map((v, i) =>
-                          i === idx ? { ...v, stock: value } : v,
-                        ),
-                      }));
-                    }
-                  }}
-                  className="border rounded px-2 py-1 w-20"
-                  placeholder="Stock"
-                  required
-                />
-                <input
-                  type="number"
-                  min="0"
-                  step="any"
-                  inputMode="decimal"
-                  name={`variant-price-${idx}`}
-                  value={
-                    variantDraftValues[idx]?.price ??
-                    String(variant.price ?? "")
-                  }
-                  onKeyDown={preventPriceInvalidKeys}
-                  onChange={(e) => {
-                    const raw = e.target.value;
-                    if (raw !== "" && !/^\d*\.?\d*$/.test(raw)) {
-                      setVariantFieldErrors((prev) => ({
-                        ...prev,
-                        [idx]: {
-                          ...prev[idx],
-                          price: "Precio: solo números no negativos",
-                        },
-                      }));
-                      return;
-                    }
-                    setVariantDraftValues((prev) => ({
-                      ...prev,
-                      [idx]: {
-                        stock: prev[idx]?.stock ?? String(variant.stock ?? ""),
-                        price: raw,
-                      },
-                    }));
-                    setVariantFieldErrors((prev) => ({
-                      ...prev,
-                      [idx]: {
-                        ...prev[idx],
-                        price: undefined,
-                      },
-                    }));
-                    if (raw !== "") {
-                      const value = Number(raw);
-                      setForm((prev) => ({
-                        ...prev,
-                        variants: (prev.variants || []).map((v, i) =>
-                          i === idx ? { ...v, price: value } : v,
-                        ),
-                      }));
-                    }
-                  }}
-                  className="border rounded px-2 py-1 w-24"
-                  placeholder="Precio"
-                  required
-                />
-                <button
-                  type="button"
-                  className="text-red-600 font-bold px-2"
-                  onClick={() => {
-                    setVariantDraftValues((prev) => {
-                      const next: Record<
-                        number,
-                        { stock: string; price: string }
-                      > = {};
-                      Object.entries(prev).forEach(([key, value]) => {
-                        const keyNumber = Number(key);
-                        if (keyNumber < idx) next[keyNumber] = value;
-                        if (keyNumber > idx) next[keyNumber - 1] = value;
-                      });
-                      return next;
-                    });
-                    setVariantFieldErrors((prev) => {
-                      const next: Record<
-                        number,
-                        { stock?: string; price?: string }
-                      > = {};
-                      Object.entries(prev).forEach(([key, value]) => {
-                        const keyNumber = Number(key);
-                        if (keyNumber < idx) next[keyNumber] = value;
-                        if (keyNumber > idx) next[keyNumber - 1] = value;
-                      });
-                      return next;
-                    });
-                    setForm((prev) => ({
-                      ...prev,
-                      variants: (prev.variants || []).filter(
-                        (_, i) => i !== idx,
-                      ),
-                    }));
-                  }}
-                  title="Eliminar variante"
-                >
-                  ×
-                </button>
-              </div>
-              <div className="-mt-1 mb-1 space-y-1">
-                <p
-                  className={`text-xs ${
-                    variantFieldErrors[idx]?.stock
-                      ? "text-red-600"
-                      : "text-gray-500"
-                  }`}
-                >
-                  {variantFieldErrors[idx]?.stock ||
-                    "Stock: solo enteros no negativos"}
-                </p>
-                <p
-                  className={`text-xs ${
-                    variantFieldErrors[idx]?.price
-                      ? "text-red-600"
-                      : "text-gray-500"
-                  }`}
-                >
-                  {variantFieldErrors[idx]?.price ||
-                    "Precio: números enteros o decimales no negativos"}
-                </p>
-              </div>
-            </React.Fragment>
-          ))}
-          <button
-            type="button"
-            className="bg-green-600 text-white px-3 py-1 rounded"
-            onClick={() => {
-              // Añadir una nueva variante con talla no usada
-              const usedSizes = (form.variants || []).map((v) => v.size);
-              const allSizes = Object.values(Size);
-              const availableSize = allSizes.find(
-                (size) => !usedSizes.includes(size as VariantProduct["size"]),
-              );
-              if (!availableSize) return;
-              const nextIndex = (form.variants || []).length;
-              setForm((prev) => ({
-                ...prev,
-                variants: [
-                  ...(prev.variants || []),
-                  {
-                    size: availableSize as VariantProduct["size"],
-                    stock: 0,
-                    price: 0,
-                  },
-                ],
-              }));
-              setVariantDraftValues((prev) => ({
-                ...prev,
-                [nextIndex]: { stock: "0", price: "0" },
-              }));
-            }}
-          >
-            + Añadir talla
-          </button>
-        </div>
+        )}
+
         <button
           type="submit"
           className="bg-blue-600 text-white px-4 py-2 rounded"

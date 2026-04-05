@@ -141,6 +141,14 @@ export interface ProductImage {
   publicId: string;
 }
 
+export interface CloudinaryUploadSignature {
+  timestamp: number;
+  signature: string;
+  apiKey: string;
+  cloudName: string;
+  folder: string;
+}
+
 // Producto principal
 export interface Product {
   id: string;

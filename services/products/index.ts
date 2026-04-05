@@ -2,6 +2,7 @@ import type {
   CreateProduct,
   PaginatedProducts,
   Product,
+  ProductImage,
   ProductSearchFilters,
   UploadProduct,
 } from "@/types/product.type";
@@ -11,6 +12,68 @@ interface ApiOptions {
   cache?: RequestCache;
   signal?: AbortSignal;
 }
+
+const genericErrorMessages = new Set([
+  "bad request exception",
+  "bad request",
+  "internal server error",
+  "error backend",
+  "error del backend",
+]);
+
+const isGenericErrorMessage = (value: string): boolean =>
+  genericErrorMessages.has(value.trim().toLowerCase());
+
+const extractErrorMessage = (
+  value: unknown,
+  fallbackErrorMessage: string,
+): string => {
+  if (typeof value === "string") {
+    const trimmedValue = value.trim();
+    return trimmedValue || fallbackErrorMessage;
+  }
+
+  if (Array.isArray(value)) {
+    const messages = value
+      .map((item) => extractErrorMessage(item, ""))
+      .filter(Boolean);
+
+    return messages.join(". ") || fallbackErrorMessage;
+  }
+
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+
+    const nestedMessage = [
+      record.originalError,
+      record.extensions,
+      record.exception,
+      record.response,
+    ]
+      .map((item) => extractErrorMessage(item, ""))
+      .find(Boolean);
+
+    if (typeof record.message === "string" && record.message.trim()) {
+      const message = record.message.trim();
+      if (!isGenericErrorMessage(message) || !nestedMessage) {
+        return message;
+      }
+    }
+
+    if (typeof record.error === "string" && record.error.trim()) {
+      const errorMessage = record.error.trim();
+      if (!isGenericErrorMessage(errorMessage) || !nestedMessage) {
+        return errorMessage;
+      }
+    }
+
+    if (nestedMessage) {
+      return nestedMessage;
+    }
+  }
+
+  return fallbackErrorMessage;
+};
 
 const buildApiUrl = (path: string, baseUrl?: string): string => {
   if (!baseUrl) return path;
@@ -28,9 +91,11 @@ const parseResponseOrThrow = async <T>(
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const message =
-      (data && (data.error || data.message)) || fallbackErrorMessage;
-    throw new Error(String(message));
+    const message = extractErrorMessage(
+      data && (data.error || data.message),
+      fallbackErrorMessage,
+    );
+    throw new Error(message);
   }
 
   return data as T;
@@ -104,6 +169,26 @@ export const createProduct = async (
   );
 
   return parseResponseOrThrow<Product>(response, "Error al crear producto");
+};
+
+export const uploadProductImage = async (
+  file: File,
+  options: ApiOptions = {},
+): Promise<ProductImage> => {
+  const uploadFormData = new FormData();
+  uploadFormData.append("file", file);
+  uploadFormData.append("folder", "products");
+
+  const response = await fetch(
+    buildApiUrl("/api/cloudinary/upload", options.baseUrl),
+    {
+      method: "POST",
+      body: uploadFormData,
+      signal: options.signal,
+    },
+  );
+
+  return parseResponseOrThrow<ProductImage>(response, "Error subiendo imagen");
 };
 
 export const updateProduct = async (
