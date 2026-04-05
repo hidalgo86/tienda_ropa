@@ -1,18 +1,12 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { formatSizeLabel, Product } from "@/types/product.type";
+import { Product } from "@/types/product.type";
 
 const statusColors: Record<string, string> = {
   disponible: "bg-green-100 text-green-700 border-green-300",
   agotado: "bg-gray-200 text-gray-700 border-gray-300",
   eliminado: "bg-red-100 text-red-700 border-red-300",
-};
-
-const genreLabels: Record<string, string> = {
-  NINA: "Niña",
-  NINO: "Niño",
-  UNISEX: "Unisex",
 };
 
 interface ProductCardAdminProps {
@@ -40,16 +34,14 @@ const ProductCardAdmin: React.FC<ProductCardAdminProps> = ({
     variants.length > 0
       ? Math.min(...variants.map((v) => Number(v.price) || 0))
       : null;
-  const sizes =
-    variants.length > 0
-      ? variants.map((v) => formatSizeLabel(v.size)).join(", ")
-      : null;
-  const rawGenre = String(product.genre ?? "");
-  const normalizedGenre = rawGenre
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toUpperCase();
-  const displayGenre = genreLabels[normalizedGenre] || rawGenre;
+  const directPrice = Number(product.price ?? 0);
+  const finalPrice =
+    minPrice !== null
+      ? minPrice
+      : Number.isFinite(directPrice)
+        ? directPrice
+        : null;
+  const coverImage = product.images?.[0]?.url || PLACEHOLDER;
 
   return (
     <div
@@ -64,7 +56,7 @@ const ProductCardAdmin: React.FC<ProductCardAdminProps> = ({
         aria-label={`Ver detalle de ${product.name}`}
       >
         <Image
-          src={product.imageUrl || PLACEHOLDER}
+          src={coverImage}
           alt={product.name}
           fill
           className="object-cover"
@@ -166,21 +158,13 @@ const ProductCardAdmin: React.FC<ProductCardAdminProps> = ({
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-xs text-gray-400">{displayGenre}</span>
-        </div>
-        <div className="mt-auto pt-2 text-sm text-gray-700 flex justify-between items-end">
-          {variants.length > 0 ? (
-            <>
-              <div>
-                <span className="font-semibold">Tallas:</span> {sizes}
-              </div>
-              <div className="font-bold text-lg text-gray-900 text-right min-w-[80px]">
-                ${minPrice?.toFixed(2)}
-              </div>
-            </>
+        <div className="mt-auto pt-2 text-sm text-gray-700 flex justify-end items-end">
+          {finalPrice !== null ? (
+            <div className="font-bold text-lg text-gray-900 text-right min-w-[80px]">
+              ${finalPrice.toFixed(2)}
+            </div>
           ) : (
-            <div className="text-gray-400">Sin variantes disponibles</div>
+            <div className="text-gray-400">Precio no disponible</div>
           )}
         </div>
       </div>

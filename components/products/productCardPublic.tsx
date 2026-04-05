@@ -23,7 +23,14 @@ const ProductCardPublic: React.FC<ProductCardPublicProps> = ({
     variants.length > 0
       ? Math.min(...variants.map((v) => Number(v.price) || 0))
       : null;
-  // Nota: 'sizes' no se usa en la UI actual
+  const directPrice = Number(product.price ?? 0);
+  const finalPrice =
+    minPrice !== null
+      ? minPrice
+      : Number.isFinite(directPrice)
+        ? directPrice
+        : null;
+  const coverImage = product.images?.[0]?.url || PLACEHOLDER;
   const isEliminado = product.status?.toLowerCase() === "eliminado";
   const isFavorite = useSelector((state: RootState) =>
     state.favorites?.items?.some((item) => item.id === product.id),
@@ -42,7 +49,7 @@ const ProductCardPublic: React.FC<ProductCardPublicProps> = ({
         aria-label={`Ver detalle de ${product.name}`}
       >
         <Image
-          src={product.imageUrl || PLACEHOLDER}
+          src={coverImage}
           alt={product.name}
           fill
           className="object-cover"
@@ -85,7 +92,7 @@ const ProductCardPublic: React.FC<ProductCardPublicProps> = ({
         <div className="font-bold text-base text-gray-900">{product.name}</div>
         <div className="flex items-center justify-between">
           <div className="font-bold text-lg text-gray-900">
-            ${Number(minPrice ?? 0).toFixed(2)}
+            ${Number(finalPrice ?? 0).toFixed(2)}
           </div>
           {!isEliminado &&
             (onAddToCart ? (

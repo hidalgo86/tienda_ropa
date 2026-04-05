@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Product, ProductStatus } from "@/types/product.type";
+import { listProducts } from "@/services/products";
 
 interface UseAdminProductsParams {
   status: ProductStatus;
@@ -43,28 +44,19 @@ export const useAdminProducts = ({
       }
       setError(null);
 
-      const params = new URLSearchParams();
-      params.append("status", String(status));
-      params.append("page", String(page));
-      params.append("limit", String(limit));
-      // API espera el texto de búsqueda en el parámetro "name"
-      if (search.trim()) {
-        params.append("name", search.trim());
-      }
-
       try {
-        const res = await fetch(`/api/products/get?${params.toString()}`, {
-          cache: "no-store",
-          signal: controller.signal,
-        });
-
-        const data = await res.json().catch(() => null);
-        if (!res.ok) {
-          throw new Error(
-            (data && (data.message || data.error)) ||
-              "Error al cargar productos",
-          );
-        }
+        const data = await listProducts(
+          {
+            status,
+            page,
+            limit,
+            name: search.trim() || undefined,
+          },
+          {
+            cache: "no-store",
+            signal: controller.signal,
+          },
+        );
 
         setProducts((data && data.items) || []);
         setTotalPages((data && data.totalPages) || 1);

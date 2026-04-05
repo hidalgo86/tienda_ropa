@@ -1,10 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import Image from "next/image";
-import { formatSizeLabel, Product } from "@/types/product.type";
+import {
+  formatGenreLabel,
+  formatSizeLabel,
+  ProductCategory,
+  Product,
+} from "@/types/product.type";
 import { RootState } from "@/store";
 import { addToCart } from "@/store/slices/cartSlice";
 import { toggleFavorite } from "@/store/slices/favoriteSlice";
@@ -18,12 +23,6 @@ import {
   MdRemove,
 } from "react-icons/md";
 
-const genreLabels: Record<string, string> = {
-  NINA: "Niña",
-  NINO: "Niño",
-  UNISEX: "Unisex",
-};
-
 interface ProductDetailClientProps {
   producto: Product;
   mode?: "public" | "admin";
@@ -36,49 +35,59 @@ export default function ProductDetailClient({
   const router = useRouter();
   const dispatch = useDispatch();
   const [selectedSize, setSelectedSize] = useState<string>("");
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [showAddedToCart, setShowAddedToCart] = useState(false);
   const isAdminMode = mode === "admin";
+  const isRopa = producto.category === ProductCategory.ROPA;
+
+  const images =
+    Array.isArray(producto.images) && producto.images.length > 0
+      ? producto.images
+      : [{ url: "/placeholder.webp", publicId: "placeholder" }];
+  const selectedImage = images[selectedImageIndex] || images[0];
 
   // Verificar si el producto está en favoritos
   const isFavorite = useSelector((state: RootState) =>
     state.favorites.items.some((item) => item.id === producto.id),
   );
 
-  // Inicializar con la primera talla disponible
-  useState(() => {
-    if (producto.variants && producto.variants.length > 0) {
+  // Inicializar selección de imagen/talla
+  useEffect(() => {
+    setSelectedImageIndex(0);
+    if (isRopa && producto.variants && producto.variants.length > 0) {
       const firstAvailableSize =
         producto.variants.find((v) => (v.stock || 0) > 0)?.size ||
         producto.variants[0]?.size ||
         "";
       setSelectedSize(firstAvailableSize);
+      return;
     }
-  });
+    setSelectedSize("");
+  }, [isRopa, producto.id, producto.variants]);
 
   const variants = producto.variants || [];
-  const totalStock = variants.reduce(
-    (sum, v) => sum + (Number(v?.stock) || 0),
-    0,
-  );
-  const currentVariant = variants.find((v) => v.size === selectedSize);
-  const displayPrice =
-    currentVariant?.price ??
-    (variants.length > 0
-      ? Math.min(
-          ...variants.map((v) => Number(v?.price) || 0).filter((n) => n > 0),
-        )
-      : 0);
-  const availableStock = currentVariant?.stock || 0;
-  const rawGenre = String(producto.genre ?? "");
-  const normalizedGenre = rawGenre
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toUpperCase();
-  const displayGenre = genreLabels[normalizedGenre] || rawGenre;
+  const totalStock = isRopa
+    ? variants.reduce((sum, v) => sum + (Number(v?.stock) || 0), 0)
+    : Number(producto.stock || 0);
+  const currentVariant = isRopa
+    ? variants.find((v) => v.size === selectedSize)
+    : null;
+  const displayPrice = isRopa
+    ? (currentVariant?.price ??
+      (variants.length > 0
+        ? Math.min(
+            ...variants.map((v) => Number(v?.price) || 0).filter((n) => n > 0),
+          )
+        : 0))
+    : Number(producto.price || 0);
+  const availableStock = isRopa
+    ? currentVariant?.stock || 0
+    : Number(producto.stock || 0);
+  const displayGenre = formatGenreLabel(producto.genre);
 
   const handleAddToCart = () => {
-    if (!selectedSize) {
+    if (isRopa && !selectedSize) {
       alert("Por favor selecciona una talla");
       return;
     }
@@ -91,7 +100,7 @@ export default function ProductDetailClient({
       addToCart({
         product: producto,
         quantity,
-        selectedSize,
+        selectedSize: isRopa ? selectedSize : undefined,
       }),
     );
 
@@ -105,7 +114,7 @@ export default function ProductDetailClient({
   };
 
   const handleBuyNow = () => {
-    if (!selectedSize) {
+    if (isRopa && !selectedSize) {
       alert("Por favor selecciona una talla");
       return;
     }
@@ -116,11 +125,13 @@ export default function ProductDetailClient({
     // TODO: Implementar compra directa
     console.log("Compra directa:", {
       producto: producto.id,
-      size: selectedSize,
+      size: isRopa ? selectedSize : null,
       quantity,
     });
     alert(
-      `Redirigiendo a checkout (Talla: ${selectedSize}, Cantidad: ${quantity})`,
+      isRopa
+        ? `Redirigiendo a checkout (Talla: ${selectedSize}, Cantidad: ${quantity})`
+        : `Redirigiendo a checkout (Cantidad: ${quantity})`,
     );
   };
 
@@ -161,7 +172,7 @@ export default function ProductDetailClient({
             <div className="space-y-4">
               <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center relative">
                 <Image
-                  src={producto.imageUrl || "/placeholder.webp"}
+                  src={selectedImage.url}
                   alt={producto.name || "Producto"}
                   width={600}
                   height={600}
@@ -169,6 +180,34 @@ export default function ProductDetailClient({
                   priority
                 />
               </div>
+
+              {images.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {images.map((img, idx) => {
+                    const isSelected = idx === selectedImageIndex;
+                    return (
+                      <button
+                        key={`${img.publicId}-${idx}`}
+                        type="button"
+                        onClick={() => setSelectedImageIndex(idx)}
+                        className={`relative w-16 h-16 rounded-md overflow-hidden border-2 shrink-0 ${
+                          isSelected
+                            ? "border-pink-500"
+                            : "border-gray-200 hover:border-gray-300"
+                        }`}
+                        aria-label={`Ver imagen ${idx + 1}`}
+                      >
+                        <Image
+                          src={img.url}
+                          alt={`${producto.name} miniatura ${idx + 1}`}
+                          fill
+                          className="object-cover"
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* Botones de acción secundarios */}
               {!isAdminMode && (
@@ -242,8 +281,10 @@ export default function ProductDetailClient({
               {/* Información del producto */}
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="font-medium text-gray-900">Género:</span>
-                  <span className="ml-2 text-gray-600">{displayGenre}</span>
+                  <span className="font-medium text-gray-900">Categoría:</span>
+                  <span className="ml-2 text-gray-600">
+                    {producto.category}
+                  </span>
                 </div>
                 <div>
                   <span className="font-medium text-gray-900">
@@ -253,10 +294,16 @@ export default function ProductDetailClient({
                     {totalStock} unidades
                   </span>
                 </div>
+                {isRopa && (
+                  <div>
+                    <span className="font-medium text-gray-900">Género:</span>
+                    <span className="ml-2 text-gray-600">{displayGenre}</span>
+                  </div>
+                )}
               </div>
 
               {/* Selector de tallas */}
-              {variants.length > 0 && (
+              {isRopa && variants.length > 0 && (
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">
                     Tallas disponibles

@@ -1,10 +1,15 @@
 "use client";
-import React, { Suspense, useEffect, useMemo, useState } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Product, ProductStatus } from "@/types/product.type";
+import {
+  Product,
+  ProductStatus,
+  parseProductStatus,
+} from "@/types/product.type";
 import ProductListAdmin from "@/components/products/ProductListAdmin";
 import Pagination from "@/components/Pagination";
 import { useAdminProducts } from "./useAdminProducts";
+import { updateProduct } from "@/services/products";
 
 const ProductsContent: React.FC = () => {
   // Dependencias de navegación para sincronizar estado <-> URL
@@ -12,18 +17,12 @@ const ProductsContent: React.FC = () => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Valores válidos de estado para evitar filtros inválidos desde query params
-  const validStatuses = useMemo(() => Object.values(ProductStatus), []);
-
   // Estado inicial tomado de URL (deep-link y recarga de página)
   const initialLimit = Number(searchParams.get("limit")) || 50;
   const initialPage = Math.max(1, Number(searchParams.get("page")) || 1);
   const initialSearch = searchParams.get("search") || "";
-  const initialStatus = validStatuses.includes(
-    searchParams.get("status") as ProductStatus,
-  )
-    ? (searchParams.get("status") as ProductStatus)
-    : ProductStatus.DISPONIBLE;
+  const initialStatus =
+    parseProductStatus(searchParams.get("status")) || ProductStatus.DISPONIBLE;
   const [limit] = useState(initialLimit);
   const [page, setPage] = useState(initialPage);
   const [search, setSearch] = useState(initialSearch);
@@ -63,7 +62,7 @@ const ProductsContent: React.FC = () => {
 
     const currentPage = Math.max(1, Number(searchParams.get("page")) || 1);
     const currentStatus =
-      (searchParams.get("status") as ProductStatus | null) ||
+      parseProductStatus(searchParams.get("status")) ||
       ProductStatus.DISPONIBLE;
     const currentLimit = Number(searchParams.get("limit")) || 50;
     const currentSearch = searchParams.get("search") || "";
@@ -82,18 +81,16 @@ const ProductsContent: React.FC = () => {
   useEffect(() => {
     // Lee cambios de URL (ej. botón atrás/adelante) y actualiza estado local
     const nextPage = Math.max(1, Number(searchParams.get("page")) || 1);
-    const rawStatus = searchParams.get("status") as ProductStatus | null;
     const nextStatus =
-      rawStatus && validStatuses.includes(rawStatus)
-        ? rawStatus
-        : ProductStatus.DISPONIBLE;
+      parseProductStatus(searchParams.get("status")) ||
+      ProductStatus.DISPONIBLE;
     const nextSearch = searchParams.get("search") || "";
 
     setPage((prev) => (prev === nextPage ? prev : nextPage));
     setStatus((prev) => (prev === nextStatus ? prev : nextStatus));
     setSearch((prev) => (prev === nextSearch ? prev : nextSearch));
     setDebouncedSearch((prev) => (prev === nextSearch ? prev : nextSearch));
-  }, [searchParams, validStatuses]);
+  }, [searchParams]);
 
   if (error) {
     return <div className="text-center py-10 text-red-600">{error}</div>;
@@ -114,17 +111,7 @@ const ProductsContent: React.FC = () => {
     });
 
     try {
-      const res = await fetch(`/api/products/update/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, status: ProductStatus.ELIMINADO }),
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok)
-        throw new Error(
-          (data && (data.message || data.error)) ||
-            "Error al eliminar producto",
-        );
+      await updateProduct(id, { status: ProductStatus.ELIMINADO });
 
       // Refetch silencioso: valida consistencia sin mostrar spinner global
       await refetch({ silent: true }).catch(() => {
@@ -154,17 +141,7 @@ const ProductsContent: React.FC = () => {
     });
 
     try {
-      const res = await fetch(`/api/products/update/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id, status: ProductStatus.DISPONIBLE }),
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok)
-        throw new Error(
-          (data && (data.message || data.error)) ||
-            "Error al restaurar producto",
-        );
+      await updateProduct(id, { status: ProductStatus.DISPONIBLE });
 
       // Refetch silencioso para evitar parpadeo de loading general
       await refetch({ silent: true }).catch(() => {
@@ -222,9 +199,9 @@ const ProductsContent: React.FC = () => {
           onChange={(e) => handleStatusChange(e.target.value as ProductStatus)}
           className="border rounded px-3 py-2 text-sm"
         >
-          <option value="DISPONIBLE">Disponibles</option>
-          <option value="AGOTADO">Agotados</option>
-          <option value="ELIMINADO">Eliminados</option>
+          <option value={ProductStatus.DISPONIBLE}>Disponibles</option>
+          <option value={ProductStatus.AGOTADO}>Agotados</option>
+          <option value={ProductStatus.ELIMINADO}>Eliminados</option>
         </select>
         <input
           type="text"

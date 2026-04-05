@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { formatSizeLabel, Product } from "@/types/product.type";
+import { Product } from "@/types/product.type";
 
 interface CardProps {
   product: Product;
@@ -15,12 +15,6 @@ const statusColors: Record<string, string> = {
   disponible: "bg-green-100 text-green-700 border-green-300",
   agotado: "bg-red-100 text-red-700 border-red-300",
   eliminado: "bg-gray-200 text-gray-500 border-gray-400",
-};
-
-const genreLabels: Record<string, string> = {
-  NINA: "Niña",
-  NINO: "Niño",
-  UNISEX: "Unisex",
 };
 
 const PLACEHOLDER = "/placeholder.webp";
@@ -42,16 +36,14 @@ function Card({
     variants.length > 0
       ? Math.min(...variants.map((v) => Number(v.price) || 0))
       : null;
-  const sizes =
-    variants.length > 0
-      ? variants.map((v) => formatSizeLabel(v.size)).join(", ")
-      : null;
-  const rawGenre = String(product.genre ?? "");
-  const normalizedGenre = rawGenre
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toUpperCase();
-  const displayGenre = genreLabels[normalizedGenre] || rawGenre;
+  const directPrice = Number(product.price ?? 0);
+  const finalPrice =
+    minPrice !== null
+      ? minPrice
+      : Number.isFinite(directPrice)
+        ? directPrice
+        : null;
+  const coverImage = product.images?.[0]?.url || PLACEHOLDER;
 
   return (
     <div
@@ -61,7 +53,7 @@ function Card({
     >
       <div className="w-full h-40 sm:h-48 bg-gray-100 flex items-center justify-center overflow-hidden relative">
         <Image
-          src={product.imageUrl || PLACEHOLDER}
+          src={coverImage}
           alt={product.name}
           width={224}
           height={192}
@@ -190,22 +182,14 @@ function Card({
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-xs text-gray-400">{displayGenre}</span>
-        </div>
         {/* Variantes */}
-        <div className="mt-auto pt-2 text-sm text-gray-700 flex justify-between items-end">
-          {variants.length > 0 ? (
-            <>
-              <div>
-                <span className="font-semibold">Tallas:</span> {sizes}
-              </div>
-              <div className="font-bold text-lg text-gray-900 text-right min-w-[80px]">
-                ${minPrice?.toFixed(2)}
-              </div>
-            </>
+        <div className="mt-auto pt-2 text-sm text-gray-700 flex justify-end items-end">
+          {finalPrice !== null ? (
+            <div className="font-bold text-lg text-gray-900 text-right min-w-[80px]">
+              ${finalPrice.toFixed(2)}
+            </div>
           ) : (
-            <div className="text-gray-400">Sin variantes disponibles</div>
+            <div className="text-gray-400">Precio no disponible</div>
           )}
         </div>
       </div>

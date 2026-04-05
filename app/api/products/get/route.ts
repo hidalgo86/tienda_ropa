@@ -1,54 +1,148 @@
+// app/api/products/get/route.ts
+import { NextResponse } from "next/server";
 import {
-  Genre,
+  Product,
+  Size,
+  ProductStatus,
   PaginatedProducts,
   ProductsQueryModel,
-  ProductStatus,
-  Size,
+  parseGenre,
+  parseProductCategory,
+  parseProductStatus,
+  allowedSizes,
 } from "@/types/product.type";
-import { NextResponse } from "next/server";
+
 export const dynamic = "force-dynamic";
+
+const parseOptionalNumber = (value: string | null): number | undefined => {
+  if (value === null || value.trim() === "") return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+const matchesFilters = (
+  product: Product,
+  filters: ProductsQueryModel["filters"],
+): boolean => {
+  if (
+    filters.name &&
+    !product.name.toLowerCase().includes(filters.name.toLowerCase())
+  ) {
+    return false;
+  }
+
+  if (filters.category && product.category !== filters.category) {
+    return false;
+  }
+
+  if (filters.genre && product.genre !== filters.genre) {
+    return false;
+  }
+
+  if (filters.status && product.status !== filters.status) {
+    return false;
+  }
+
+  if (filters.sizes?.length) {
+    const productSizes = new Set(
+      (product.variants ?? []).map((variant) => variant.size),
+    );
+    const hasMatchingSize = filters.sizes.some((size) =>
+      productSizes.has(size),
+    );
+    if (!hasMatchingSize) {
+      return false;
+    }
+  }
+
+  if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
+    const prices = (product.variants ?? []).length
+      ? (product.variants ?? [])
+          .map((variant) => Number(variant.price))
+          .filter((price) => Number.isFinite(price))
+      : [Number(product.price)].filter((price) => Number.isFinite(price));
+
+    if (!prices.length) {
+      return false;
+    }
+
+    const hasMatchingPrice = prices.some((price) => {
+      if (filters.minPrice !== undefined && price < filters.minPrice) {
+        return false;
+      }
+      if (filters.maxPrice !== undefined && price > filters.maxPrice) {
+        return false;
+      }
+      return true;
+    });
+
+    if (!hasMatchingPrice) {
+      return false;
+    }
+  }
+
+  return true;
+};
 
 export async function GET(req: Request) {
   try {
-    // Extraer parámetros de la query
     const { searchParams } = new URL(req.url);
+
+    // ===== Paginación =====
     const page = Number(searchParams.get("page")) || 1;
     const limit = Number(searchParams.get("limit")) || 20;
-    const status = searchParams.get("status") || undefined;
-    const genre = searchParams.get("genre") || undefined;
-    const size = searchParams.getAll("size");
-    const name = searchParams.get("name") || undefined;
-    const minPrice = searchParams.get("minPrice")
-      ? Number(searchParams.get("minPrice"))
-      : undefined;
-    const maxPrice = searchParams.get("maxPrice")
-      ? Number(searchParams.get("maxPrice"))
-      : undefined;
 
-    // Construir el input para el query GraphQL
+    // ===== Filtros =====
+    const name = searchParams.get("name") || undefined;
+    const category =
+      parseProductCategory(searchParams.get("category")) ?? undefined;
+    const genre = parseGenre(searchParams.get("genre")) ?? undefined;
+    const status =
+      parseProductStatus(searchParams.get("status")) ||
+      ProductStatus.DISPONIBLE;
+    const sizes = searchParams
+      .getAll("size")
+      .map((s) => String(s).trim().toUpperCase() as Size)
+      .filter((s): s is Size => allowedSizes.has(s));
+    const minPrice = parseOptionalNumber(searchParams.get("minPrice"));
+    const maxPrice = parseOptionalNumber(searchParams.get("maxPrice"));
+
+    // ===== Mapear a DTO de NestJS =====
     const input: ProductsQueryModel = {
       pagination: { page, limit },
-      filters: {},
+      filters: {
+        name,
+        category,
+        genre,
+        status,
+        sizes: sizes.length ? sizes : undefined,
+        minPrice,
+        maxPrice,
+      },
     };
 
-    if (status) input.filters.status = status.toUpperCase() as ProductStatus;
-    if (genre) input.filters.genre = genre as Genre;
-    if (minPrice) input.filters.minPrice = minPrice;
-    if (maxPrice) input.filters.maxPrice = maxPrice;
-    if (size.length > 0) input.filters.size = size as Size[];
-    if (name) input.filters.name = name;
-
-    // Construir el query GraphQL
+    // ===== Query GraphQL =====
     const query = `
-      query Products($input: ProductsQueryInput) {
+      query Products($input: ProductsQueryInput!) {
         products(input: $input) {
           items {
             id
             name
+            description
+            category
             genre
             status
-            imageUrl
-            variants { size price stock }
+            images {
+              url
+              publicId
+            }
+            variants {
+              size
+              stock
+              price
+            }
+            stock
+            price
           }
           total
           page
@@ -57,33 +151,75 @@ export async function GET(req: Request) {
       }
     `;
 
-    // Hacer la petición al endpoint GraphQL
-    const backendRes = await fetch(process.env.API_URL + "/graphql", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query, variables: { input } }),
-      cache: "no-store",
-    });
-    const response = await backendRes.json();
-    let data = response.data.products as PaginatedProducts;
-    const errors = response.errors;
+    const fetchProductsPage = async (pageNumber: number, pageSize: number) => {
+      const backendRes = await fetch(`${process.env.API_URL}/graphql`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query,
+          variables: {
+            input: {
+              pagination: { page: pageNumber, limit: pageSize },
+              filters: input.filters,
+            },
+          },
+        }),
+        cache: "no-store",
+      });
 
-    if (errors) {
-      throw new Error(errors[0]?.message || "Error en GraphQL");
-    }
+      const response = await backendRes.json();
 
-    // Fallback: si el backend ignora el filtro de status, aplicar en server
-    const requestedStatus = status?.toUpperCase();
-    if (requestedStatus) {
-      const items = (data.items || []).filter(
-        (p) => String(p.status).toUpperCase() === requestedStatus,
+      if (response.errors) {
+        throw new Error(response.errors[0]?.message || "Error en GraphQL");
+      }
+
+      if (!response.data?.products) {
+        throw new Error("No se recibieron productos desde GraphQL");
+      }
+
+      return response.data.products as PaginatedProducts;
+    };
+
+    const needsExactFiltering = Boolean(
+      name ||
+      category ||
+      genre ||
+      sizes.length ||
+      minPrice !== undefined ||
+      maxPrice !== undefined,
+    );
+
+    if (needsExactFiltering) {
+      const batchLimit = Math.max(limit, 100);
+      const firstBatch = await fetchProductsPage(1, batchLimit);
+      const allItems = [...firstBatch.items];
+
+      for (
+        let currentPage = 2;
+        currentPage <= firstBatch.totalPages;
+        currentPage += 1
+      ) {
+        const batch = await fetchProductsPage(currentPage, batchLimit);
+        allItems.push(...batch.items);
+      }
+
+      const filteredItems = allItems.filter((product) =>
+        matchesFilters(product, input.filters),
       );
-      const total = items.length;
+      const total = filteredItems.length;
       const totalPages = Math.max(1, Math.ceil(total / limit));
-      const start = (page - 1) * limit;
-      const pageItems = items.slice(start, start + limit);
-      data = { items: pageItems, total, page, totalPages };
+      const startIndex = (page - 1) * limit;
+      const pageItems = filteredItems.slice(startIndex, startIndex + limit);
+
+      return NextResponse.json({
+        items: pageItems,
+        total,
+        page,
+        totalPages,
+      } satisfies PaginatedProducts);
     }
+
+    const data = await fetchProductsPage(page, limit);
 
     return NextResponse.json(data);
   } catch (error: unknown) {
@@ -94,6 +230,7 @@ export async function GET(req: Request) {
               "Error al obtener productos",
           )
         : "Error al obtener productos";
+
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

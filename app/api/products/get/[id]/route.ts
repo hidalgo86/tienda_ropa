@@ -1,10 +1,23 @@
+// app/api/products/get/[id]/route.ts
 import { NextResponse } from "next/server";
+
+interface GraphqlError {
+  message?: string;
+}
+
+interface ProductByIdResponse {
+  data?: {
+    product?: unknown;
+  };
+  errors?: GraphqlError[];
+}
 
 export async function GET(
   req: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
+
   const query = `
     query ($id: String!) {
       product(id: $id) {
@@ -12,44 +25,43 @@ export async function GET(
         name
         description
         genre
-        imageUrl
-        imagePublicId
+        category
         status
         variants { size stock price }
+        images { url publicId }
+        stock
+        price
         createdAt
         updatedAt
       }
     }
   `;
 
-  const variables = { id };
   try {
-    const res = await fetch(process.env.API_URL! + "/graphql", {
+    const res = await fetch(`${process.env.API_URL}/graphql`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query, variables }),
+      body: JSON.stringify({ query, variables: { id } }),
     });
-    const data = await res.json();
 
-    const errors: Array<{ message?: string }> | undefined = Array.isArray(
-      data?.errors
-    )
-      ? data.errors
-      : undefined;
-    if (errors && errors.length) {
-      const message = errors
-        .map((e) => (typeof e?.message === "string" ? e.message : "Error"))
-        ?.join(", ");
+    const data = (await res.json()) as ProductByIdResponse;
+
+    if (data.errors?.length) {
+      const message = data.errors.map((e) => e.message || "Error").join(", ");
       return NextResponse.json({ error: message }, { status: 500 });
     }
 
-    const product = data.data.product;
-    return NextResponse.json(product);
+    if (!data.data?.product) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(data.data.product);
   } catch (error: unknown) {
-    const message =
-      error && typeof error === "object" && "message" in error
-        ? String((error as { message?: unknown }).message ?? "Error interno")
-        : "Error interno";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: error instanceof Error ? error.message : "Error interno",
+      },
+      { status: 500 },
+    );
   }
 }

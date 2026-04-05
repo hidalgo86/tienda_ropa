@@ -1,9 +1,35 @@
 "use client";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MdSearch } from "react-icons/md";
+import {
+  formatSizeLabel,
+  Genre,
+  ProductCategory,
+  Size,
+} from "@/types/product.type";
 
-// Eliminado filtro de categoría
+const FILTER_KEYS = [
+  "search",
+  "category",
+  "genre",
+  "size",
+  "minPrice",
+  "maxPrice",
+  "page",
+  "genero",
+  "talla",
+  "precioMin",
+  "precioMax",
+] as const;
+
+const readParam = (searchParams: URLSearchParams | null, ...keys: string[]) => {
+  for (const key of keys) {
+    const value = searchParams?.get(key);
+    if (value && value.trim()) return value;
+  }
+  return "";
+};
 
 interface FiltrosProps {
   onFilterApply?: () => void;
@@ -14,47 +40,61 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Estado local para cada filtro (sin categoría)
-  const [genero, setGenero] = useState(searchParams?.get("genero") || "");
-  const [precioMin, setPrecioMin] = useState(
-    searchParams?.get("precioMin") || ""
+  const [search, setSearch] = useState(readParam(searchParams, "search"));
+  const [category, setCategory] = useState(readParam(searchParams, "category"));
+  const [genre, setGenre] = useState(
+    readParam(searchParams, "genre", "genero"),
   );
-  const [precioMax, setPrecioMax] = useState(
-    searchParams?.get("precioMax") || ""
+  const [size, setSize] = useState(readParam(searchParams, "size", "talla"));
+  const [minPrice, setMinPrice] = useState(
+    readParam(searchParams, "minPrice", "precioMin"),
   );
-  const [talla, setTalla] = useState(searchParams?.get("talla") || "");
-  const [search, setSearch] = useState(searchParams?.get("search") || "");
+  const [maxPrice, setMaxPrice] = useState(
+    readParam(searchParams, "maxPrice", "precioMax"),
+  );
   const [isSearching, setIsSearching] = useState(false);
+  const isClothingFilter = !category || category === ProductCategory.ROPA;
+
+  useEffect(() => {
+    setSearch(readParam(searchParams, "search"));
+    setCategory(readParam(searchParams, "category"));
+    setGenre(readParam(searchParams, "genre", "genero"));
+    setSize(readParam(searchParams, "size", "talla"));
+    setMinPrice(readParam(searchParams, "minPrice", "precioMin"));
+    setMaxPrice(readParam(searchParams, "maxPrice", "precioMax"));
+  }, [searchParams]);
 
   // Actualiza la URL con todos los filtros
   const updateURL = (paramsObj: Record<string, string>) => {
-    console.log("🔍 Aplicando filtros:", paramsObj);
     const params = new URLSearchParams(
-      searchParams ? searchParams.toString() : ""
+      searchParams ? searchParams.toString() : "",
     );
-    // Limpiar todos los filtros anteriores
-    ["genero", "precioMin", "precioMax", "talla", "search", "page"].forEach(
-      (key) => params.delete(key)
-    );
-    // Agregar los nuevos filtros
+
+    FILTER_KEYS.forEach((key) => params.delete(key));
+
     Object.entries(paramsObj).forEach(([key, value]) => {
       if (value && value.trim()) {
         params.set(key, value.trim());
-        console.log(`✅ Filtro ${key}: ${value.trim()}`);
       }
     });
-    params.set("page", "1"); // Reiniciar paginación
+
+    params.set("page", "1");
     const newUrl = `${pathname}?${params.toString()}`;
-    console.log("🔗 Nueva URL:", newUrl);
     router.push(newUrl);
 
-    // Cerrar el modal si estamos en móvil
     onFilterApply?.();
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    updateURL({ genero, precioMin, precioMax, talla, search });
+    updateURL({
+      search,
+      category,
+      genre,
+      size,
+      minPrice,
+      maxPrice,
+    });
   };
 
   return (
@@ -87,12 +127,20 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
                   e.preventDefault();
                   if (
                     search.trim() ||
-                    genero ||
-                    precioMin ||
-                    precioMax ||
-                    talla
+                    category ||
+                    genre ||
+                    minPrice ||
+                    maxPrice ||
+                    size
                   ) {
-                    updateURL({ genero, precioMin, precioMax, talla, search });
+                    updateURL({
+                      search,
+                      category,
+                      genre,
+                      size,
+                      minPrice,
+                      maxPrice,
+                    });
                   }
                 }
               }}
@@ -100,7 +148,7 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
                          focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-300
                          text-sm placeholder-gray-400
                          transition-colors"
-              placeholder="Buscar por nombre o descripción..."
+              placeholder="Buscar por nombre..."
             />
             <button
               type="button"
@@ -118,10 +166,11 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
                 e.preventDefault();
                 if (
                   !search.trim() &&
-                  !genero &&
-                  !precioMin &&
-                  !precioMax &&
-                  !talla
+                  !category &&
+                  !genre &&
+                  !minPrice &&
+                  !maxPrice &&
+                  !size
                 ) {
                   alert("Por favor, ingresa algún criterio de búsqueda");
                   return;
@@ -129,8 +178,14 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
 
                 setIsSearching(true);
                 try {
-                  updateURL({ genero, precioMin, precioMax, talla, search });
-                  // Simular pequeño delay para feedback visual
+                  updateURL({
+                    search,
+                    category,
+                    genre,
+                    size,
+                    minPrice,
+                    maxPrice,
+                  });
                   setTimeout(() => setIsSearching(false), 800);
                 } catch (error) {
                   setIsSearching(false);
@@ -147,73 +202,111 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
           </div>
         </div>
 
-        {/* Género */}
         <div>
           <label
-            htmlFor="genero"
+            htmlFor="category"
             className="block text-sm font-medium text-gray-700 mb-2"
           >
-            👶 Género
+            🧩 Categoría
           </label>
           <select
-            id="genero"
-            value={genero}
-            onChange={(e) => setGenero(e.target.value)}
+            id="category"
+            value={category}
+            onChange={(e) => {
+              const nextCategory = e.target.value;
+              const nextGenre =
+                nextCategory && nextCategory !== ProductCategory.ROPA
+                  ? ""
+                  : genre;
+              const nextSize =
+                nextCategory && nextCategory !== ProductCategory.ROPA
+                  ? ""
+                  : size;
+
+              setCategory(nextCategory);
+              setGenre(nextGenre);
+              setSize(nextSize);
+
+              updateURL({
+                search,
+                category: nextCategory,
+                genre: nextGenre,
+                size: nextSize,
+                minPrice,
+                maxPrice,
+              });
+            }}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg 
                        focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-300
                        text-sm bg-white
                        transition-colors"
           >
+            <option value="">Todas las categorías</option>
+            <option value={ProductCategory.ROPA}>Ropa</option>
+            <option value={ProductCategory.JUGUETE}>Juguetes</option>
+            <option value={ProductCategory.ACCESORIO}>Accesorios</option>
+            <option value={ProductCategory.ALIMENTACION}>Alimentación</option>
+          </select>
+        </div>
+
+        {/* Género */}
+        <div>
+          <label
+            htmlFor="genre"
+            className="block text-sm font-medium text-gray-700 mb-2"
+          >
+            👶 Género
+          </label>
+          <select
+            id="genre"
+            value={genre}
+            onChange={(e) => setGenre(e.target.value)}
+            disabled={!isClothingFilter}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg 
+                       focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-300
+                       text-sm bg-white disabled:bg-gray-100 disabled:text-gray-400
+                       transition-colors"
+          >
             <option value="">Todos los géneros</option>
-            <option value="NINO">Niño 👦</option>
-            <option value="NINA">Niña 👧</option>
-            <option value="UNISEX">Unisex 👶</option>
+            <option value={Genre.NINO}>Niño 👦</option>
+            <option value={Genre.NINA}>Niña 👧</option>
+            <option value={Genre.UNISEX}>Unisex 👶</option>
           </select>
         </div>
         {/* Talla */}
         <div>
           <label
-            htmlFor="talla"
+            htmlFor="size"
             className="block text-sm font-medium text-gray-700 mb-2"
           >
             📏 Talla
           </label>
           <select
-            id="talla"
-            value={talla}
+            id="size"
+            value={size}
+            disabled={!isClothingFilter}
             onChange={(e) => {
-              const newTalla = e.target.value;
-              if (newTalla !== talla) {
-                setTalla(newTalla);
+              const nextSize = e.target.value;
+              if (nextSize !== size) {
+                setSize(nextSize);
                 updateURL({
-                  genero,
-                  precioMin,
-                  precioMax,
-                  talla: newTalla,
                   search,
+                  category,
+                  genre,
+                  size: nextSize,
+                  minPrice,
+                  maxPrice,
                 });
               }
             }}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-300 text-sm bg-white transition-colors"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-300 text-sm bg-white disabled:bg-gray-100 disabled:text-gray-400 transition-colors"
           >
             <option value="">Todas las tallas</option>
-            <option value="RN">RN (Recién nacido)</option>
-            <option value="3M">3M</option>
-            <option value="6M">6M</option>
-            <option value="9M">9M</option>
-            <option value="12M">12M</option>
-            <option value="18M">18M</option>
-            <option value="24M">24M</option>
-            <option value="2T">2T</option>
-            <option value="3T">3T</option>
-            <option value="4T">4T</option>
-            <option value="5T">5T</option>
-            <option value="6T">6T</option>
-            <option value="7T">7T</option>
-            <option value="8T">8T</option>
-            <option value="9T">9T</option>
-            <option value="10T">10T</option>
-            <option value="12T">12T</option>
+            {Object.values(Size).map((option) => (
+              <option key={option} value={option}>
+                {formatSizeLabel(option)}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -225,18 +318,18 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label
-                htmlFor="precioMin"
+                htmlFor="minPrice"
                 className="block text-xs text-gray-600 mb-1"
               >
                 Mínimo
               </label>
               <input
-                id="precioMin"
+                id="minPrice"
                 type="number"
                 min="0"
                 step="0.01"
-                value={precioMin}
-                onChange={(e) => setPrecioMin(e.target.value)}
+                value={minPrice}
+                onChange={(e) => setMinPrice(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg 
                            focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-300
                            text-sm
@@ -246,18 +339,18 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
             </div>
             <div>
               <label
-                htmlFor="precioMax"
+                htmlFor="maxPrice"
                 className="block text-xs text-gray-600 mb-1"
               >
                 Máximo
               </label>
               <input
-                id="precioMax"
+                id="maxPrice"
                 type="number"
                 min="0"
                 step="0.01"
-                value={precioMax}
-                onChange={(e) => setPrecioMax(e.target.value)}
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg 
                            focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-300
                            text-sm
@@ -283,10 +376,12 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
           <button
             type="button"
             onClick={() => {
-              setGenero("");
-              setPrecioMin("");
-              setPrecioMax("");
               setSearch("");
+              setCategory("");
+              setGenre("");
+              setSize("");
+              setMinPrice("");
+              setMaxPrice("");
               updateURL({});
             }}
             className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg 

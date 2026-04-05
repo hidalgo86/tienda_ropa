@@ -7,7 +7,11 @@ import {
   UploadProduct,
   VariantProduct,
   ProductStatus,
+  Size,
+  Genre,
+  formatSizeLabel,
 } from "@/types/product.type";
+import { getProductById, updateProduct } from "@/services/products";
 
 const EditProductPage: React.FC = () => {
   const router = useRouter();
@@ -62,8 +66,7 @@ const EditProductPage: React.FC = () => {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    fetch(`/api/products/get/${id}`)
-      .then((res) => res.json())
+    getProductById(id)
       .then((data) => {
         setProduct(data);
         setForm({ ...data });
@@ -141,48 +144,62 @@ const EditProductPage: React.FC = () => {
       const nextStatus: ProductStatus =
         totalStock > 0 ? ProductStatus.DISPONIBLE : ProductStatus.AGOTADO;
 
-      let res: Response;
+      let nextImages = form.images;
       if (selectedFile) {
-        // Requiere oldImagePublicId para borrar en Cloudinary
-        const oldImagePublicId =
-          form.imagePublicId || product?.imagePublicId || "";
-        if (!oldImagePublicId) {
-          throw new Error("Falta el id de la imagen anterior");
-        }
-
-        const fd = new FormData();
-        fd.append("id", id);
-        fd.append("oldImagePublicId", oldImagePublicId);
-        fd.append("image", selectedFile);
-        if (form.name) fd.append("name", String(form.name));
-        if (form.genre) fd.append("genre", String(form.genre));
-        if (form.description !== undefined && form.description !== null) {
-          fd.append("description", String(form.description));
-        }
-        // Enviar status calculado por stock
-        fd.append("status", String(nextStatus));
-        if (normalizedVariants) {
-          fd.append("variants", JSON.stringify(normalizedVariants));
-        }
-
-        res = await fetch(`/api/products/update/${id}`, {
-          method: "PATCH",
-          body: fd,
-        });
-      } else {
-        res = await fetch(`/api/products/update/${id}`, {
-          method: "PATCH",
+        const signRes = await fetch("/api/cloudinary/sign", {
+          method: "POST",
           headers: { "Content-Type": "application/json" },
-          // Enviar status calculado por stock
-          body: JSON.stringify({
-            ...form,
-            variants: normalizedVariants,
-            status: nextStatus,
-            id,
-          }),
+          body: JSON.stringify({ folder: "products" }),
         });
+
+        const signData = await signRes.json().catch(() => null);
+        if (!signRes.ok || !signData?.signature) {
+          throw new Error(
+            signData?.error || "No se pudo obtener firma para subir imagen",
+          );
+        }
+
+        const uploadFormData = new FormData();
+        uploadFormData.append("file", selectedFile);
+        uploadFormData.append("api_key", String(signData.apiKey));
+        uploadFormData.append("timestamp", String(signData.timestamp));
+        uploadFormData.append("signature", String(signData.signature));
+        uploadFormData.append("folder", String(signData.folder || "products"));
+
+        const uploadRes = await fetch(
+          `https://api.cloudinary.com/v1_1/${signData.cloudName}/image/upload`,
+          {
+            method: "POST",
+            body: uploadFormData,
+          },
+        );
+
+        const uploadData = await uploadRes.json().catch(() => null);
+        if (
+          !uploadRes.ok ||
+          !uploadData?.secure_url ||
+          !uploadData?.public_id
+        ) {
+          throw new Error(
+            uploadData?.error?.message || "Error subiendo imagen",
+          );
+        }
+
+        nextImages = [
+          {
+            url: String(uploadData.secure_url),
+            publicId: String(uploadData.public_id),
+          },
+        ];
       }
-      if (!res.ok) throw new Error("Error al actualizar producto");
+
+      await updateProduct(id, {
+        ...form,
+        variants: normalizedVariants,
+        status: nextStatus,
+        images: nextImages,
+      });
+
       router.push("/dashboard/products");
     } catch (err) {
       setError(
@@ -199,13 +216,16 @@ const EditProductPage: React.FC = () => {
   if (!product)
     return <div className="py-10 text-center">Producto no encontrado</div>;
 
+  const currentImageUrl =
+    previewUrl || form.images?.[0]?.url || product.images?.[0]?.url || "";
+
   return (
     <div className="max-w-xl mx-auto py-8">
       <div className="flex justify-center mb-6">
         <div className="relative">
-          {previewUrl || form.imageUrl ? (
+          {currentImageUrl ? (
             <Image
-              src={previewUrl || String(form.imageUrl)}
+              src={currentImageUrl}
               alt={form.name || "Imagen del producto"}
               width={224}
               height={224}
@@ -341,9 +361,9 @@ const EditProductPage: React.FC = () => {
           required
         >
           <option value="">Selecciona un género</option>
-          <option value="NINA">Niña</option>
-          <option value="NINO">Niño</option>
-          <option value="UNISEX">Unisex</option>
+          <option value={Genre.NINA}>Niña</option>
+          <option value={Genre.NINO}>Niño</option>
+          <option value={Genre.UNISEX}>Unisex</option>
         </select>
 
         {/* Edición de variantes (tallas) */}
@@ -377,31 +397,13 @@ const EditProductPage: React.FC = () => {
                   required
                 >
                   <option value="">Talla</option>
-                  {[
-                    "RN",
-                    "M3",
-                    "M6",
-                    "M9",
-                    "M12",
-                    "M18",
-                    "M24",
-                    "T2",
-                    "T3",
-                    "T4",
-                    "T5",
-                    "T6",
-                    "T7",
-                    "T8",
-                    "T9",
-                    "T10",
-                    "T12",
-                  ].map((size) => {
+                  {Object.values(Size).map((size) => {
                     const isUsed = form.variants?.some(
                       (v, i) => v.size === size && i !== idx,
                     );
                     return (
                       <option key={size} value={size} disabled={isUsed}>
-                        {size}
+                        {formatSizeLabel(size)}
                       </option>
                     );
                   })}
@@ -578,25 +580,7 @@ const EditProductPage: React.FC = () => {
             onClick={() => {
               // Añadir una nueva variante con talla no usada
               const usedSizes = (form.variants || []).map((v) => v.size);
-              const allSizes = [
-                "RN",
-                "M3",
-                "M6",
-                "M9",
-                "M12",
-                "M18",
-                "M24",
-                "T2",
-                "T3",
-                "T4",
-                "T5",
-                "T6",
-                "T7",
-                "T8",
-                "T9",
-                "T10",
-                "T12",
-              ];
+              const allSizes = Object.values(Size);
               const availableSize = allSizes.find(
                 (size) => !usedSizes.includes(size as VariantProduct["size"]),
               );

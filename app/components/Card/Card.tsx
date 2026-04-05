@@ -5,7 +5,7 @@ import Image from "next/image";
 import { MdFavorite, MdFavoriteBorder, MdShoppingCart } from "react-icons/md";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { formatSizeLabel, ProductServer } from "@/types/product.type";
+import { ProductServer } from "@/types/product.type";
 import { RootState } from "@/store";
 import { toggleFavorite } from "@/store/slices/favoriteSlice";
 import { addToCart } from "@/store/slices/cartSlice";
@@ -19,7 +19,7 @@ export default function Card({ producto, priority = false }: CardProps) {
   const router = useRouter();
   const dispatch = useDispatch();
   const [imgSrc, setImgSrc] = useState(
-    producto.imageUrl ?? "/placeholder.webp",
+    producto.images?.[0]?.url ?? "/placeholder.webp",
   );
 
   // Verificar si el producto está en favoritos
@@ -37,12 +37,13 @@ export default function Card({ producto, priority = false }: CardProps) {
           null as number | null,
         )
     : null;
-  const sizesCsv = Array.isArray(variants)
-    ? variants
-        .map((v) => formatSizeLabel(v?.size))
-        .filter(Boolean)
-        .join(", ")
-    : "";
+  const directPrice = Number(producto.price ?? 0);
+  const finalPrice =
+    minPrice !== null
+      ? minPrice
+      : Number.isFinite(directPrice)
+        ? directPrice
+        : null;
 
   const handleClick = () => {
     if (producto.id) {
@@ -135,29 +136,15 @@ export default function Card({ producto, priority = false }: CardProps) {
             {producto.name ?? "Producto sin nombre"}
           </h3>
 
-          {/* Precio y tallas en filas separadas para evitar superposición */}
           <div className="space-y-1">
             <div className="flex justify-between items-center">
               <span
                 className="text-pink-500 font-bold 
                           text-sm sm:text-base lg:text-lg"
               >
-                {Number.isFinite(minPrice)
-                  ? `$${(minPrice as number).toFixed(2)}`
+                {finalPrice !== null
+                  ? `$${(finalPrice as number).toFixed(2)}`
                   : "N/A"}
-              </span>
-            </div>
-
-            <div className="text-right">
-              <span
-                className="text-gray-500 text-xs inline-block"
-                translate="no"
-              >
-                {sizesCsv
-                  ? `${sizesCsv.split(", ").slice(0, 3).join(", ")}${
-                      sizesCsv.split(", ").length > 3 ? "..." : ""
-                    }`
-                  : "Sin tallas"}
               </span>
             </div>
           </div>

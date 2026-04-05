@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { Product } from "@/types/product.type";
 import ProductDetailClient from "../../../products/[id]/ProductDetailClient";
+import { getProductById } from "@/services/products";
 
 interface DashboardProductDetailPageProps {
   params: Promise<{ id: string }>;
@@ -29,15 +30,10 @@ export default async function DashboardProductDetailPage({
           ? `https://${process.env.VERCEL_URL}`
           : "http://localhost:3000";
 
-    const res = await fetch(`${baseUrl}/api/products/get/${id}`, {
+    const producto: Product = await getProductById(id, {
+      baseUrl,
       cache: "no-store",
     });
-
-    if (!res.ok) {
-      return notFound();
-    }
-
-    const producto: Product | null = await res.json();
 
     if (!producto) {
       return notFound();

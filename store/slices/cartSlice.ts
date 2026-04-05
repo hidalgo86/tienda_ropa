@@ -41,9 +41,10 @@ const saveCartToStorage = (cartItems: CartItem[]): void => {
 const calculateTotals = (items: CartItem[]) => {
   const totalItems = items.reduce((total, item) => total + item.quantity, 0);
   const totalPrice = items.reduce((total, item) => {
-    const price = Array.isArray(item.variants)
-      ? item.variants.find((v) => v.size === item.selectedSize)?.price || 0
-      : 0;
+    const variantPrice = Array.isArray(item.variants)
+      ? item.variants.find((v) => v.size === item.selectedSize)?.price
+      : undefined;
+    const price = Number(variantPrice ?? item.price ?? 0);
     return total + Number(price) * item.quantity;
   }, 0);
 
@@ -70,7 +71,7 @@ const cartSlice = createSlice({
         quantity?: number;
         selectedSize?: string;
         selectedColor?: string;
-      }>
+      }>,
     ) => {
       const {
         product,
@@ -84,7 +85,7 @@ const cartSlice = createSlice({
         (item) =>
           item.id === product.id &&
           item.selectedSize === selectedSize &&
-          item.selectedColor === selectedColor
+          item.selectedColor === selectedColor,
       );
 
       if (existingItemIndex >= 0) {
@@ -116,7 +117,7 @@ const cartSlice = createSlice({
         productId: string;
         selectedSize?: string;
         selectedColor?: string;
-      }>
+      }>,
     ) => {
       const { productId, selectedSize, selectedColor } = action.payload;
 
@@ -126,7 +127,7 @@ const cartSlice = createSlice({
             item.id === productId &&
             item.selectedSize === selectedSize &&
             item.selectedColor === selectedColor
-          )
+          ),
       );
 
       // Recalcular totales
@@ -145,7 +146,7 @@ const cartSlice = createSlice({
         quantity: number;
         selectedSize?: string;
         selectedColor?: string;
-      }>
+      }>,
     ) => {
       const { productId, quantity, selectedSize, selectedColor } =
         action.payload;
@@ -154,7 +155,7 @@ const cartSlice = createSlice({
         (item) =>
           item.id === productId &&
           item.selectedSize === selectedSize &&
-          item.selectedColor === selectedColor
+          item.selectedColor === selectedColor,
       );
 
       if (itemIndex >= 0) {

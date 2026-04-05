@@ -129,13 +129,13 @@ export default function CartClient() {
             {/* Lista de productos */}
             <div className="lg:col-span-2 space-y-4">
               {items.map((item, index) => {
-                const itemPrice = Array.isArray(item.variants)
-                  ? Number(
-                      item.variants.find((v) => v.size === item.selectedSize)
-                        ?.price || 0,
-                    )
-                  : 0;
+                const variantPrice = Array.isArray(item.variants)
+                  ? item.variants.find((v) => v.size === item.selectedSize)
+                      ?.price
+                  : undefined;
+                const itemPrice = Number(variantPrice ?? item.price ?? 0);
                 const itemTotal = itemPrice * item.quantity;
+                const itemImage = item.images?.[0]?.url || "/placeholder.webp";
 
                 return (
                   <div
@@ -146,7 +146,7 @@ export default function CartClient() {
                       {/* Imagen del producto */}
                       <div className="w-full sm:w-24 h-32 sm:h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                         <Image
-                          src={item.imageUrl || "/placeholder.webp"}
+                          src={itemImage}
                           alt={item.name || "Producto"}
                           width={96}
                           height={96}

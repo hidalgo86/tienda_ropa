@@ -4,8 +4,33 @@ import Filtros from "../components/Filtros";
 import Navbar from "../../components/Navbar";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
-import { Product } from "@/types/product.type";
+import {
+  Product,
+  ProductStatus,
+  Size,
+  allowedSizes,
+  parseGenre,
+  parseProductCategory,
+} from "@/types/product.type";
 import FiltrosMobileButton from "./FiltrosMobileButton";
+import { listProducts } from "@/services/products";
+
+const readSingleParam = (
+  params: Record<string, string> | undefined,
+  ...keys: string[]
+) => {
+  for (const key of keys) {
+    const value = params?.[key];
+    if (typeof value === "string" && value.trim()) return value;
+  }
+  return "";
+};
+
+const parseOptionalNumber = (value: string) => {
+  if (!value.trim()) return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
+};
 
 export default async function ProductsClient({
   searchParams,
@@ -14,20 +39,23 @@ export default async function ProductsClient({
 }) {
   const params = await searchParams;
   const page = Number(params?.page) || 1;
-  const search = params?.search || "";
-  const minPrice = params?.precioMin ? Number(params.precioMin) : undefined;
-  const maxPrice = params?.precioMax ? Number(params.precioMax) : undefined;
-  const genre = params?.genero || "";
-
-  // Construir query params para la API interna
-  const paramsApi = new URLSearchParams();
-  paramsApi.append("page", String(page));
-  paramsApi.append("limit", "20");
-  paramsApi.append("status", "DISPONIBLE");
-  if (search) paramsApi.append("search", search);
-  if (genre) paramsApi.append("genre", genre);
-  if (minPrice !== undefined) paramsApi.append("minPrice", String(minPrice));
-  if (maxPrice !== undefined) paramsApi.append("maxPrice", String(maxPrice));
+  const search = readSingleParam(params, "search");
+  const minPrice = parseOptionalNumber(
+    readSingleParam(params, "minPrice", "precioMin"),
+  );
+  const maxPrice = parseOptionalNumber(
+    readSingleParam(params, "maxPrice", "precioMax"),
+  );
+  const parsedGenre = parseGenre(readSingleParam(params, "genre", "genero"));
+  const parsedCategory = parseProductCategory(
+    readSingleParam(params, "category"),
+  );
+  const sizeParam = readSingleParam(params, "size", "talla");
+  const sizes = sizeParam
+    ? [String(sizeParam).trim().toUpperCase() as Size].filter(
+        (size): size is Size => allowedSizes.has(size),
+      )
+    : undefined;
 
   const reqHeaders = await headers();
   const host = reqHeaders.get("x-forwarded-host") ?? reqHeaders.get("host");
@@ -41,13 +69,25 @@ export default async function ProductsClient({
         ? `https://${process.env.VERCEL_URL}`
         : "http://localhost:3000";
 
-  const res = await fetch(
-    `${baseUrl}/api/products/get?${paramsApi.toString()}`,
-  );
-
-  if (!res.ok) return notFound();
-
-  const data = await res.json();
+  let data;
+  try {
+    data = await listProducts(
+      {
+        page,
+        limit: 20,
+        status: ProductStatus.DISPONIBLE,
+        name: search || undefined,
+        category: parsedCategory ?? undefined,
+        genre: parsedGenre ?? undefined,
+        sizes,
+        minPrice,
+        maxPrice,
+      },
+      { baseUrl, cache: "no-store" },
+    );
+  } catch {
+    return notFound();
+  }
 
   const { items, totalPages } = data;
 
