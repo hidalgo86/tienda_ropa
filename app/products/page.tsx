@@ -1,3 +1,4 @@
+// src/app/products/page.tsx
 import ProductsClient from "./ProductsClient";
 
 interface ProductsPageProps {
@@ -5,7 +6,5 @@ interface ProductsPageProps {
 }
 
 export default function ProductsPage(props: ProductsPageProps) {
-  return <> 
-  <ProductsClient {...props} />;
-  </>
+  return <ProductsClient {...props} />;
 }

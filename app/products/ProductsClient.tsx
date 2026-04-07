@@ -1,3 +1,4 @@
+// src/app/products/ProductsClient.tsx
 import PublicListWrapper from "./PublicListWrapper";
 import Pagination from "./Pagination";
 import Filtros from "../components/Filtros";

@@ -1,3 +1,4 @@
+// src/app/products/[id]/ProductDetailClient.tsx
 "use client";
 
 import { useEffect, useState } from "react";

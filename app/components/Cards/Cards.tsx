@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
-import { Product, ProductServer } from "@/types/product.type";
+import { Product, ProductServer, ProductStatus } from "@/types/product.type";
 import ProductListPublic from "@/components/products/ProductListPublic";
 import { addToCart } from "@/store/slices/cartSlice";
 import { toggleFavorite } from "@/store/slices/favoriteSlice";
+import { listProducts } from "@/services/products";
 import Link from "next/link";
 
 export default function Cards() {
@@ -18,13 +19,12 @@ export default function Cards() {
     try {
       setLoading(true);
       setError(null);
-      // Consultar productos usando el endpoint API interno
-      const res = await fetch(
-        "/api/products/get?page=1&limit=20&status=DISPONIBLE",
-      );
-      if (!res.ok) throw new Error("Error al consultar productos");
-      const response = await res.json();
-      setProductos(response.items);
+      const response = await listProducts({
+        page: 1,
+        limit: 20,
+        status: ProductStatus.DISPONIBLE,
+      });
+      setProductos(response.items ?? []);
     } catch (err) {
       console.error("Error cargando productos:", err);
       setError("Error al cargar los productos");

@@ -1,5 +1,7 @@
+// src/app/products/[id]/page.tsx
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { Product } from "@/types/product.type";
+import { getProductById } from "@/services/products";
 import ProductDetailClient from "./ProductDetailClient";
 
 interface ProductPageProps {
@@ -9,23 +11,24 @@ interface ProductPageProps {
 export default async function ProductPage({ params }: ProductPageProps) {
   const { id } = await params;
 
-  if (!id) {
-    return notFound();
-  }
+  if (!id) return notFound();
 
   try {
-    // Consultar el producto usando el endpoint API interno
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_SITE_URL || ""}/api/products/get/${id}`
-    );
-    if (!res.ok) {
-      return notFound();
-    }
-    const producto: Product | null = await res.json();
+    const reqHeaders = await headers();
+    const host = reqHeaders.get("x-forwarded-host") ?? reqHeaders.get("host");
+    const protocol = reqHeaders.get("x-forwarded-proto") ?? "https";
+    const baseUrl = host
+      ? `${protocol}://${host}`
+      : process.env.NEXT_PUBLIC_SITE_URL
+        ? process.env.NEXT_PUBLIC_SITE_URL
+        : process.env.VERCEL_URL
+          ? `https://${process.env.VERCEL_URL}`
+          : "http://localhost:3000";
 
-    if (!producto) {
-      return notFound();
-    }
+    const producto = await getProductById(id, {
+      baseUrl,
+      cache: "no-store",
+    });
 
     return <ProductDetailClient producto={producto} />;
   } catch (error) {

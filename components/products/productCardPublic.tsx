@@ -44,7 +44,7 @@ const ProductCardPublic: React.FC<ProductCardPublicProps> = ({
     >
       {/* Imagen */}
       <Link
-        href={`/detalle?id=${product.id}`}
+        href={`/products/${product.id}`}
         className="w-full h-40 sm:h-48 bg-gray-100 flex items-center justify-center overflow-hidden relative"
         aria-label={`Ver detalle de ${product.name}`}
       >

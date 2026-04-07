@@ -1,3 +1,4 @@
+// src/app/products/Pagination.tsx
 "use client";
 
 import React from "react";

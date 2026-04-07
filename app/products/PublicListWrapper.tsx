@@ -1,3 +1,4 @@
+// src/app/products/PublicListWrapper.tsx
 "use client";
 
 import React from "react";
