@@ -1,12 +1,13 @@
 // src/app/dashboard/products/edit/[id]/page.tsx
 "use client";
 import React, { useEffect, useRef, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import {
   Product,
   UploadProduct,
   VariantProduct,
+  ProductStatus,
   ProductCategory,
   Size,
   Genre,
@@ -23,7 +24,13 @@ const MAX_IMAGES = 4;
 const EditProductPage: React.FC = () => {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const id = params?.id as string;
+  const rawReturnTo = searchParams.get("returnTo");
+  const returnTo =
+    rawReturnTo && rawReturnTo.startsWith("/dashboard/products")
+      ? rawReturnTo
+      : "/dashboard/products";
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -180,12 +187,16 @@ const EditProductPage: React.FC = () => {
         throw new Error("Agrega al menos una imagen");
       }
 
+      const { status: formStatus, ...formWithoutStatus } = form;
       const payload: Partial<UploadProduct> = {
-        ...form,
+        ...formWithoutStatus,
         name: String(form.name || "").trim(),
         description: form.description ? String(form.description) : undefined,
         category: resolvedCategory,
         images: nextImages,
+        ...(formStatus === ProductStatus.ELIMINADO
+          ? { status: formStatus }
+          : {}),
       };
 
       if (resolvedCategory === ProductCategory.ROPA) {
@@ -252,7 +263,7 @@ const EditProductPage: React.FC = () => {
 
       await updateProduct(id, payload);
 
-      router.push("/dashboard/products");
+      router.push(returnTo);
     } catch (err) {
       setError(
         err instanceof Error
@@ -279,7 +290,7 @@ const EditProductPage: React.FC = () => {
     <div className="max-w-xl mx-auto py-8">
       <button
         type="button"
-        onClick={() => router.push("/dashboard/products")}
+        onClick={() => router.push(returnTo)}
         className="flex items-center gap-2 text-gray-600 hover:text-pink-500 transition-colors mb-4"
       >
         <span aria-hidden="true">←</span>

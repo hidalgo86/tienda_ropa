@@ -128,16 +128,11 @@ export async function PATCH(
       }
     }
 
-    // ===== Ajustar status según stock =====
-    let finalStatus = status;
-    if (typedVariants) {
-      const totalStock = typedVariants.reduce(
-        (sum, v) => sum + (v.stock || 0),
-        0,
-      );
-      finalStatus =
-        totalStock > 0 ? ProductStatus.DISPONIBLE : ProductStatus.AGOTADO;
-    }
+    const statusToForward = Object.values(ProductStatus).includes(
+      status as ProductStatus,
+    )
+      ? (status as ProductStatus)
+      : undefined;
 
     // ===== Preparar input para GraphQL =====
     const input: Partial<UploadProduct> = {
@@ -149,7 +144,7 @@ export async function PATCH(
       stock,
       price,
       genre: parsedGenre,
-      status: finalStatus,
+      status: statusToForward,
     };
 
     if (Object.keys(input).length === 0) {

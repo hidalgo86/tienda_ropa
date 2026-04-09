@@ -160,7 +160,11 @@ const ProductsContent: React.FC = () => {
 
   // Función para editar producto (redirecciona a la página de edición)
   const handleEdit = (id: string) => {
-    router.push(`/dashboard/products/edit/${id}`);
+    const currentQuery = searchParams.toString();
+    const returnTo = `${pathname}${currentQuery ? `?${currentQuery}` : ""}`;
+    router.push(
+      `/dashboard/products/edit/${id}?returnTo=${encodeURIComponent(returnTo)}`,
+    );
   };
 
   const handleStatusChange = (value: ProductStatus) => {
