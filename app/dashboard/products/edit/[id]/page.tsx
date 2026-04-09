@@ -7,7 +7,6 @@ import {
   Product,
   UploadProduct,
   VariantProduct,
-  ProductStatus,
   ProductCategory,
   Size,
   Genre,
@@ -229,8 +228,6 @@ const EditProductPage: React.FC = () => {
         payload.variants = normalizedVariants;
         payload.stock = undefined;
         payload.price = undefined;
-        payload.status =
-          totalStock > 0 ? ProductStatus.DISPONIBLE : ProductStatus.AGOTADO;
       } else {
         const nextStock = Number(form.stock ?? product?.stock);
         const nextPrice = Number(form.price ?? product?.price);
@@ -251,8 +248,6 @@ const EditProductPage: React.FC = () => {
         payload.variants = undefined;
         payload.stock = nextStock;
         payload.price = nextPrice;
-        payload.status =
-          nextStock > 0 ? ProductStatus.DISPONIBLE : ProductStatus.AGOTADO;
       }
 
       await updateProduct(id, payload);
