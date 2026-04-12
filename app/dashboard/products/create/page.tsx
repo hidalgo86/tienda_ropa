@@ -4,8 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   CreateProduct,
-  getCategoryOptionById,
-  getCategoryOptionByValue,
+  resolveCategoryOption,
   VariantProduct,
   Size,
   Genre,
@@ -87,9 +86,7 @@ const CreateProductPage: React.FC = () => {
   ) => {
     const { name, value } = e.target;
     if (name === "categoryId") {
-      const selectedOption =
-        getCategoryOptionById(value, categoryOptions) ||
-        getCategoryOptionByValue(value, categoryOptions);
+      const selectedOption = resolveCategoryOption(value, categoryOptions);
       setForm((prev) => {
         if (selectedOption?.supportsGenre) {
           return {
@@ -133,8 +130,8 @@ const CreateProductPage: React.FC = () => {
       }
 
       const selectedCategory =
-        getCategoryOptionById(prev.categoryId, categoryOptions) ||
-        getCategoryOptionByValue(prev.category, categoryOptions);
+        resolveCategoryOption(prev.categoryId, categoryOptions) ||
+        resolveCategoryOption(prev.category, categoryOptions);
 
       if (selectedCategory) {
         const nextCategoryId = selectedCategory.categoryId;
@@ -397,8 +394,8 @@ const CreateProductPage: React.FC = () => {
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
   const selectedCategoryOption =
-    getCategoryOptionById(form.categoryId, categoryOptions) ||
-    getCategoryOptionByValue(form.category, categoryOptions);
+    resolveCategoryOption(form.categoryId, categoryOptions) ||
+    resolveCategoryOption(form.category, categoryOptions);
   const isClothingProduct = isClothingCategory(
     form.categoryId || form.category,
     categoryOptions,

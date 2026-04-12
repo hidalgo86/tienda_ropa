@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ADMIN_PRODUCT_FILTER_ALL,
   AdminProductFilter,
   Product,
+  ProductAvailability,
+  ProductState,
 } from "@/types/product.type";
 import { listProducts } from "@/services/products";
 
@@ -49,10 +50,20 @@ export const useAdminProducts = ({
       setError(null);
 
       try {
+        const state =
+          filter === ProductState.ELIMINADO
+            ? ProductState.ELIMINADO
+            : undefined;
+        const availability =
+          filter === ProductAvailability.DISPONIBLE ||
+          filter === ProductAvailability.AGOTADO
+            ? filter
+            : undefined;
+
         const data = await listProducts(
           {
-            availability:
-              filter === ADMIN_PRODUCT_FILTER_ALL ? undefined : filter,
+            state,
+            availability,
             page,
             limit,
             name: search.trim() || undefined,

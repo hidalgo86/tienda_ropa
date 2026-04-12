@@ -100,11 +100,10 @@ const getCategoryOptionsPool = (
   return legacyProductCategoryOptions;
 };
 
-export const getCategoryOptionByValue = (
-  value?: string | null,
+const findCategoryOptionByNormalizedValue = (
+  value: string,
   options?: ProductCategoryOption[],
 ): ProductCategoryOption | null => {
-  if (!value) return null;
   const normalizedValue = normalizeCategoryLookupValue(String(value));
   return (
     getCategoryOptionsPool(options).find(
@@ -113,6 +112,14 @@ export const getCategoryOptionByValue = (
         normalizeCategoryLookupValue(option.label) === normalizedValue,
     ) || null
   );
+};
+
+export const getCategoryOptionByValue = (
+  value?: string | null,
+  options?: ProductCategoryOption[],
+): ProductCategoryOption | null => {
+  if (!value) return null;
+  return findCategoryOptionByNormalizedValue(value, options);
 };
 
 export const getCategoryOptionById = (
@@ -127,25 +134,29 @@ export const getCategoryOptionById = (
   );
 };
 
+export const resolveCategoryOption = (
+  value?: string | null,
+  options?: ProductCategoryOption[],
+): ProductCategoryOption | null => {
+  if (!value) return null;
+  return (
+    getCategoryOptionById(value, options) ||
+    findCategoryOptionByNormalizedValue(value, options)
+  );
+};
+
 export const isClothingCategory = (
   value?: string | null,
   options?: ProductCategoryOption[],
 ): boolean => {
-  return (
-    getCategoryOptionById(value, options)?.supportsGenre ||
-    getCategoryOptionByValue(value, options)?.supportsGenre ||
-    false
-  );
+  return resolveCategoryOption(value, options)?.supportsGenre || false;
 };
 
 export const resolveCategoryIdFromCategory = (
   value?: string | null,
   options?: ProductCategoryOption[],
 ): string | undefined => {
-  return (
-    getCategoryOptionById(value, options)?.categoryId ||
-    getCategoryOptionByValue(value, options)?.categoryId
-  );
+  return resolveCategoryOption(value, options)?.categoryId;
 };
 
 export const parseProductCategory = (
@@ -188,21 +199,6 @@ export const parseProductAvailability = (
     .trim()
     .toLowerCase() as ProductAvailability;
   return allowedAvailabilities.has(normalized) ? normalized : null;
-};
-
-export type ProductAvailabilityFilter =
-  | ProductAvailability
-  | ProductState.ELIMINADO;
-
-export const parseProductAvailabilityFilter = (
-  availability?: string | ProductAvailabilityFilter | null,
-): ProductAvailabilityFilter | null => {
-  if (!availability) return null;
-  const normalized = String(availability).trim().toLowerCase();
-  if (normalized === ProductState.ELIMINADO) {
-    return ProductState.ELIMINADO;
-  }
-  return parseProductAvailability(normalized);
 };
 
 // Alias de compatibilidad para la UI vieja.
@@ -403,10 +399,9 @@ export interface ProductFiltersModel {
   minPrice?: number;
   maxPrice?: number;
   state?: ProductState;
-  availability?: ProductAvailabilityFilter;
+  availability?: ProductAvailability;
   category?: string;
   sizes?: Size[];
-  status?: ProductStatus;
 }
 
 export interface PaginationModel {
@@ -431,10 +426,9 @@ export interface ProductSearchFilters {
   minPrice?: number;
   maxPrice?: number;
   state?: ProductState;
-  availability?: ProductAvailabilityFilter;
+  availability?: ProductAvailability;
   category?: string;
   sizes?: Size[];
-  status?: ProductStatus;
 }
 
 export interface CreateProduct {
@@ -472,7 +466,8 @@ export interface UploadProduct {
 export const ADMIN_PRODUCT_FILTER_ALL = "all";
 
 export type AdminProductFilter =
-  | ProductAvailabilityFilter
+  | ProductAvailability
+  | ProductState.ELIMINADO
   | typeof ADMIN_PRODUCT_FILTER_ALL;
 
 export const getVariantName = (
@@ -511,7 +506,7 @@ export const parseAdminProductFilter = (
   if (value === ADMIN_PRODUCT_FILTER_ALL) {
     return ADMIN_PRODUCT_FILTER_ALL;
   }
-  const parsedAvailability = parseProductAvailabilityFilter(value);
+  const parsedAvailability = parseProductAvailability(value);
   if (parsedAvailability) {
     return parsedAvailability;
   }
@@ -532,9 +527,12 @@ export const getProductCategoryLabel = (
   options?: ProductCategoryOption[],
 ): string => {
   if (!product) return "";
+  const resolvedCategory =
+    resolveCategoryOption(product.categoryId, options) ||
+    resolveCategoryOption(product.category, options);
+
   return (
-    getCategoryOptionById(product.categoryId, options)?.label ||
-    getCategoryOptionByValue(product.category, options)?.label ||
+    resolvedCategory?.label ||
     (parseProductCategory(product.category)
       ? legacyCategoryLabels[
           parseProductCategory(product.category) as ProductCategory
@@ -550,6 +548,37 @@ export const hasProductVariants = (
   product?: Pick<Product, "variants"> | null,
 ): boolean => {
   return Array.isArray(product?.variants) && product.variants.length > 0;
+};
+
+export const isVariantProduct = hasProductVariants;
+
+export const getProductPrices = (
+  product?: Pick<Product, "variants" | "price"> | null,
+): number[] => {
+  if (!product) return [];
+
+  if (hasProductVariants(product)) {
+    return (product.variants ?? [])
+      .map((variant) => Number(variant.price))
+      .filter((price) => Number.isFinite(price));
+  }
+
+  return [Number(product.price)].filter((price) => Number.isFinite(price));
+};
+
+export const getProductStock = (
+  product?: Pick<Product, "variants" | "stock"> | null,
+): number => {
+  if (!product) return 0;
+
+  if (hasProductVariants(product)) {
+    return (product.variants ?? []).reduce(
+      (total, variant) => total + Math.max(0, Number(variant.stock) || 0),
+      0,
+    );
+  }
+
+  return Math.max(0, Number(product.stock) || 0);
 };
 
 export const findVariantBySelection = (

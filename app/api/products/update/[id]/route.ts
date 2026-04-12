@@ -5,13 +5,12 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   Genre,
   parseProductState,
-  ProductState,
   UploadProduct,
   VariantProduct,
-  ProductStatus,
   getVariantName,
   parseGenre,
 } from "@/types/product.type";
+import { toGraphqlGenre, toGraphqlState } from "@/lib/graphqlMappers";
 import { normalizeProduct } from "../../normalizeProduct";
 
 interface GraphqlError {
@@ -76,22 +75,6 @@ const getGraphqlErrorMessage = (errors?: GraphqlError[]): string => {
   return messages.join(". ") || "Error backend";
 };
 
-const toGraphqlGenre = (
-  genre?: Genre,
-): "NINA" | "NINO" | "UNISEX" | undefined => {
-  if (!genre) return undefined;
-  if (genre === Genre.NINA) return "NINA";
-  if (genre === Genre.NINO) return "NINO";
-  return "UNISEX";
-};
-
-const toGraphqlState = (
-  state?: ProductState,
-): "ACTIVO" | "ELIMINADO" | undefined => {
-  if (!state) return undefined;
-  return state === ProductState.ACTIVO ? "ACTIVO" : "ELIMINADO";
-};
-
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -105,7 +88,6 @@ export async function PATCH(
     const {
       images,
       variants,
-      status,
       state,
       name,
       description,
@@ -176,19 +158,6 @@ export async function PATCH(
 
     const normalizedState = parseProductState(state) ?? undefined;
 
-    const statusToForward = Object.values(ProductStatus).includes(
-      status as ProductStatus,
-    )
-      ? (status as ProductStatus)
-      : undefined;
-    const stateToForward =
-      normalizedState ||
-      (statusToForward === ProductStatus.ELIMINADO
-        ? ProductState.ELIMINADO
-        : statusToForward
-          ? ProductState.ACTIVO
-          : undefined);
-
     // ===== Preparar input para GraphQL =====
     const input: Record<string, unknown> = {
       name,
@@ -201,7 +170,7 @@ export async function PATCH(
       stock,
       price,
       genre: toGraphqlGenre(parsedGenre),
-      state: toGraphqlState(stateToForward),
+      state: toGraphqlState(normalizedState),
     };
 
     if (Object.keys(input).length === 0) {

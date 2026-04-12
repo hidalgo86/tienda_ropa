@@ -114,7 +114,6 @@ export const listProducts = async (
   if (params.category) query.set("category", params.category);
   if (params.categoryId) query.set("categoryId", params.categoryId);
   if (params.genre) query.set("genre", String(params.genre));
-  if (params.status) query.set("status", params.status);
   if (params.state) query.set("state", params.state);
   if (params.availability) query.set("availability", params.availability);
   if (typeof params.minPrice === "number") {

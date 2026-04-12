@@ -4,10 +4,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import {
-  getCategoryOptionById,
-  getCategoryOptionByValue,
   legacyProductCategoryOptions,
   Product,
+  ProductState,
   UploadProduct,
   VariantProduct,
   ProductStatus,
@@ -18,6 +17,7 @@ import {
   getVariantName,
   hasProductVariants,
   isClothingCategory,
+  resolveCategoryOption,
 } from "@/types/product.type";
 import {
   getProductById,
@@ -85,8 +85,8 @@ const EditProductPage: React.FC = () => {
     getProductById(id)
       .then((data) => {
         const inferredCategory =
-          getCategoryOptionByValue(data.category, categoryOptions)?.value ||
-          getCategoryOptionById(data.categoryId, categoryOptions)?.value;
+          resolveCategoryOption(data.categoryId, categoryOptions)?.value ||
+          resolveCategoryOption(data.category, categoryOptions)?.value;
         setProduct(data);
         setForm({
           ...data,
@@ -165,9 +165,7 @@ const EditProductPage: React.FC = () => {
     const { name, value } = e.target;
 
     if (name === "categoryId") {
-      const selectedOption =
-        getCategoryOptionById(value, categoryOptions) ||
-        getCategoryOptionByValue(value, categoryOptions);
+      const selectedOption = resolveCategoryOption(value, categoryOptions);
 
       setForm((prev) => ({
         ...prev,
@@ -228,7 +226,7 @@ const EditProductPage: React.FC = () => {
         categoryId: resolvedCategoryId,
         images: nextImages,
         ...(formStatus === ProductStatus.ELIMINADO
-          ? { status: formStatus }
+          ? { state: ProductState.ELIMINADO }
           : {}),
       };
 
@@ -314,12 +312,12 @@ const EditProductPage: React.FC = () => {
     return <div className="py-10 text-center">Producto no encontrado</div>;
 
   const inferredCategory =
-    getCategoryOptionByValue(form.category ?? product.category, categoryOptions)
-      ?.value ||
-    getCategoryOptionById(
+    resolveCategoryOption(
       form.categoryId ?? product.categoryId,
       categoryOptions,
-    )?.value;
+    )?.value ||
+    resolveCategoryOption(form.category ?? product.category, categoryOptions)
+      ?.value;
   const resolvedCategory = getProductCategoryLabel(
     {
       category: inferredCategory ?? form.category ?? product.category,

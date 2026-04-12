@@ -6,9 +6,8 @@ import {
   formatSizeLabel,
   Genre,
   isClothingCategory,
-  getCategoryOptionById,
-  getCategoryOptionByValue,
   legacyProductCategoryOptions,
+  resolveCategoryOption,
   Size,
 } from "@/types/product.type";
 import { useCategories } from "@/services/categories/useCategories";
@@ -226,9 +225,10 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
             value={categoryId}
             onChange={(e) => {
               const nextCategoryId = e.target.value;
-              const nextOption =
-                getCategoryOptionById(nextCategoryId, categoryOptions) ||
-                getCategoryOptionByValue(nextCategoryId, categoryOptions);
+              const nextOption = resolveCategoryOption(
+                nextCategoryId,
+                categoryOptions,
+              );
               const nextGenre =
                 nextCategoryId && !nextOption?.supportsGenre ? "" : genre;
               const nextSize =

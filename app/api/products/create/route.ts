@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
 import type { CreateProduct, VariantProduct } from "@/types/product.type";
 import { Genre, getVariantName, parseGenre } from "@/types/product.type";
+import { toGraphqlGenre } from "@/lib/graphqlMappers";
 import { normalizeProduct } from "../normalizeProduct";
 
 interface GraphqlError {
@@ -83,15 +84,6 @@ const isValidUrl = (value: string): boolean => {
   } catch {
     return false;
   }
-};
-
-const toGraphqlGenre = (
-  genre?: Genre,
-): "NINA" | "NINO" | "UNISEX" | undefined => {
-  if (!genre) return undefined;
-  if (genre === Genre.NINA) return "NINA";
-  if (genre === Genre.NINO) return "NINO";
-  return "UNISEX";
 };
 
 export async function POST(req: NextRequest) {
