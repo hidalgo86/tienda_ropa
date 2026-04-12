@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ProductServer } from "@/types/product.type";
+import { ProductServer, findVariantBySelection } from "@/types/product.type";
 
 interface CartItem extends ProductServer {
   quantity: number;
@@ -41,9 +41,10 @@ const saveCartToStorage = (cartItems: CartItem[]): void => {
 const calculateTotals = (items: CartItem[]) => {
   const totalItems = items.reduce((total, item) => total + item.quantity, 0);
   const totalPrice = items.reduce((total, item) => {
-    const variantPrice = Array.isArray(item.variants)
-      ? item.variants.find((v) => v.size === item.selectedSize)?.price
-      : undefined;
+    const variantPrice = findVariantBySelection(
+      item.variants,
+      item.selectedSize,
+    )?.price;
     const price = Number(variantPrice ?? item.price ?? 0);
     return total + Number(price) * item.quantity;
   }, 0);

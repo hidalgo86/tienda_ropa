@@ -1,6 +1,7 @@
 // src/types/product.type.ts
 
-// Categorías de producto
+// Categorías legacy del frontend.
+// El backend nuevo trabaja con categoryId, pero se conservan para la UI existente.
 export enum ProductCategory {
   ROPA = "ROPA",
   JUGUETE = "JUGUETE",
@@ -12,6 +13,141 @@ export const allowedCategories = new Set<ProductCategory>(
   Object.values(ProductCategory),
 );
 
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  parent?: string;
+}
+
+export interface ProductCategoryOption {
+  value: string;
+  label: string;
+  categoryId: string;
+  supportsGenre: boolean;
+}
+
+const legacyCategoryLabels: Record<ProductCategory, string> = {
+  [ProductCategory.ROPA]: "Ropa",
+  [ProductCategory.JUGUETE]: "Juguetes",
+  [ProductCategory.ACCESORIO]: "Accesorios",
+  [ProductCategory.ALIMENTACION]: "Alimentación",
+};
+
+export const legacyProductCategoryOptions: ProductCategoryOption[] = [
+  {
+    value: "ropa",
+    label: legacyCategoryLabels[ProductCategory.ROPA],
+    categoryId: "",
+    supportsGenre: true,
+  },
+  {
+    value: "juguete",
+    label: legacyCategoryLabels[ProductCategory.JUGUETE],
+    categoryId: "",
+    supportsGenre: false,
+  },
+  {
+    value: "accesorio",
+    label: legacyCategoryLabels[ProductCategory.ACCESORIO],
+    categoryId: "",
+    supportsGenre: false,
+  },
+  {
+    value: "alimentacion",
+    label: legacyCategoryLabels[ProductCategory.ALIMENTACION],
+    categoryId: "",
+    supportsGenre: false,
+  },
+];
+
+const normalizeCategoryLookupValue = (value: string): string =>
+  value
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+export const buildProductCategoryOptions = (
+  categories?: Category[],
+): ProductCategoryOption[] => {
+  if (!Array.isArray(categories) || categories.length === 0) {
+    return [];
+  }
+
+  return categories
+    .filter(
+      (category) =>
+        Boolean(category?.id?.trim()) &&
+        Boolean(category?.name?.trim()) &&
+        Boolean(category?.slug?.trim()),
+    )
+    .map((category) => ({
+      value: category.slug,
+      label: category.name,
+      categoryId: category.id,
+      supportsGenre: normalizeCategoryLookupValue(category.slug) === "ropa",
+    }));
+};
+
+const getCategoryOptionsPool = (
+  options?: ProductCategoryOption[],
+): ProductCategoryOption[] => {
+  const dynamicOptions = Array.isArray(options) ? options : [];
+  if (dynamicOptions.length > 0) {
+    return dynamicOptions;
+  }
+  return legacyProductCategoryOptions;
+};
+
+export const getCategoryOptionByValue = (
+  value?: string | null,
+  options?: ProductCategoryOption[],
+): ProductCategoryOption | null => {
+  if (!value) return null;
+  const normalizedValue = normalizeCategoryLookupValue(String(value));
+  return (
+    getCategoryOptionsPool(options).find(
+      (option) =>
+        normalizeCategoryLookupValue(option.value) === normalizedValue ||
+        normalizeCategoryLookupValue(option.label) === normalizedValue,
+    ) || null
+  );
+};
+
+export const getCategoryOptionById = (
+  categoryId?: string | null,
+  options?: ProductCategoryOption[],
+): ProductCategoryOption | null => {
+  if (!categoryId) return null;
+  return (
+    getCategoryOptionsPool(options).find(
+      (option) => option.categoryId === categoryId,
+    ) || null
+  );
+};
+
+export const isClothingCategory = (
+  value?: string | null,
+  options?: ProductCategoryOption[],
+): boolean => {
+  return (
+    getCategoryOptionById(value, options)?.supportsGenre ||
+    getCategoryOptionByValue(value, options)?.supportsGenre ||
+    false
+  );
+};
+
+export const resolveCategoryIdFromCategory = (
+  value?: string | null,
+  options?: ProductCategoryOption[],
+): string | undefined => {
+  return (
+    getCategoryOptionById(value, options)?.categoryId ||
+    getCategoryOptionByValue(value, options)?.categoryId
+  );
+};
+
 export const parseProductCategory = (
   category?: string | ProductCategory | null,
 ): ProductCategory | null => {
@@ -20,11 +156,60 @@ export const parseProductCategory = (
   return allowedCategories.has(normalized) ? normalized : null;
 };
 
-// Estados de producto
+export enum ProductState {
+  ACTIVO = "activo",
+  ELIMINADO = "eliminado",
+}
+
+export const allowedStates = new Set<ProductState>(Object.values(ProductState));
+
+export const parseProductState = (
+  state?: string | ProductState | null,
+): ProductState | null => {
+  if (!state) return null;
+  const normalized = String(state).trim().toLowerCase() as ProductState;
+  return allowedStates.has(normalized) ? normalized : null;
+};
+
+export enum ProductAvailability {
+  DISPONIBLE = "disponible",
+  AGOTADO = "agotado",
+}
+
+export const allowedAvailabilities = new Set<ProductAvailability>(
+  Object.values(ProductAvailability),
+);
+
+export const parseProductAvailability = (
+  availability?: string | ProductAvailability | null,
+): ProductAvailability | null => {
+  if (!availability) return null;
+  const normalized = String(availability)
+    .trim()
+    .toLowerCase() as ProductAvailability;
+  return allowedAvailabilities.has(normalized) ? normalized : null;
+};
+
+export type ProductAvailabilityFilter =
+  | ProductAvailability
+  | ProductState.ELIMINADO;
+
+export const parseProductAvailabilityFilter = (
+  availability?: string | ProductAvailabilityFilter | null,
+): ProductAvailabilityFilter | null => {
+  if (!availability) return null;
+  const normalized = String(availability).trim().toLowerCase();
+  if (normalized === ProductState.ELIMINADO) {
+    return ProductState.ELIMINADO;
+  }
+  return parseProductAvailability(normalized);
+};
+
+// Alias de compatibilidad para la UI vieja.
 export enum ProductStatus {
-  DISPONIBLE = "DISPONIBLE",
-  AGOTADO = "AGOTADO",
-  ELIMINADO = "ELIMINADO",
+  DISPONIBLE = ProductAvailability.DISPONIBLE,
+  AGOTADO = ProductAvailability.AGOTADO,
+  ELIMINADO = ProductState.ELIMINADO,
 }
 
 export const allowedStatuses = new Set<ProductStatus>(
@@ -32,18 +217,27 @@ export const allowedStatuses = new Set<ProductStatus>(
 );
 
 export const parseProductStatus = (
-  status?: string | ProductStatus | null,
+  status?: string | ProductStatus | ProductState | ProductAvailability | null,
 ): ProductStatus | null => {
   if (!status) return null;
-  const normalized = String(status).trim().toUpperCase() as ProductStatus;
-  return allowedStatuses.has(normalized) ? normalized : null;
+  const normalized = String(status).trim().toLowerCase();
+  if (normalized === ProductState.ELIMINADO) {
+    return ProductStatus.ELIMINADO;
+  }
+  if (normalized === ProductAvailability.DISPONIBLE) {
+    return ProductStatus.DISPONIBLE;
+  }
+  if (normalized === ProductAvailability.AGOTADO) {
+    return ProductStatus.AGOTADO;
+  }
+  return null;
 };
 
-// Géneros para ropa
+// Géneros para ropa según backend.
 export enum Genre {
-  NINA = "NINA",
-  NINO = "NINO",
-  UNISEX = "UNISEX",
+  NINA = "niña",
+  NINO = "niño",
+  UNISEX = "unisex",
 }
 
 export const genreLabels: Record<Genre, string> = {
@@ -80,7 +274,7 @@ export const formatGenreLabel = (genre?: string | Genre | null): string => {
   return parsed ? genreLabels[parsed] : String(genre);
 };
 
-// Tallas para ropa
+// Tallas legacy. El backend ahora usa variants.name genérico.
 export enum Size {
   RN = "RN",
   M3 = "M3",
@@ -129,16 +323,25 @@ export const formatSizeLabel = (size?: string | Size | null): string => {
   return sizeLabels[normalized as Size] || String(size);
 };
 
-// Interfaces de producto
 export interface VariantProduct {
-  size: Size;
+  name: string;
   stock: number;
   price: number;
+  image?: string;
+  size?: Size | string;
 }
 
 export interface ProductImage {
   url: string;
   publicId: string;
+}
+
+export interface ProductStats {
+  views: number;
+  favorites: number;
+  cartAdds: number;
+  purchases: number;
+  searches: number;
 }
 
 export interface CloudinaryUploadSignature {
@@ -149,26 +352,31 @@ export interface CloudinaryUploadSignature {
   folder: string;
 }
 
-// Producto principal
 export interface Product {
   id: string;
+  sku?: string;
+  slug?: string;
+  categoryId?: string;
   name: string;
-  category: ProductCategory;
-  genre?: Genre;
   description?: string;
+  brand?: string;
+  thumbnail?: string;
+  genre?: Genre;
   variants?: VariantProduct[];
-  images: ProductImage[];
+  images?: ProductImage[];
   stock?: number;
   price?: number;
+  state?: ProductState;
+  availability?: ProductAvailability;
+  stats?: ProductStats;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+  category?: ProductCategory;
   status?: ProductStatus;
-  createdAt?: string;
-  updatedAt?: string;
 }
 
-// Producto desde backend para cliente/Redux
-export interface ProductServer extends Product {}
+export type ProductServer = Product;
 
-// Paginación
 export interface PaginatedProducts {
   items: Product[];
   total: number;
@@ -176,20 +384,35 @@ export interface PaginatedProducts {
   totalPages: number;
 }
 
-// Filtros y queries
+export enum ProductSortBy {
+  NEWEST = "newest",
+  OLDEST = "oldest",
+  PRICE_ASC = "price_asc",
+  PRICE_DESC = "price_desc",
+  NAME_ASC = "name_asc",
+  NAME_DESC = "name_desc",
+  MOST_PURCHASED = "most_purchased",
+  MOST_VIEWED = "most_viewed",
+}
+
 export interface ProductFiltersModel {
   name?: string;
-  category?: ProductCategory; // <--- agregado
+  categoryId?: string;
   genre?: Genre;
-  sizes?: Size[]; // <--- renombrado para coincidir con DTO Nest
+  variantNames?: string[];
   minPrice?: number;
   maxPrice?: number;
+  state?: ProductState;
+  availability?: ProductAvailabilityFilter;
+  category?: string;
+  sizes?: Size[];
   status?: ProductStatus;
 }
 
 export interface PaginationModel {
   page: number;
   limit: number;
+  sortBy?: ProductSortBy;
 }
 
 export interface ProductsQueryModel {
@@ -200,37 +423,139 @@ export interface ProductsQueryModel {
 export interface ProductSearchFilters {
   page?: number;
   limit?: number;
+  sortBy?: ProductSortBy;
   name?: string;
-  category?: ProductCategory;
+  categoryId?: string;
   genre?: Genre;
-  sizes?: Size[];
+  variantNames?: string[];
   minPrice?: number;
   maxPrice?: number;
+  state?: ProductState;
+  availability?: ProductAvailabilityFilter;
+  category?: string;
+  sizes?: Size[];
   status?: ProductStatus;
 }
 
-// Crear producto (frontend → backend)
 export interface CreateProduct {
+  categoryId: string;
   name: string;
-  category: ProductCategory;
   description?: string;
-  genre?: Genre; // solo ropa
-  variants?: VariantProduct[]; // solo ropa
-  images: ProductImage[]; // al menos 1
-  stock?: number; // solo no ropa
-  price?: number; // solo no ropa
+  brand?: string;
+  thumbnail?: string;
+  images?: ProductImage[];
+  genre?: Genre;
+  variants?: VariantProduct[];
+  stock?: number;
+  price?: number;
+  category?: string;
 }
 
-// Para subir producto en Redux/cliente
 export interface UploadProduct {
   id: string;
+  categoryId?: string;
   name?: string;
-  category?: ProductCategory;
   genre?: Genre;
   description?: string;
+  brand?: string;
+  thumbnail?: string;
   variants?: VariantProduct[];
   images?: ProductImage[];
   stock?: number;
   price?: number;
+  state?: ProductState;
+  availability?: ProductAvailability;
+  category?: string;
   status?: ProductStatus;
 }
+
+export const ADMIN_PRODUCT_FILTER_ALL = "all";
+
+export type AdminProductFilter =
+  | ProductAvailabilityFilter
+  | typeof ADMIN_PRODUCT_FILTER_ALL;
+
+export const getVariantName = (
+  variant?: string | Pick<VariantProduct, "name" | "size"> | null,
+): string => {
+  if (!variant) return "";
+  if (typeof variant === "string") return variant;
+  return variant.name || String(variant.size || "");
+};
+
+export const formatVariantLabel = (
+  variant?: string | Pick<VariantProduct, "name" | "size"> | null,
+): string => {
+  const value = getVariantName(variant);
+  return formatSizeLabel(value);
+};
+
+export const getProductStatus = (
+  product?: Pick<Product, "state" | "availability" | "status"> | null,
+): ProductStatus | null => {
+  if (!product) return null;
+  if (product.status) return parseProductStatus(product.status);
+  if (product.state === ProductState.ELIMINADO) {
+    return ProductStatus.ELIMINADO;
+  }
+  if (product.availability) {
+    return parseProductStatus(product.availability);
+  }
+  return null;
+};
+
+export const parseAdminProductFilter = (
+  value?: string | AdminProductFilter | null,
+): AdminProductFilter | null => {
+  if (!value) return null;
+  if (value === ADMIN_PRODUCT_FILTER_ALL) {
+    return ADMIN_PRODUCT_FILTER_ALL;
+  }
+  const parsedAvailability = parseProductAvailabilityFilter(value);
+  if (parsedAvailability) {
+    return parsedAvailability;
+  }
+
+  return parseProductState(value) === ProductState.ELIMINADO
+    ? ProductState.ELIMINADO
+    : null;
+};
+
+export const getProductStatusLabel = (
+  product?: Pick<Product, "state" | "availability" | "status"> | null,
+): string => {
+  return getProductStatus(product) || "";
+};
+
+export const getProductCategoryLabel = (
+  product?: (Pick<Product, "categoryId"> & { category?: string | null }) | null,
+  options?: ProductCategoryOption[],
+): string => {
+  if (!product) return "";
+  return (
+    getCategoryOptionById(product.categoryId, options)?.label ||
+    getCategoryOptionByValue(product.category, options)?.label ||
+    (parseProductCategory(product.category)
+      ? legacyCategoryLabels[
+          parseProductCategory(product.category) as ProductCategory
+        ]
+      : "") ||
+    product.category ||
+    product.categoryId ||
+    ""
+  );
+};
+
+export const hasProductVariants = (
+  product?: Pick<Product, "variants"> | null,
+): boolean => {
+  return Array.isArray(product?.variants) && product.variants.length > 0;
+};
+
+export const findVariantBySelection = (
+  variants: VariantProduct[] | undefined,
+  selection?: string,
+): VariantProduct | undefined => {
+  if (!Array.isArray(variants) || !selection) return undefined;
+  return variants.find((variant) => getVariantName(variant) === selection);
+};

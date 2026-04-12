@@ -5,7 +5,7 @@ import Image from "next/image";
 import { MdFavorite, MdFavoriteBorder, MdShoppingCart } from "react-icons/md";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { ProductServer } from "@/types/product.type";
+import { ProductServer, getVariantName } from "@/types/product.type";
 import { RootState } from "@/store";
 import { toggleFavorite } from "@/store/slices/favoriteSlice";
 import { addToCart } from "@/store/slices/cartSlice";
@@ -64,7 +64,7 @@ export default function Card({ producto, priority = false }: CardProps) {
     // Obtener la primera talla disponible si existe
     const firstSize =
       Array.isArray(variants) && variants.length > 0
-        ? variants[0]?.size
+        ? getVariantName(variants[0])
         : undefined;
 
     dispatch(

@@ -7,13 +7,13 @@ import { toggleFavorite, clearFavorites } from "@/store/slices/favoriteSlice";
 import { addToCart } from "@/store/slices/cartSlice";
 import Navbar from "../../components/Navbar";
 import ProductListPublic from "@/components/products/ProductListPublic";
-import { ProductServer, Product } from "@/types/product.type";
+import { ProductServer, Product, getVariantName } from "@/types/product.type";
 import { MdDeleteSweep } from "react-icons/md";
 
 export default function FavoritesClient() {
   const dispatch = useDispatch();
   const favoriteItems = useSelector(
-    (state: RootState) => state.favorites.items
+    (state: RootState) => state.favorites.items,
   );
 
   const handleFavorite = (productId: string) => {
@@ -26,15 +26,15 @@ export default function FavoritesClient() {
     const producto = favoriteItems.find((p) => p.id === productId);
     if (!producto) return;
     const variants = producto.variants || [];
-    const size =
-      variants.find((v) => (v.stock || 0) > 0)?.size || variants[0]?.size;
-    if (!size) return;
+    const selectedVariant =
+      variants.find((v) => (v.stock || 0) > 0) || variants[0];
+    const variantName = getVariantName(selectedVariant);
     dispatch(
       addToCart({
         product: producto as ProductServer,
         quantity: 1,
-        selectedSize: String(size),
-      })
+        selectedSize: variantName || undefined,
+      }),
     );
   };
 

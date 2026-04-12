@@ -6,11 +6,17 @@ import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import Image from "next/image";
 import {
+  findVariantBySelection,
   formatGenreLabel,
-  formatSizeLabel,
-  ProductCategory,
+  formatVariantLabel,
+  getProductCategoryLabel,
+  getProductStatusLabel,
+  getVariantName,
+  hasProductVariants,
+  legacyProductCategoryOptions,
   Product,
 } from "@/types/product.type";
+import { useCategories } from "@/services/categories/useCategories";
 import { RootState } from "@/store";
 import { addToCart } from "@/store/slices/cartSlice";
 import { toggleFavorite } from "@/store/slices/favoriteSlice";
@@ -40,7 +46,11 @@ export default function ProductDetailClient({
   const [quantity, setQuantity] = useState(1);
   const [showAddedToCart, setShowAddedToCart] = useState(false);
   const isAdminMode = mode === "admin";
-  const isRopa = producto.category === ProductCategory.ROPA;
+  const isRopa = hasProductVariants(producto) || Boolean(producto.genre);
+  const { options } = useCategories();
+  const categoryOptions = options.length
+    ? options
+    : legacyProductCategoryOptions;
 
   const images =
     Array.isArray(producto.images) && producto.images.length > 0
@@ -58,8 +68,8 @@ export default function ProductDetailClient({
     setSelectedImageIndex(0);
     if (isRopa && producto.variants && producto.variants.length > 0) {
       const firstAvailableSize =
-        producto.variants.find((v) => (v.stock || 0) > 0)?.size ||
-        producto.variants[0]?.size ||
+        getVariantName(producto.variants.find((v) => (v.stock || 0) > 0)) ||
+        getVariantName(producto.variants[0]) ||
         "";
       setSelectedSize(firstAvailableSize);
       return;
@@ -72,7 +82,7 @@ export default function ProductDetailClient({
     ? variants.reduce((sum, v) => sum + (Number(v?.stock) || 0), 0)
     : Number(producto.stock || 0);
   const currentVariant = isRopa
-    ? variants.find((v) => v.size === selectedSize)
+    ? findVariantBySelection(variants, selectedSize)
     : null;
   const displayPrice = isRopa
     ? (currentVariant?.price ??
@@ -86,6 +96,8 @@ export default function ProductDetailClient({
     ? currentVariant?.stock || 0
     : Number(producto.stock || 0);
   const displayGenre = formatGenreLabel(producto.genre);
+  const displayStatus = getProductStatusLabel(producto);
+  const displayCategory = getProductCategoryLabel(producto, categoryOptions);
 
   const handleAddToCart = () => {
     if (isRopa && !selectedSize) {
@@ -231,7 +243,7 @@ export default function ProductDetailClient({
                   </button>
                   <button
                     onClick={handleAddToCart}
-                    disabled={!selectedSize || availableStock === 0}
+                    disabled={(isRopa && !selectedSize) || availableStock === 0}
                     className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Agregar al carrito"
                     aria-label="Agregar al carrito"
@@ -253,15 +265,15 @@ export default function ProductDetailClient({
                   <span className="text-3xl font-bold text-pink-600">
                     ${Number(displayPrice || 0).toFixed(2)}
                   </span>
-                  {producto.status && (
+                  {displayStatus && (
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        producto.status.toLowerCase() === "disponible"
+                        displayStatus === "disponible"
                           ? "bg-green-100 text-green-800"
                           : "bg-red-100 text-red-800"
                       }`}
                     >
-                      {producto.status.toLowerCase()}
+                      {displayStatus}
                     </span>
                   )}
                 </div>
@@ -284,17 +296,25 @@ export default function ProductDetailClient({
                 <div>
                   <span className="font-medium text-gray-900">Categoría:</span>
                   <span className="ml-2 text-gray-600">
-                    {producto.category}
+                    {displayCategory || "Sin categoría"}
                   </span>
                 </div>
-                <div>
-                  <span className="font-medium text-gray-900">
-                    Stock total:
-                  </span>
-                  <span className="ml-2 text-gray-600">
-                    {totalStock} unidades
-                  </span>
-                </div>
+                {!isRopa && (
+                  <div>
+                    <span className="font-medium text-gray-900">Stock:</span>
+                    <span className="ml-2 text-gray-600">
+                      {totalStock} unidades
+                    </span>
+                  </div>
+                )}
+                {!isRopa && (
+                  <div>
+                    <span className="font-medium text-gray-900">Precio:</span>
+                    <span className="ml-2 text-gray-600">
+                      ${Number(displayPrice || 0).toFixed(2)}
+                    </span>
+                  </div>
+                )}
                 {isRopa && (
                   <div>
                     <span className="font-medium text-gray-900">Género:</span>
@@ -307,18 +327,19 @@ export default function ProductDetailClient({
               {isRopa && variants.length > 0 && (
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                    Tallas disponibles
+                    Variantes disponibles
                   </h3>
                   <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                     {variants.map((variant) => {
-                      const isSelected = selectedSize === variant.size;
+                      const variantName = getVariantName(variant);
+                      const isSelected = selectedSize === variantName;
                       const hasStock = (variant.stock || 0) > 0;
 
                       return (
                         <button
-                          key={variant.size}
+                          key={variantName}
                           onClick={() =>
-                            hasStock && setSelectedSize(variant.size)
+                            hasStock && setSelectedSize(variantName)
                           }
                           disabled={!hasStock}
                           className={`
@@ -332,7 +353,7 @@ export default function ProductDetailClient({
                             }
                           `}
                         >
-                          <div>{formatSizeLabel(variant.size)}</div>
+                          <div>{formatVariantLabel(variant)}</div>
                           <div className="text-xs text-gray-500">
                             {hasStock ? `(${variant.stock})` : "Agotado"}
                           </div>
@@ -346,7 +367,7 @@ export default function ProductDetailClient({
                       <div className="text-sm text-gray-600">
                         Talla seleccionada:{" "}
                         <span className="font-medium">
-                          {formatSizeLabel(selectedSize)}
+                          {formatVariantLabel(selectedSize)}
                         </span>{" "}
                         - Stock disponible:{" "}
                         <span className="font-medium">

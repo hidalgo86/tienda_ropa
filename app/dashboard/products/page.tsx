@@ -2,9 +2,12 @@
 import React, { Suspense, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
+  ADMIN_PRODUCT_FILTER_ALL,
+  AdminProductFilter,
   Product,
-  ProductStatus,
-  parseProductStatus,
+  ProductAvailability,
+  ProductState,
+  parseAdminProductFilter,
 } from "@/types/product.type";
 import ProductListAdmin from "@/components/products/ProductListAdmin";
 import Pagination from "@/components/Pagination";
@@ -21,13 +24,14 @@ const ProductsContent: React.FC = () => {
   const initialLimit = Number(searchParams.get("limit")) || 50;
   const initialPage = Math.max(1, Number(searchParams.get("page")) || 1);
   const initialSearch = searchParams.get("search") || "";
-  const initialStatus =
-    parseProductStatus(searchParams.get("status")) || ProductStatus.DISPONIBLE;
+  const initialFilter =
+    parseAdminProductFilter(searchParams.get("status")) ||
+    ADMIN_PRODUCT_FILTER_ALL;
   const [limit] = useState(initialLimit);
   const [page, setPage] = useState(initialPage);
   const [search, setSearch] = useState(initialSearch);
   const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
-  const [status, setStatus] = useState<ProductStatus>(initialStatus);
+  const [filter, setFilter] = useState<AdminProductFilter>(initialFilter);
 
   // Controla acciones por tarjeta para prevenir doble click en delete/restore
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -35,7 +39,7 @@ const ProductsContent: React.FC = () => {
   // Hook encargado de datos, loading, errores y refetch de productos
   const { products, setProducts, totalPages, loading, error, refetch } =
     useAdminProducts({
-      status,
+      filter,
       page,
       limit,
       search: debouncedSearch,
@@ -54,40 +58,34 @@ const ProductsContent: React.FC = () => {
     // (permite compartir link, refrescar y usar botón atrás)
     const params = new URLSearchParams();
     params.set("page", String(page));
-    params.set("status", status);
     params.set("limit", String(limit));
+    if (filter !== ADMIN_PRODUCT_FILTER_ALL) {
+      params.set("status", filter);
+    }
     if (debouncedSearch.trim()) {
       params.set("search", debouncedSearch.trim());
     }
 
-    const currentPage = Math.max(1, Number(searchParams.get("page")) || 1);
-    const currentStatus =
-      parseProductStatus(searchParams.get("status")) ||
-      ProductStatus.DISPONIBLE;
-    const currentLimit = Number(searchParams.get("limit")) || 50;
-    const currentSearch = searchParams.get("search") || "";
+    const nextQuery = params.toString();
+    const currentQuery = searchParams.toString();
 
-    const mustUpdate =
-      currentPage !== page ||
-      currentStatus !== status ||
-      currentLimit !== limit ||
-      currentSearch !== debouncedSearch.trim();
-
-    if (mustUpdate) {
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    if (currentQuery !== nextQuery) {
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
+        scroll: false,
+      });
     }
-  }, [page, status, limit, debouncedSearch, pathname, router, searchParams]);
+  }, [page, filter, limit, debouncedSearch, pathname, router, searchParams]);
 
   useEffect(() => {
     // Lee cambios de URL (ej. botón atrás/adelante) y actualiza estado local
     const nextPage = Math.max(1, Number(searchParams.get("page")) || 1);
     const nextStatus =
-      parseProductStatus(searchParams.get("status")) ||
-      ProductStatus.DISPONIBLE;
+      parseAdminProductFilter(searchParams.get("status")) ||
+      ADMIN_PRODUCT_FILTER_ALL;
     const nextSearch = searchParams.get("search") || "";
 
     setPage((prev) => (prev === nextPage ? prev : nextPage));
-    setStatus((prev) => (prev === nextStatus ? prev : nextStatus));
+    setFilter((prev) => (prev === nextStatus ? prev : nextStatus));
     setSearch((prev) => (prev === nextSearch ? prev : nextSearch));
     setDebouncedSearch((prev) => (prev === nextSearch ? prev : nextSearch));
   }, [searchParams]);
@@ -111,7 +109,7 @@ const ProductsContent: React.FC = () => {
     });
 
     try {
-      await updateProduct(id, { status: ProductStatus.ELIMINADO });
+      await updateProduct(id, { state: ProductState.ELIMINADO });
 
       // Refetch silencioso: valida consistencia sin mostrar spinner global
       await refetch({ silent: true }).catch(() => {
@@ -141,7 +139,7 @@ const ProductsContent: React.FC = () => {
     });
 
     try {
-      await updateProduct(id, { status: ProductStatus.DISPONIBLE });
+      await updateProduct(id, { state: ProductState.ACTIVO });
 
       // Refetch silencioso para evitar parpadeo de loading general
       await refetch({ silent: true }).catch(() => {
@@ -167,10 +165,10 @@ const ProductsContent: React.FC = () => {
     );
   };
 
-  const handleStatusChange = (value: ProductStatus) => {
+  const handleStatusChange = (value: AdminProductFilter) => {
     // Evitar re-fetch doble y resetear página
     setPage(1);
-    setStatus(value);
+    setFilter(value);
   };
 
   const handleSearchChange = (value: string) => {
@@ -199,13 +197,16 @@ const ProductsContent: React.FC = () => {
           Añadir
         </button>
         <select
-          value={status}
-          onChange={(e) => handleStatusChange(e.target.value as ProductStatus)}
+          value={filter}
+          onChange={(e) =>
+            handleStatusChange(e.target.value as AdminProductFilter)
+          }
           className="border rounded px-3 py-2 text-sm"
         >
-          <option value={ProductStatus.DISPONIBLE}>Disponibles</option>
-          <option value={ProductStatus.AGOTADO}>Agotados</option>
-          <option value={ProductStatus.ELIMINADO}>Eliminados</option>
+          <option value={ADMIN_PRODUCT_FILTER_ALL}>Todos</option>
+          <option value={ProductAvailability.DISPONIBLE}>Disponibles</option>
+          <option value={ProductAvailability.AGOTADO}>Agotados</option>
+          <option value={ProductState.ELIMINADO}>Eliminados</option>
         </select>
         <input
           type="text"

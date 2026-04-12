@@ -6,12 +6,11 @@ import Navbar from "../../components/Navbar";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import {
+  ProductAvailability,
   Product,
-  ProductStatus,
   Size,
   allowedSizes,
   parseGenre,
-  parseProductCategory,
 } from "@/types/product.type";
 import FiltrosMobileButton from "./FiltrosMobileButton";
 import { listProducts } from "@/services/products";
@@ -48,9 +47,8 @@ export default async function ProductsClient({
     readSingleParam(params, "maxPrice", "precioMax"),
   );
   const parsedGenre = parseGenre(readSingleParam(params, "genre", "genero"));
-  const parsedCategory = parseProductCategory(
-    readSingleParam(params, "category"),
-  );
+  const categoryId = readSingleParam(params, "categoryId");
+  const category = readSingleParam(params, "category");
   const sizeParam = readSingleParam(params, "size", "talla");
   const sizes = sizeParam
     ? [String(sizeParam).trim().toUpperCase() as Size].filter(
@@ -76,9 +74,10 @@ export default async function ProductsClient({
       {
         page,
         limit: 20,
-        status: ProductStatus.DISPONIBLE,
+        availability: ProductAvailability.DISPONIBLE,
         name: search || undefined,
-        category: parsedCategory ?? undefined,
+        categoryId: categoryId || undefined,
+        category: category || undefined,
         genre: parsedGenre ?? undefined,
         sizes,
         minPrice,
@@ -91,9 +90,10 @@ export default async function ProductsClient({
   }
 
   const { items, totalPages } = data;
-
-  if (page < 1 || (totalPages && page > totalPages)) return notFound();
+  const safeTotalPages = Math.max(1, totalPages || 1);
   const noProducts = !items || items.length === 0;
+
+  if (page < 1 || (!noProducts && page > safeTotalPages)) return notFound();
 
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -136,7 +136,7 @@ export default async function ProductsClient({
       {/* Footer con paginación responsiva */}
       <footer className="sticky bottom-0 left-0 w-full bg-white/95 backdrop-blur-sm border-t border-gray-200 pt-2 pb-3 sm:pt-3 sm:pb-4 lg:pt-4 lg:pb-5 z-20">
         <div className="flex justify-center px-3 sm:px-6 lg:px-8">
-          <Pagination currentPage={page} totalPages={totalPages} />
+          <Pagination currentPage={page} totalPages={safeTotalPages} />
         </div>
       </footer>
     </div>

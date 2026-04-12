@@ -3,7 +3,7 @@
 
 import React from "react";
 import { useDispatch } from "react-redux";
-import { Product, ProductServer } from "@/types/product.type";
+import { Product, ProductServer, getVariantName } from "@/types/product.type";
 import ProductListPublic from "@/components/products/ProductListPublic";
 import { addToCart } from "@/store/slices/cartSlice";
 import { toggleFavorite } from "@/store/slices/favoriteSlice";
@@ -19,15 +19,15 @@ export default function PublicListWrapper({
     const producto = products.find((p) => p.id === id);
     if (!producto) return;
     const variants = producto.variants || [];
-    const size =
-      variants.find((v) => (v.stock || 0) > 0)?.size || variants[0]?.size;
-    if (!size) return;
+    const selectedVariant =
+      variants.find((v) => (v.stock || 0) > 0) || variants[0];
+    const variantName = getVariantName(selectedVariant);
     dispatch(
       addToCart({
         product: producto as ProductServer,
         quantity: 1,
-        selectedSize: size,
-      })
+        selectedSize: variantName || undefined,
+      }),
     );
   };
 

@@ -4,28 +4,38 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   CreateProduct,
-  ProductCategory,
+  getCategoryOptionById,
+  getCategoryOptionByValue,
   VariantProduct,
   Size,
   Genre,
+  legacyProductCategoryOptions,
   formatSizeLabel,
+  getVariantName,
+  isClothingCategory,
 } from "@/types/product.type";
 import { createProduct, uploadProductImage } from "@/services/products";
+import { useCategories } from "@/services/categories/useCategories";
 
 const MAX_IMAGES = 4;
 
 const CreateProductPage: React.FC = () => {
   const router = useRouter();
+  const { options } = useCategories();
+  const categoryOptions = options.length
+    ? options
+    : legacyProductCategoryOptions;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<CreateProduct>>({
+    categoryId: "",
     name: "",
-    category: ProductCategory.ROPA,
-    genre: undefined,
+    category: "",
+    genre: Genre.UNISEX,
     description: "",
     variants: [] as VariantProduct[],
-    stock: undefined,
-    price: undefined,
+    stock: 1,
+    price: 1,
   });
   // Estado para la imagen y su previsualización
   const [images, setImages] = useState<File[]>([]);
@@ -46,8 +56,8 @@ const CreateProductPage: React.FC = () => {
   type VariantDraft = { size: Size; stock: number | ""; price: number | "" };
   const [variant, setVariant] = useState<VariantDraft>({
     size: Size.RN,
-    stock: "",
-    price: "",
+    stock: 1,
+    price: 1,
   });
   const [variantErrors, setVariantErrors] = useState<{
     stock?: string;
@@ -76,13 +86,17 @@ const CreateProductPage: React.FC = () => {
     >,
   ) => {
     const { name, value } = e.target;
-    if (name === "category") {
-      const category = value as ProductCategory;
+    if (name === "categoryId") {
+      const selectedOption =
+        getCategoryOptionById(value, categoryOptions) ||
+        getCategoryOptionByValue(value, categoryOptions);
       setForm((prev) => {
-        if (category === ProductCategory.ROPA) {
+        if (selectedOption?.supportsGenre) {
           return {
             ...prev,
-            category,
+            category: selectedOption.value,
+            categoryId: selectedOption.categoryId,
+            genre: prev.genre || Genre.UNISEX,
             stock: undefined,
             price: undefined,
           };
@@ -90,9 +104,12 @@ const CreateProductPage: React.FC = () => {
 
         return {
           ...prev,
-          category,
+          category: selectedOption?.value || prev.category,
+          categoryId: selectedOption?.categoryId || "",
           genre: undefined,
           variants: [],
+          stock: prev.stock ?? 1,
+          price: prev.price ?? 1,
         };
       });
       return;
@@ -108,6 +125,51 @@ const CreateProductPage: React.FC = () => {
 
     setForm((prev) => ({ ...prev, [name]: value }));
   };
+
+  useEffect(() => {
+    setForm((prev) => {
+      if (!categoryOptions.length) {
+        return prev;
+      }
+
+      const selectedCategory =
+        getCategoryOptionById(prev.categoryId, categoryOptions) ||
+        getCategoryOptionByValue(prev.category, categoryOptions);
+
+      if (selectedCategory) {
+        const nextCategoryId = selectedCategory.categoryId;
+        const nextCategory = selectedCategory.value;
+
+        if (
+          prev.categoryId === nextCategoryId &&
+          prev.category === nextCategory
+        ) {
+          return prev;
+        }
+
+        return {
+          ...prev,
+          categoryId: nextCategoryId,
+          category: nextCategory,
+          genre: selectedCategory.supportsGenre
+            ? prev.genre || Genre.UNISEX
+            : undefined,
+          stock: selectedCategory.supportsGenre ? undefined : (prev.stock ?? 1),
+          price: selectedCategory.supportsGenre ? undefined : (prev.price ?? 1),
+        };
+      }
+
+      const defaultCategory = categoryOptions[0];
+      return {
+        ...prev,
+        categoryId: defaultCategory.categoryId,
+        category: defaultCategory.value,
+        genre: defaultCategory.supportsGenre ? Genre.UNISEX : undefined,
+        stock: defaultCategory.supportsGenre ? undefined : 1,
+        price: defaultCategory.supportsGenre ? undefined : 1,
+      };
+    });
+  }, [categoryOptions]);
 
   // Manejar cambio de imagen
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -213,6 +275,7 @@ const CreateProductPage: React.FC = () => {
       variants: [
         ...(prev.variants || []),
         {
+          name: String(variant.size),
           ...variant,
           size: variant.size as Size,
           stock: Number(variant.stock),
@@ -220,7 +283,7 @@ const CreateProductPage: React.FC = () => {
         },
       ],
     }));
-    setVariant({ size: Size.RN, stock: "", price: "" });
+    setVariant({ size: Size.RN, stock: 1, price: 1 });
     setVariantErrors({});
   };
 
@@ -246,19 +309,28 @@ const CreateProductPage: React.FC = () => {
         throw new Error(`Máximo ${MAX_IMAGES} imágenes permitidas`);
       }
 
+      if (!String(form.categoryId || "").trim()) {
+        throw new Error("Ingresa un categoryId válido");
+      }
+
       // Validación: al menos una variante
       if (
-        form.category === ProductCategory.ROPA &&
+        isClothingCategory(form.categoryId || form.category, categoryOptions) &&
         (!form.variants || form.variants.length === 0)
       ) {
         throw new Error("Agrega al menos una variante (talla, stock y precio)");
       }
 
-      if (form.category === ProductCategory.ROPA && !form.genre) {
+      if (
+        isClothingCategory(form.categoryId || form.category, categoryOptions) &&
+        !form.genre
+      ) {
         throw new Error("Selecciona un género para productos de ropa");
       }
 
-      if (form.category !== ProductCategory.ROPA) {
+      if (
+        !isClothingCategory(form.categoryId || form.category, categoryOptions)
+      ) {
         const stock = Number(form.stock);
         const price = Number(form.price);
         if (!Number.isFinite(stock) || stock < 0 || !Number.isInteger(stock)) {
@@ -274,16 +346,22 @@ const CreateProductPage: React.FC = () => {
       );
 
       const payload: CreateProduct = {
+        categoryId: String(form.categoryId || "").trim(),
         name: String(form.name || "").trim(),
-        category: (form.category as ProductCategory) || ProductCategory.ROPA,
+        category: String(form.category || "").trim() || undefined,
         description: form.description ? String(form.description) : undefined,
         images: uploadedImages,
       };
 
-      if (payload.category === ProductCategory.ROPA) {
+      if (
+        isClothingCategory(
+          payload.categoryId || payload.category,
+          categoryOptions,
+        )
+      ) {
         payload.genre = form.genre as Genre;
         payload.variants = (form.variants || []).map((v) => ({
-          size: v.size,
+          name: getVariantName(v),
           stock: Number(v.stock),
           price: Number(v.price),
         }));
@@ -318,6 +396,14 @@ const CreateProductPage: React.FC = () => {
     });
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
+  const selectedCategoryOption =
+    getCategoryOptionById(form.categoryId, categoryOptions) ||
+    getCategoryOptionByValue(form.category, categoryOptions);
+  const isClothingProduct = isClothingCategory(
+    form.categoryId || form.category,
+    categoryOptions,
+  );
+
   return (
     <div className="max-w-xl mx-auto py-8">
       <button
@@ -479,21 +565,31 @@ const CreateProductPage: React.FC = () => {
           onChange={handleChange}
           placeholder="Descripción del producto"
           className="w-full p-2 border border-gray-300 rounded"
-          required
         />
         <select
-          name="category"
-          value={form.category || ProductCategory.ROPA}
+          name="categoryId"
+          value={
+            selectedCategoryOption?.categoryId ||
+            selectedCategoryOption?.value ||
+            ""
+          }
           onChange={handleChange}
           className="w-full p-2 border border-gray-300 rounded"
           required
         >
-          <option value={ProductCategory.ROPA}>Ropa</option>
-          <option value={ProductCategory.JUGUETE}>Juguete</option>
-          <option value={ProductCategory.ACCESORIO}>Accesorio</option>
-          <option value={ProductCategory.ALIMENTACION}>Alimentación</option>
+          <option value="" disabled>
+            Selecciona una categoría
+          </option>
+          {categoryOptions.map((option) => (
+            <option
+              key={option.categoryId || option.value}
+              value={option.categoryId || option.value}
+            >
+              {option.label}
+            </option>
+          ))}
         </select>
-        {form.category === ProductCategory.ROPA ? (
+        {isClothingProduct ? (
           <>
             <select
               name="genre"

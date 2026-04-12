@@ -1,8 +1,9 @@
 // app/api/products/create/route.ts
 export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
-import type { CreateProduct, VariantProduct, Size } from "@/types/product.type";
-import { allowedSizes, parseGenre } from "@/types/product.type";
+import type { CreateProduct, VariantProduct } from "@/types/product.type";
+import { Genre, getVariantName, parseGenre } from "@/types/product.type";
+import { normalizeProduct } from "../normalizeProduct";
 
 interface GraphqlError {
   message?: string;
@@ -10,82 +11,258 @@ interface GraphqlError {
 
 interface CreateProductResponse {
   data?: {
-    createProduct?: CreateProduct;
+    createProduct?: unknown;
   };
   errors?: GraphqlError[];
 }
 
+const genericErrorMessages = new Set([
+  "bad request exception",
+  "bad request",
+  "internal server error",
+  "error backend",
+]);
+
+const isGenericErrorMessage = (value: string): boolean =>
+  genericErrorMessages.has(value.trim().toLowerCase());
+
+const extractGraphqlErrorMessage = (value: unknown): string => {
+  if (typeof value === "string") return value.trim();
+
+  if (Array.isArray(value)) {
+    return value.map(extractGraphqlErrorMessage).filter(Boolean).join(". ");
+  }
+
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    const nestedMessage = [
+      record.originalError,
+      record.extensions,
+      record.exception,
+      record.response,
+    ]
+      .map(extractGraphqlErrorMessage)
+      .find(Boolean);
+
+    if (typeof record.message === "string" && record.message.trim()) {
+      const message = record.message.trim();
+      if (!isGenericErrorMessage(message) || !nestedMessage) {
+        return message;
+      }
+    }
+
+    if (typeof record.error === "string" && record.error.trim()) {
+      const errorMessage = record.error.trim();
+      if (!isGenericErrorMessage(errorMessage) || !nestedMessage) {
+        return errorMessage;
+      }
+    }
+
+    if (nestedMessage) {
+      return nestedMessage;
+    }
+  }
+
+  return "";
+};
+
+const getGraphqlErrorMessage = (errors?: GraphqlError[]): string => {
+  const messages = (errors || [])
+    .map(extractGraphqlErrorMessage)
+    .filter(Boolean);
+
+  return messages.join(". ") || "Error del backend";
+};
+
+const isValidMongoId = (value: string): boolean => /^[a-f\d]{24}$/i.test(value);
+
+const isValidUrl = (value: string): boolean => {
+  try {
+    new URL(value);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const toGraphqlGenre = (
+  genre?: Genre,
+): "NINA" | "NINO" | "UNISEX" | undefined => {
+  if (!genre) return undefined;
+  if (genre === Genre.NINA) return "NINA";
+  if (genre === Genre.NINO) return "NINO";
+  return "UNISEX";
+};
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-
-    // 👀 Tipamos la entrada con nuestro type
     const input: CreateProduct = body;
+    const normalizedName = String(input.name || "").trim();
+    const normalizedCategoryId = String(input.categoryId || "").trim();
+    const normalizedDescription =
+      typeof input.description === "string"
+        ? input.description.trim()
+        : undefined;
+    const normalizedBrand =
+      typeof input.brand === "string" ? input.brand.trim() : undefined;
+    const normalizedThumbnail =
+      typeof input.thumbnail === "string" ? input.thumbnail.trim() : undefined;
 
-    // Validación mínima de campos obligatorios
-    if (!input.name || !input.category) {
+    if (!normalizedName || !normalizedCategoryId) {
       return NextResponse.json(
-        { error: "Faltan campos obligatorios: name y category" },
+        { error: "Faltan campos obligatorios: name y categoryId" },
         { status: 400 },
       );
     }
 
-    if (!Array.isArray(input.images) || input.images.length === 0) {
+    if (!isValidMongoId(normalizedCategoryId)) {
       return NextResponse.json(
-        { error: "Debes enviar al menos una imagen en 'images'" },
+        { error: "categoryId debe ser un ObjectId válido" },
         { status: 400 },
       );
     }
 
-    let typedVariants: VariantProduct[] | undefined = undefined;
+    if (normalizedThumbnail && !isValidUrl(normalizedThumbnail)) {
+      return NextResponse.json(
+        { error: "thumbnail debe ser una URL válida" },
+        { status: 400 },
+      );
+    }
 
-    if (input.category === "ROPA") {
-      if (!Array.isArray(input.variants) || input.variants.length === 0) {
-        return NextResponse.json(
-          { error: "Los productos de ropa deben tener al menos una variante" },
-          { status: 400 },
-        );
-      }
+    const normalizedImages = Array.isArray(input.images)
+      ? input.images.map((image) => ({
+          url: String(image?.url || "").trim(),
+          publicId: String(image?.publicId || "").trim(),
+        }))
+      : undefined;
 
-      typedVariants = input.variants.map((v) => ({
-        size: String(v.size).trim().toUpperCase() as Size,
-        stock: Number(v.stock),
-        price: Number(v.price),
-      }));
+    if (normalizedImages && normalizedImages.length === 0) {
+      return NextResponse.json(
+        { error: "images no puede ser un arreglo vacío" },
+        { status: 400 },
+      );
+    }
 
-      // Validar tallas
-      if (!typedVariants.every((v) => allowedSizes.has(v.size))) {
-        return NextResponse.json(
-          {
-            error:
-              "Talla inválida en variants. Usa RN, M3, M6, M9, M12, M18, M24, T2, T3, T4, T5, T6, T7, T8, T9, T10 o T12",
-          },
-          { status: 400 },
-        );
-      }
+    if (
+      normalizedImages?.some(
+        (image) => !image.url || !image.publicId || !isValidUrl(image.url),
+      )
+    ) {
+      return NextResponse.json(
+        { error: "Cada imagen debe incluir una url válida y un publicId" },
+        { status: 400 },
+      );
+    }
 
-      // Validar género
-      const parsedGenre = parseGenre(input.genre);
+    const sourceVariants = Array.isArray(input.variants) ? input.variants : [];
+    const hasVariants = sourceVariants.length > 0;
+
+    const typedVariants = hasVariants
+      ? sourceVariants.map((variant) => ({
+          name: getVariantName(variant).trim(),
+          stock: Number(variant.stock),
+          price: Number(variant.price),
+          image:
+            typeof variant.image === "string"
+              ? variant.image.trim()
+              : undefined,
+        }))
+      : undefined;
+
+    if (Array.isArray(input.variants) && input.variants.length === 0) {
+      return NextResponse.json(
+        { error: "variants no puede ser un arreglo vacío" },
+        { status: 400 },
+      );
+    }
+
+    if (
+      typedVariants?.some(
+        (variant) =>
+          !variant.name ||
+          !Number.isFinite(variant.stock) ||
+          variant.stock < 0 ||
+          !Number.isInteger(variant.stock) ||
+          !Number.isFinite(variant.price) ||
+          variant.price < 0 ||
+          (variant.image ? !isValidUrl(variant.image) : false),
+      )
+    ) {
+      return NextResponse.json(
+        { error: "Las variantes deben tener nombre, stock y precio válidos" },
+        { status: 400 },
+      );
+    }
+
+    if (
+      typedVariants &&
+      new Set(typedVariants.map((variant) => variant.name.toLowerCase()))
+        .size !== typedVariants.length
+    ) {
+      return NextResponse.json(
+        { error: "Los nombres de variantes no deben repetirse" },
+        { status: 400 },
+      );
+    }
+
+    let parsedGenre: Genre | undefined;
+    if (input.genre !== undefined) {
+      parsedGenre = parseGenre(input.genre) ?? undefined;
       if (!parsedGenre) {
         return NextResponse.json(
           { error: `Género inválido: ${input.genre}` },
           { status: 400 },
         );
       }
-      input.genre = parsedGenre;
     }
 
-    // Preparar objeto para enviar a backend GraphQL
-    const productInput: CreateProduct = {
-      name: input.name,
-      category: input.category,
-      description: input.description,
-      images: input.images,
+    if (!hasVariants) {
+      const normalizedStock = Number(input.stock);
+      const normalizedPrice = Number(input.price);
+
+      if (!Number.isFinite(normalizedPrice) || normalizedPrice < 0) {
+        return NextResponse.json(
+          { error: "El producto simple debe tener un precio válido" },
+          { status: 400 },
+        );
+      }
+
+      if (!Number.isFinite(normalizedStock) || normalizedStock < 0) {
+        return NextResponse.json(
+          { error: "El producto simple debe tener un stock válido" },
+          { status: 400 },
+        );
+      }
+    }
+
+    const productInput: Record<string, unknown> = {
+      categoryId: normalizedCategoryId,
+      name: normalizedName,
     };
 
-    if (input.category === "ROPA") {
-      productInput.genre = input.genre;
-      productInput.variants = typedVariants;
+    if (normalizedDescription) {
+      productInput.description = normalizedDescription;
+    }
+
+    if (normalizedBrand) {
+      productInput.brand = normalizedBrand;
+    }
+
+    if (normalizedThumbnail) {
+      productInput.thumbnail = normalizedThumbnail;
+    }
+
+    if (normalizedImages) {
+      productInput.images = normalizedImages;
+    }
+
+    if (parsedGenre) {
+      productInput.genre = toGraphqlGenre(parsedGenre);
+    }
+
+    if (hasVariants) {
+      productInput.variants = typedVariants as VariantProduct[];
     } else {
       productInput.stock = Number(input.stock ?? 0);
       productInput.price = Number(input.price ?? 0);
@@ -106,15 +283,23 @@ export async function POST(req: NextRequest) {
         mutation CreateProduct($input: CreateProductInput!) {
           createProduct(input: $input) {
             id
+            sku
+            slug
+            categoryId
             name
-            category
-            genre
             description
+            brand
+            thumbnail
+            genre
             images { url publicId }
-            variants { size stock price }
+            variants { name stock price image }
             stock
             price
-            status
+            state
+            availability
+            stats { views favorites cartAdds purchases searches }
+            createdAt
+            updatedAt
           }
         }
       `,
@@ -130,8 +315,8 @@ export async function POST(req: NextRequest) {
     const backendData = (await backendRes.json()) as CreateProductResponse;
     if (!backendRes.ok || backendData.errors) {
       return NextResponse.json(
-        { error: backendData.errors || "Error del backend" },
-        { status: backendRes.status },
+        { error: getGraphqlErrorMessage(backendData.errors) },
+        { status: backendRes.status || 500 },
       );
     }
 
@@ -142,7 +327,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    return NextResponse.json(backendData.data.createProduct);
+    return NextResponse.json(normalizeProduct(backendData.data.createProduct));
   } catch (error: unknown) {
     return NextResponse.json(
       {

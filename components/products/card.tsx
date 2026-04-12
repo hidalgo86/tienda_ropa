@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Product } from "@/types/product.type";
+import { getProductStatusLabel, Product } from "@/types/product.type";
 
 interface CardProps {
   product: Product;
@@ -28,7 +28,7 @@ function Card({
   onAddToCart,
   onFavorite,
 }: CardProps) {
-  const status = product.status?.toLowerCase();
+  const status = getProductStatusLabel(product);
   const isEliminado = status === "eliminado";
 
   const variants = product.variants ?? [];
@@ -67,7 +67,7 @@ function Card({
             }`}
             style={{ zIndex: 2 }}
           >
-            {product.status}
+            {status}
           </span>
         )}
       </div>

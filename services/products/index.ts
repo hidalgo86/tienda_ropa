@@ -112,8 +112,11 @@ export const listProducts = async (
 
   if (params.name?.trim()) query.set("name", params.name.trim());
   if (params.category) query.set("category", params.category);
+  if (params.categoryId) query.set("categoryId", params.categoryId);
   if (params.genre) query.set("genre", String(params.genre));
   if (params.status) query.set("status", params.status);
+  if (params.state) query.set("state", params.state);
+  if (params.availability) query.set("availability", params.availability);
   if (typeof params.minPrice === "number") {
     query.set("minPrice", String(params.minPrice));
   }
@@ -123,6 +126,10 @@ export const listProducts = async (
 
   for (const size of params.sizes || []) {
     query.append("size", size);
+  }
+
+  for (const variantName of params.variantNames || []) {
+    query.append("variantName", variantName);
   }
 
   const response = await fetch(

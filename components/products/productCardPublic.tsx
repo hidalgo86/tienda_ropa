@@ -1,7 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Product } from "@/types/product.type";
+import { getProductStatusLabel, Product } from "@/types/product.type";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 
@@ -31,7 +31,8 @@ const ProductCardPublic: React.FC<ProductCardPublicProps> = ({
         ? directPrice
         : null;
   const coverImage = product.images?.[0]?.url || PLACEHOLDER;
-  const isEliminado = product.status?.toLowerCase() === "eliminado";
+  const status = getProductStatusLabel(product);
+  const isEliminado = status === "eliminado";
   const isFavorite = useSelector((state: RootState) =>
     state.favorites?.items?.some((item) => item.id === product.id),
   );

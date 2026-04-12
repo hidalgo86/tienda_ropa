@@ -1,11 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Product, ProductStatus } from "@/types/product.type";
+import {
+  ADMIN_PRODUCT_FILTER_ALL,
+  AdminProductFilter,
+  Product,
+} from "@/types/product.type";
 import { listProducts } from "@/services/products";
 
 interface UseAdminProductsParams {
-  status: ProductStatus;
+  filter: AdminProductFilter;
   page: number;
   limit: number;
   search: string;
@@ -21,7 +25,7 @@ interface FetchProductsOptions {
 // - Maneja loading/error/totalPages
 // - Aborta requests anteriores para evitar race conditions
 export const useAdminProducts = ({
-  status,
+  filter,
   page,
   limit,
   search,
@@ -47,7 +51,8 @@ export const useAdminProducts = ({
       try {
         const data = await listProducts(
           {
-            status,
+            availability:
+              filter === ADMIN_PRODUCT_FILTER_ALL ? undefined : filter,
             page,
             limit,
             name: search.trim() || undefined,
@@ -77,7 +82,7 @@ export const useAdminProducts = ({
         }
       }
     },
-    [status, page, limit, search],
+    [filter, page, limit, search],
   );
 
   useEffect(() => {

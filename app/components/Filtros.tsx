@@ -5,12 +5,17 @@ import { MdSearch } from "react-icons/md";
 import {
   formatSizeLabel,
   Genre,
-  ProductCategory,
+  isClothingCategory,
+  getCategoryOptionById,
+  getCategoryOptionByValue,
+  legacyProductCategoryOptions,
   Size,
 } from "@/types/product.type";
+import { useCategories } from "@/services/categories/useCategories";
 
 const FILTER_KEYS = [
   "search",
+  "categoryId",
   "category",
   "genre",
   "size",
@@ -39,9 +44,15 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { options } = useCategories();
+  const categoryOptions = options.length
+    ? options
+    : legacyProductCategoryOptions;
 
   const [search, setSearch] = useState(readParam(searchParams, "search"));
-  const [category, setCategory] = useState(readParam(searchParams, "category"));
+  const [categoryId, setCategoryId] = useState(
+    readParam(searchParams, "categoryId", "category"),
+  );
   const [genre, setGenre] = useState(
     readParam(searchParams, "genre", "genero"),
   );
@@ -53,11 +64,12 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
     readParam(searchParams, "maxPrice", "precioMax"),
   );
   const [isSearching, setIsSearching] = useState(false);
-  const isClothingFilter = !category || category === ProductCategory.ROPA;
+  const isClothingFilter =
+    !categoryId || isClothingCategory(categoryId, categoryOptions);
 
   useEffect(() => {
     setSearch(readParam(searchParams, "search"));
-    setCategory(readParam(searchParams, "category"));
+    setCategoryId(readParam(searchParams, "categoryId", "category"));
     setGenre(readParam(searchParams, "genre", "genero"));
     setSize(readParam(searchParams, "size", "talla"));
     setMinPrice(readParam(searchParams, "minPrice", "precioMin"));
@@ -89,7 +101,7 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
     e.preventDefault();
     updateURL({
       search,
-      category,
+      categoryId,
       genre,
       size,
       minPrice,
@@ -127,7 +139,7 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
                   e.preventDefault();
                   if (
                     search.trim() ||
-                    category ||
+                    categoryId ||
                     genre ||
                     minPrice ||
                     maxPrice ||
@@ -135,7 +147,7 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
                   ) {
                     updateURL({
                       search,
-                      category,
+                      categoryId,
                       genre,
                       size,
                       minPrice,
@@ -166,7 +178,7 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
                 e.preventDefault();
                 if (
                   !search.trim() &&
-                  !category &&
+                  !categoryId &&
                   !genre &&
                   !minPrice &&
                   !maxPrice &&
@@ -180,7 +192,7 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
                 try {
                   updateURL({
                     search,
-                    category,
+                    categoryId,
                     genre,
                     size,
                     minPrice,
@@ -204,32 +216,31 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
 
         <div>
           <label
-            htmlFor="category"
+            htmlFor="categoryId"
             className="block text-sm font-medium text-gray-700 mb-2"
           >
             🧩 Categoría
           </label>
           <select
-            id="category"
-            value={category}
+            id="categoryId"
+            value={categoryId}
             onChange={(e) => {
-              const nextCategory = e.target.value;
+              const nextCategoryId = e.target.value;
+              const nextOption =
+                getCategoryOptionById(nextCategoryId, categoryOptions) ||
+                getCategoryOptionByValue(nextCategoryId, categoryOptions);
               const nextGenre =
-                nextCategory && nextCategory !== ProductCategory.ROPA
-                  ? ""
-                  : genre;
+                nextCategoryId && !nextOption?.supportsGenre ? "" : genre;
               const nextSize =
-                nextCategory && nextCategory !== ProductCategory.ROPA
-                  ? ""
-                  : size;
+                nextCategoryId && !nextOption?.supportsGenre ? "" : size;
 
-              setCategory(nextCategory);
+              setCategoryId(nextCategoryId);
               setGenre(nextGenre);
               setSize(nextSize);
 
               updateURL({
                 search,
-                category: nextCategory,
+                categoryId: nextCategoryId,
                 genre: nextGenre,
                 size: nextSize,
                 minPrice,
@@ -242,10 +253,14 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
                        transition-colors"
           >
             <option value="">Todas las categorías</option>
-            <option value={ProductCategory.ROPA}>Ropa</option>
-            <option value={ProductCategory.JUGUETE}>Juguetes</option>
-            <option value={ProductCategory.ACCESORIO}>Accesorios</option>
-            <option value={ProductCategory.ALIMENTACION}>Alimentación</option>
+            {categoryOptions.map((option) => (
+              <option
+                key={option.categoryId || option.value}
+                value={option.categoryId || option.value}
+              >
+                {option.label}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -291,7 +306,7 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
                 setSize(nextSize);
                 updateURL({
                   search,
-                  category,
+                  categoryId,
                   genre,
                   size: nextSize,
                   minPrice,
@@ -377,7 +392,7 @@ export default function Filtros({ onFilterApply }: FiltrosProps) {
             type="button"
             onClick={() => {
               setSearch("");
-              setCategory("");
+              setCategoryId("");
               setGenre("");
               setSize("");
               setMinPrice("");

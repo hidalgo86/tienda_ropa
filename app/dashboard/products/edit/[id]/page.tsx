@@ -4,25 +4,36 @@ import React, { useEffect, useRef, useState } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import {
+  getCategoryOptionById,
+  getCategoryOptionByValue,
+  legacyProductCategoryOptions,
   Product,
   UploadProduct,
   VariantProduct,
   ProductStatus,
-  ProductCategory,
   Size,
   Genre,
   formatSizeLabel,
+  getProductCategoryLabel,
+  getVariantName,
+  hasProductVariants,
+  isClothingCategory,
 } from "@/types/product.type";
 import {
   getProductById,
   updateProduct,
   uploadProductImage,
 } from "@/services/products";
+import { useCategories } from "@/services/categories/useCategories";
 
 const MAX_IMAGES = 4;
 
 const EditProductPage: React.FC = () => {
   const router = useRouter();
+  const { options } = useCategories();
+  const categoryOptions = options.length
+    ? options
+    : legacyProductCategoryOptions;
   const params = useParams();
   const searchParams = useSearchParams();
   const id = params?.id as string;
@@ -73,9 +84,13 @@ const EditProductPage: React.FC = () => {
     setLoading(true);
     getProductById(id)
       .then((data) => {
+        const inferredCategory =
+          getCategoryOptionByValue(data.category, categoryOptions)?.value ||
+          getCategoryOptionById(data.categoryId, categoryOptions)?.value;
         setProduct(data);
         setForm({
           ...data,
+          category: inferredCategory ?? data.category,
           variants: data.variants?.map((v) => ({ ...v })) || [],
         });
 
@@ -91,7 +106,7 @@ const EditProductPage: React.FC = () => {
       })
       .catch(() => setError("No se pudo cargar el producto"))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [categoryOptions, id]);
 
   // Generar preview de imágenes seleccionadas
   useEffect(() => {
@@ -149,6 +164,22 @@ const EditProductPage: React.FC = () => {
   ) => {
     const { name, value } = e.target;
 
+    if (name === "categoryId") {
+      const selectedOption =
+        getCategoryOptionById(value, categoryOptions) ||
+        getCategoryOptionByValue(value, categoryOptions);
+
+      setForm((prev) => ({
+        ...prev,
+        categoryId: selectedOption?.categoryId || "",
+        category: selectedOption?.value || prev.category,
+        ...(selectedOption?.supportsGenre
+          ? { stock: undefined, price: undefined }
+          : { genre: undefined, variants: [] }),
+      }));
+      return;
+    }
+
     if (name === "stock" || name === "price") {
       setForm((prev) => ({
         ...prev,
@@ -165,9 +196,11 @@ const EditProductPage: React.FC = () => {
     e.preventDefault();
     setError(null);
     try {
-      const resolvedCategory = form.category ?? product?.category;
-      if (!resolvedCategory) {
-        throw new Error("No se pudo determinar la categoría del producto");
+      const resolvedCategoryId = String(
+        form.categoryId ?? product?.categoryId ?? "",
+      ).trim();
+      if (!resolvedCategoryId) {
+        throw new Error("No se pudo determinar el categoryId del producto");
       }
 
       let nextImages = form.images;
@@ -192,14 +225,19 @@ const EditProductPage: React.FC = () => {
         ...formWithoutStatus,
         name: String(form.name || "").trim(),
         description: form.description ? String(form.description) : undefined,
-        category: resolvedCategory,
+        categoryId: resolvedCategoryId,
         images: nextImages,
         ...(formStatus === ProductStatus.ELIMINADO
           ? { status: formStatus }
           : {}),
       };
 
-      if (resolvedCategory === ProductCategory.ROPA) {
+      if (
+        hasProductVariants(form) ||
+        hasProductVariants(product) ||
+        form.genre ||
+        product?.genre
+      ) {
         if (!form.genre) {
           throw new Error("Selecciona un género para productos de ropa");
         }
@@ -218,6 +256,7 @@ const EditProductPage: React.FC = () => {
 
             return {
               ...variant,
+              name: getVariantName(variant),
               stock: Number(stockRaw),
               price: Number(priceRaw),
             };
@@ -229,11 +268,6 @@ const EditProductPage: React.FC = () => {
             "Agrega al menos una variante (talla, stock y precio)",
           );
         }
-
-        const totalStock = normalizedVariants.reduce(
-          (sum, variant) => sum + variant.stock,
-          0,
-        );
 
         payload.genre = form.genre;
         payload.variants = normalizedVariants;
@@ -279,8 +313,28 @@ const EditProductPage: React.FC = () => {
   if (!product)
     return <div className="py-10 text-center">Producto no encontrado</div>;
 
-  const resolvedCategory = form.category ?? product.category;
-  const isClothingProduct = resolvedCategory === ProductCategory.ROPA;
+  const inferredCategory =
+    getCategoryOptionByValue(form.category ?? product.category, categoryOptions)
+      ?.value ||
+    getCategoryOptionById(
+      form.categoryId ?? product.categoryId,
+      categoryOptions,
+    )?.value;
+  const resolvedCategory = getProductCategoryLabel(
+    {
+      category: inferredCategory ?? form.category ?? product.category,
+      categoryId: form.categoryId ?? product.categoryId,
+    },
+    categoryOptions,
+  );
+  const isClothingProduct =
+    isClothingCategory(
+      form.categoryId ?? inferredCategory ?? form.category ?? product.category,
+      categoryOptions,
+    ) ||
+    hasProductVariants(form) ||
+    hasProductVariants(product) ||
+    Boolean(form.genre || product.genre);
   const currentImagesCount = form.images?.length || 0;
   const totalSelectedCount = currentImagesCount + selectedFiles.length;
   const currentImageUrl =
@@ -471,16 +525,24 @@ const EditProductPage: React.FC = () => {
 
             <div className="space-y-2">
               <label className="block font-semibold">Detalle por talla</label>
+              <div className="grid grid-cols-[minmax(0,1fr)_80px_96px_32px] gap-2 items-center text-xs font-medium text-gray-600">
+                <span>Talla</span>
+                <span>Stock</span>
+                <span>Precio</span>
+                <span className="sr-only">Acción</span>
+              </div>
               {(form.variants || []).map((variant, idx) => (
                 <div key={idx} className="flex gap-2 items-center">
                   <select
-                    value={variant.size || ""}
+                    value={getVariantName(variant) || ""}
                     onChange={(e) => {
                       const value = e.target.value as VariantProduct["size"];
                       setForm((prev) => ({
                         ...prev,
                         variants: (prev.variants || []).map((v, i) =>
-                          i === idx ? { ...v, size: value } : v,
+                          i === idx
+                            ? { ...v, size: value, name: String(value || "") }
+                            : v,
                         ),
                       }));
                     }}
@@ -489,7 +551,7 @@ const EditProductPage: React.FC = () => {
                     <option value="">Talla</option>
                     {Object.values(Size).map((size) => {
                       const isUsed = form.variants?.some(
-                        (v, i) => v.size === size && i !== idx,
+                        (v, i) => getVariantName(v) === size && i !== idx,
                       );
                       return (
                         <option key={size} value={size} disabled={isUsed}>
@@ -560,7 +622,9 @@ const EditProductPage: React.FC = () => {
                 type="button"
                 className="bg-green-600 text-white px-3 py-1 rounded"
                 onClick={() => {
-                  const usedSizes = (form.variants || []).map((v) => v.size);
+                  const usedSizes = (form.variants || []).map((v) =>
+                    getVariantName(v),
+                  );
                   const availableSize = Object.values(Size).find(
                     (size) => !usedSizes.includes(size),
                   );
@@ -571,6 +635,7 @@ const EditProductPage: React.FC = () => {
                     variants: [
                       ...(prev.variants || []),
                       {
+                        name: String(availableSize),
                         size: availableSize as VariantProduct["size"],
                         stock: 0,
                         price: 0,
@@ -589,32 +654,38 @@ const EditProductPage: React.FC = () => {
           </>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input
-              type="number"
-              name="stock"
-              value={form.stock ?? ""}
-              onChange={handleChange}
-              onKeyDown={(e) => preventInvalidKeys(e)}
-              placeholder="Stock"
-              min={0}
-              step={1}
-              inputMode="numeric"
-              className="w-full border rounded px-3 py-2"
-              required
-            />
-            <input
-              type="number"
-              name="price"
-              value={form.price ?? ""}
-              onChange={handleChange}
-              onKeyDown={(e) => preventInvalidKeys(e, true)}
-              placeholder="Precio"
-              min={0}
-              step="any"
-              inputMode="decimal"
-              className="w-full border rounded px-3 py-2"
-              required
-            />
+            <label className="block text-sm font-medium text-gray-700">
+              Stock
+              <input
+                type="number"
+                name="stock"
+                value={form.stock ?? ""}
+                onChange={handleChange}
+                onKeyDown={(e) => preventInvalidKeys(e)}
+                placeholder="Stock"
+                min={0}
+                step={1}
+                inputMode="numeric"
+                className="mt-1 w-full border rounded px-3 py-2"
+                required
+              />
+            </label>
+            <label className="block text-sm font-medium text-gray-700">
+              Precio
+              <input
+                type="number"
+                name="price"
+                value={form.price ?? ""}
+                onChange={handleChange}
+                onKeyDown={(e) => preventInvalidKeys(e, true)}
+                placeholder="Precio"
+                min={0}
+                step="any"
+                inputMode="decimal"
+                className="mt-1 w-full border rounded px-3 py-2"
+                required
+              />
+            </label>
           </div>
         )}
 

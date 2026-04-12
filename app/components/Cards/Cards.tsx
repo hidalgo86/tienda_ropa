@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
-import { Product, ProductServer, ProductStatus } from "@/types/product.type";
+import {
+  Product,
+  ProductAvailability,
+  ProductServer,
+  getVariantName,
+} from "@/types/product.type";
 import ProductListPublic from "@/components/products/ProductListPublic";
 import { addToCart } from "@/store/slices/cartSlice";
 import { toggleFavorite } from "@/store/slices/favoriteSlice";
@@ -22,7 +27,7 @@ export default function Cards() {
       const response = await listProducts({
         page: 1,
         limit: 20,
-        status: ProductStatus.DISPONIBLE,
+        availability: ProductAvailability.DISPONIBLE,
       });
       setProductos(response.items ?? []);
     } catch (err) {
@@ -93,14 +98,14 @@ export default function Cards() {
     const producto = productos.find((p) => p.id === id);
     if (!producto) return;
     const variants = producto.variants || [];
-    const size =
-      variants.find((v) => (v.stock || 0) > 0)?.size || variants[0]?.size;
-    if (!size) return; // sin talla, no agregar
+    const selectedVariant =
+      variants.find((v) => (v.stock || 0) > 0) || variants[0];
+    const variantName = getVariantName(selectedVariant);
     dispatch(
       addToCart({
         product: producto as ProductServer,
         quantity: 1,
-        selectedSize: size,
+        selectedSize: variantName || undefined,
       }),
     );
   };

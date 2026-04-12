@@ -1,5 +1,18 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Environment
+
+Create a local environment file from [.env.example](.env.example) and complete at least these values:
+
+- `API_URL`
+- `NEXT_PUBLIC_SITE_URL`
+- `NEXT_PUBLIC_CATEGORY_ID_ROPA`
+- `NEXT_PUBLIC_CATEGORY_ID_JUGUETE`
+- `NEXT_PUBLIC_CATEGORY_ID_ACCESORIO`
+- `NEXT_PUBLIC_CATEGORY_ID_ALIMENTACION`
+
+The product forms and category label helpers use those `NEXT_PUBLIC_CATEGORY_ID_*` values to infer the visual category from `categoryId`.
+
 ## Getting Started
 
 First, run the development server:

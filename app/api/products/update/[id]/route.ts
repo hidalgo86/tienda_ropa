@@ -3,14 +3,16 @@ export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
 import {
+  Genre,
+  parseProductState,
+  ProductState,
   UploadProduct,
   VariantProduct,
-  Size,
   ProductStatus,
-  allowedSizes,
-  Genre,
+  getVariantName,
   parseGenre,
 } from "@/types/product.type";
+import { normalizeProduct } from "../../normalizeProduct";
 
 interface GraphqlError {
   message?: string;
@@ -18,7 +20,7 @@ interface GraphqlError {
 
 interface UpdateProductResponse {
   data?: {
-    updateProduct?: UploadProduct;
+    updateProduct?: unknown;
   };
   errors?: GraphqlError[];
 }
@@ -74,6 +76,22 @@ const getGraphqlErrorMessage = (errors?: GraphqlError[]): string => {
   return messages.join(". ") || "Error backend";
 };
 
+const toGraphqlGenre = (
+  genre?: Genre,
+): "NINA" | "NINO" | "UNISEX" | undefined => {
+  if (!genre) return undefined;
+  if (genre === Genre.NINA) return "NINA";
+  if (genre === Genre.NINO) return "NINO";
+  return "UNISEX";
+};
+
+const toGraphqlState = (
+  state?: ProductState,
+): "ACTIVO" | "ELIMINADO" | undefined => {
+  if (!state) return undefined;
+  return state === ProductState.ACTIVO ? "ACTIVO" : "ELIMINADO";
+};
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -88,10 +106,13 @@ export async function PATCH(
       images,
       variants,
       status,
+      state,
       name,
       description,
+      categoryId,
+      brand,
+      thumbnail,
       genre,
-      category,
       stock,
       price,
     } = body;
@@ -110,13 +131,38 @@ export async function PATCH(
     }
 
     // ===== Validar variantes si existen =====
-    let typedVariants: VariantProduct[] | undefined;
+    let typedVariants:
+      | Array<{
+          name: string;
+          stock: number;
+          price: number;
+          image?: string;
+        }>
+      | undefined;
     if (variants) {
       typedVariants = variants
         .map((v) => {
-          const size = String(v.size).toUpperCase().trim() as Size;
-          if (!allowedSizes.has(size)) return null;
-          return { size, stock: Number(v.stock), price: Number(v.price) };
+          const name = getVariantName(v).trim();
+          if (!name) return null;
+
+          const normalizedStock = Number(v.stock);
+          const normalizedPrice = Number(v.price);
+
+          if (
+            !Number.isFinite(normalizedStock) ||
+            normalizedStock < 0 ||
+            !Number.isFinite(normalizedPrice) ||
+            normalizedPrice < 0
+          ) {
+            return null;
+          }
+
+          return {
+            name,
+            stock: normalizedStock,
+            price: normalizedPrice,
+            image: v.image,
+          };
         })
         .filter(Boolean) as VariantProduct[];
 
@@ -128,23 +174,34 @@ export async function PATCH(
       }
     }
 
+    const normalizedState = parseProductState(state) ?? undefined;
+
     const statusToForward = Object.values(ProductStatus).includes(
       status as ProductStatus,
     )
       ? (status as ProductStatus)
       : undefined;
+    const stateToForward =
+      normalizedState ||
+      (statusToForward === ProductStatus.ELIMINADO
+        ? ProductState.ELIMINADO
+        : statusToForward
+          ? ProductState.ACTIVO
+          : undefined);
 
     // ===== Preparar input para GraphQL =====
-    const input: Partial<UploadProduct> = {
+    const input: Record<string, unknown> = {
       name,
-      category,
+      categoryId,
       description,
+      brand,
+      thumbnail,
       images,
-      variants: typedVariants,
+      variants: typedVariants as VariantProduct[] | undefined,
       stock,
       price,
-      genre: parsedGenre,
-      status: statusToForward,
+      genre: toGraphqlGenre(parsedGenre),
+      state: toGraphqlState(stateToForward),
     };
 
     if (Object.keys(input).length === 0) {
@@ -167,15 +224,23 @@ export async function PATCH(
         mutation UpdateProduct($id: String!, $input: UpdateProductInput!) {
           updateProduct(id: $id, input: $input) {
             id
+            sku
+            slug
+            categoryId
             name
-            category
-            genre
             description
+            brand
+            thumbnail
+            genre
             images { url publicId }
-            variants { size stock price }
+            variants { name stock price image }
             stock
             price
-            status
+            state
+            availability
+            stats { views favorites cartAdds purchases searches }
+            createdAt
+            updatedAt
           }
         }
       `,
@@ -203,7 +268,7 @@ export async function PATCH(
       );
     }
 
-    return NextResponse.json(backendData.data.updateProduct);
+    return NextResponse.json(normalizeProduct(backendData.data.updateProduct));
   } catch (error: unknown) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Error interno" },

@@ -1,5 +1,6 @@
 // app/api/products/get/[id]/route.ts
 import { NextResponse } from "next/server";
+import { normalizeProduct } from "../../normalizeProduct";
 
 interface GraphqlError {
   message?: string;
@@ -19,18 +20,24 @@ export async function GET(
   const { id } = await context.params;
 
   const query = `
-    query ($id: String!) {
+    query Product($id: String!) {
       product(id: $id) {
         id
+        sku
+        slug
+        categoryId
         name
         description
+        brand
+        thumbnail
         genre
-        category
-        status
-        variants { size stock price }
+        state
+        availability
+        variants { name stock price image }
         images { url publicId }
         stock
         price
+        stats { views favorites cartAdds purchases searches }
         createdAt
         updatedAt
       }
@@ -55,7 +62,7 @@ export async function GET(
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
-    return NextResponse.json(data.data.product);
+    return NextResponse.json(normalizeProduct(data.data.product));
   } catch (error: unknown) {
     return NextResponse.json(
       {

@@ -1,7 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Product } from "@/types/product.type";
+import { getProductStatusLabel, Product } from "@/types/product.type";
 
 const statusColors: Record<string, string> = {
   disponible: "bg-green-100 text-green-700 border-green-300",
@@ -26,7 +26,7 @@ const ProductCardAdmin: React.FC<ProductCardAdminProps> = ({
   onRestore,
   actionLoadingId,
 }) => {
-  const status = product.status?.toLowerCase();
+  const status = getProductStatusLabel(product);
   const isEliminado = status === "eliminado";
   const isActionLoading = actionLoadingId === product.id;
   const variants = product.variants ?? [];
@@ -69,7 +69,7 @@ const ProductCardAdmin: React.FC<ProductCardAdminProps> = ({
           }`}
           style={{ zIndex: 2 }}
         >
-          {product.status}
+          {status}
         </span>
       </Link>
       {/* Botones de acción admin o restaurar */}

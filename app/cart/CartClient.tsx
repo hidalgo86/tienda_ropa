@@ -18,7 +18,10 @@ import {
   MdShoppingBag,
 } from "react-icons/md";
 import { useState } from "react";
-import { formatSizeLabel } from "@/types/product.type";
+import {
+  findVariantBySelection,
+  formatVariantLabel,
+} from "@/types/product.type";
 
 export default function CartClient() {
   const dispatch = useDispatch();
@@ -129,10 +132,10 @@ export default function CartClient() {
             {/* Lista de productos */}
             <div className="lg:col-span-2 space-y-4">
               {items.map((item, index) => {
-                const variantPrice = Array.isArray(item.variants)
-                  ? item.variants.find((v) => v.size === item.selectedSize)
-                      ?.price
-                  : undefined;
+                const variantPrice = findVariantBySelection(
+                  item.variants,
+                  item.selectedSize,
+                )?.price;
                 const itemPrice = Number(variantPrice ?? item.price ?? 0);
                 const itemTotal = itemPrice * item.quantity;
                 const itemImage = item.images?.[0]?.url || "/placeholder.webp";
@@ -166,7 +169,8 @@ export default function CartClient() {
                             <div className="flex flex-wrap gap-2 mt-2">
                               {item.selectedSize && (
                                 <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
-                                  Talla: {formatSizeLabel(item.selectedSize)}
+                                  Variante:{" "}
+                                  {formatVariantLabel(item.selectedSize)}
                                 </span>
                               )}
                               {item.selectedColor && (

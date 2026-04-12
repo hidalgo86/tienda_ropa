@@ -1,16 +1,22 @@
 // app/api/products/get/route.ts
 import { NextResponse } from "next/server";
 import {
+  ProductAvailability,
+  ProductAvailabilityFilter,
   Product,
-  Size,
+  ProductState,
   ProductStatus,
   PaginatedProducts,
   ProductsQueryModel,
+  Size,
+  getProductStatus,
   parseGenre,
-  parseProductCategory,
+  parseProductAvailabilityFilter,
+  parseProductState,
   parseProductStatus,
   allowedSizes,
 } from "@/types/product.type";
+import { normalizeProductsPage } from "../normalizeProduct";
 
 export const dynamic = "force-dynamic";
 
@@ -20,10 +26,53 @@ const parseOptionalNumber = (value: string | null): number | undefined => {
   return Number.isFinite(parsed) ? parsed : undefined;
 };
 
+const toGraphqlAvailability = (
+  availability?: ProductAvailabilityFilter,
+): "DISPONIBLE" | "AGOTADO" | undefined => {
+  if (!availability) return undefined;
+
+  if (availability === ProductAvailability.DISPONIBLE) {
+    return "DISPONIBLE";
+  }
+
+  if (availability === ProductAvailability.AGOTADO) {
+    return "AGOTADO";
+  }
+
+  return undefined;
+};
+
+const toGraphqlState = (
+  state?: ProductState,
+): "ACTIVO" | "ELIMINADO" | undefined => {
+  if (!state) return undefined;
+  return state === ProductState.ACTIVO ? "ACTIVO" : "ELIMINADO";
+};
+
+const toGraphqlGenre = (
+  genre?: ProductsQueryModel["filters"]["genre"],
+): "NINA" | "NINO" | "UNISEX" | undefined => {
+  if (!genre) return undefined;
+
+  if (genre === "niña") {
+    return "NINA";
+  }
+
+  if (genre === "niño") {
+    return "NINO";
+  }
+
+  return "UNISEX";
+};
+
 const matchesFilters = (
   product: Product,
   filters: ProductsQueryModel["filters"],
 ): boolean => {
+  if (filters.categoryId && product.categoryId !== filters.categoryId) {
+    return false;
+  }
+
   if (
     filters.name &&
     !product.name.toLowerCase().includes(filters.name.toLowerCase())
@@ -39,8 +88,22 @@ const matchesFilters = (
     return false;
   }
 
-  if (filters.status && product.status !== filters.status) {
+  if (filters.status && getProductStatus(product) !== filters.status) {
     return false;
+  }
+
+  if (filters.state && product.state !== filters.state) {
+    return false;
+  }
+
+  if (filters.availability) {
+    if (filters.availability === "eliminado") {
+      if (product.state !== "eliminado") {
+        return false;
+      }
+    } else if (product.availability !== filters.availability) {
+      return false;
+    }
   }
 
   if (filters.sizes?.length) {
@@ -51,6 +114,18 @@ const matchesFilters = (
       productSizes.has(size),
     );
     if (!hasMatchingSize) {
+      return false;
+    }
+  }
+
+  if (filters.variantNames?.length) {
+    const productVariantNames = new Set(
+      (product.variants ?? []).map((variant) => variant.name),
+    );
+    const hasMatchingVariant = filters.variantNames.some((variantName) =>
+      productVariantNames.has(variantName),
+    );
+    if (!hasMatchingVariant) {
       return false;
     }
   }
@@ -94,30 +169,75 @@ export async function GET(req: Request) {
 
     // ===== Filtros =====
     const name = searchParams.get("name") || undefined;
-    const category =
-      parseProductCategory(searchParams.get("category")) ?? undefined;
+    const categoryId = searchParams.get("categoryId")?.trim() || undefined;
+    const category = searchParams.get("category")?.trim() || undefined;
     const genre = parseGenre(searchParams.get("genre")) ?? undefined;
-    const status =
-      parseProductStatus(searchParams.get("status")) ||
-      ProductStatus.DISPONIBLE;
+    const status = parseProductStatus(searchParams.get("status")) ?? undefined;
+    const state = parseProductState(searchParams.get("state")) ?? undefined;
+    const availability =
+      parseProductAvailabilityFilter(searchParams.get("availability")) ??
+      undefined;
     const sizes = searchParams
       .getAll("size")
-      .map((s) => String(s).trim().toUpperCase() as Size)
-      .filter((s): s is Size => allowedSizes.has(s));
+      .map((s) => String(s).trim().toUpperCase())
+      .filter((s): s is Size => allowedSizes.has(s as Size));
+    const variantNames = searchParams
+      .getAll("variantName")
+      .map((value) => value.trim())
+      .filter(Boolean);
     const minPrice = parseOptionalNumber(searchParams.get("minPrice"));
     const maxPrice = parseOptionalNumber(searchParams.get("maxPrice"));
+
+    const fallbackAvailability: ProductAvailabilityFilter | undefined =
+      status === ProductStatus.DISPONIBLE
+        ? ProductAvailability.DISPONIBLE
+        : status === ProductStatus.AGOTADO
+          ? ProductAvailability.AGOTADO
+          : undefined;
+
+    const fallbackState: ProductState | undefined =
+      status === ProductStatus.ELIMINADO ? ProductState.ELIMINADO : undefined;
+
+    const resolvedState =
+      state ??
+      (availability === ProductState.ELIMINADO
+        ? ProductState.ELIMINADO
+        : fallbackState);
+
+    const resolvedAvailability =
+      availability === ProductState.ELIMINADO
+        ? undefined
+        : (availability ?? fallbackAvailability);
 
     // ===== Mapear a DTO de NestJS =====
     const input: ProductsQueryModel = {
       pagination: { page, limit },
       filters: {
         name,
+        categoryId,
         category,
         genre,
+        variantNames: variantNames.length ? variantNames : undefined,
         status,
+        state: resolvedState,
+        availability: resolvedAvailability,
         sizes: sizes.length ? sizes : undefined,
         minPrice,
         maxPrice,
+      },
+    };
+
+    const graphqlInput = {
+      pagination: input.pagination,
+      filters: {
+        name: input.filters.name,
+        categoryId: input.filters.categoryId,
+        genre: toGraphqlGenre(input.filters.genre),
+        variantNames: input.filters.variantNames,
+        minPrice: input.filters.minPrice,
+        maxPrice: input.filters.maxPrice,
+        state: toGraphqlState(input.filters.state),
+        availability: toGraphqlAvailability(input.filters.availability),
       },
     };
 
@@ -127,22 +247,37 @@ export async function GET(req: Request) {
         products(input: $input) {
           items {
             id
+            sku
+            slug
+            categoryId
             name
             description
-            category
+            brand
+            thumbnail
             genre
-            status
+            state
+            availability
             images {
               url
               publicId
             }
             variants {
-              size
+              name
               stock
               price
+              image
             }
             stock
             price
+            stats {
+              views
+              favorites
+              cartAdds
+              purchases
+              searches
+            }
+            createdAt
+            updatedAt
           }
           total
           page
@@ -159,8 +294,12 @@ export async function GET(req: Request) {
           query,
           variables: {
             input: {
-              pagination: { page: pageNumber, limit: pageSize },
-              filters: input.filters,
+              ...graphqlInput,
+              pagination: {
+                ...graphqlInput.pagination,
+                page: pageNumber,
+                limit: pageSize,
+              },
             },
           },
         }),
@@ -177,14 +316,19 @@ export async function GET(req: Request) {
         throw new Error("No se recibieron productos desde GraphQL");
       }
 
-      return response.data.products as PaginatedProducts;
+      return normalizeProductsPage(response.data.products);
     };
 
     const needsExactFiltering = Boolean(
       name ||
+      categoryId ||
       category ||
       genre ||
+      variantNames.length ||
       sizes.length ||
+      status ||
+      state ||
+      availability ||
       minPrice !== undefined ||
       maxPrice !== undefined,
     );
@@ -221,7 +365,7 @@ export async function GET(req: Request) {
 
     const data = await fetchProductsPage(page, limit);
 
-    return NextResponse.json(data);
+    return NextResponse.json(normalizeProductsPage(data));
   } catch (error: unknown) {
     const message =
       error && typeof error === "object" && "message" in error
