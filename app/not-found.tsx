@@ -16,3 +16,9 @@ export default function NotFound() {
     </div>
   );
 }
+
+
+// Si quieres, el siguiente paso natural es:
+
+// separar también account, login y register en un layout auth propio para no depender del footer compartido
+// aprovechar los grupos para mover estilos o wrappers repetidos de páginas públicas a layouts más pequeños

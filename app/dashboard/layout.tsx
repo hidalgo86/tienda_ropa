@@ -1,5 +1,3 @@
-import Navbar from "../../components/Navbar";
-import Footer from "../../components/Footer";
 import SidebarDesktop, {
   SidebarItem,
 } from "../../components/products/SidebarDesktop";
@@ -54,7 +52,6 @@ export default function DashboardLayout({
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Navbar />
       <div className="flex flex-1 w-full">
         <SidebarDesktop items={sidebarItems} activeOption={activeOption} />
         <main className="flex-1 px-3 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 pb-20 md:pb-8 overflow-x-auto bg-white min-h-full">
@@ -62,7 +59,6 @@ export default function DashboardLayout({
         </main>
       </div>
       <SidebarMobile items={sidebarItems} activeOption={activeOption} />
-      <Footer />
     </div>
   );
 }

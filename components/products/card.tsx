@@ -1,15 +1,6 @@
 import Image from "next/image";
-import { getProductStatusLabel, Product } from "@/types/product.type";
-
-interface CardProps {
-  product: Product;
-  admin?: boolean;
-  onEdit?: (id: string) => void;
-  onDelete?: (id: string) => void;
-  onRestore?: (id: string) => void;
-  onAddToCart?: (id: string) => void;
-  onFavorite?: (id: string) => void;
-}
+import { getProductStatusLabel } from "@/types/domain/products";
+import type { ProductCardProps } from "@/types/ui/products";
 
 const statusColors: Record<string, string> = {
   disponible: "bg-green-100 text-green-700 border-green-300",
@@ -27,7 +18,7 @@ function Card({
   onRestore,
   onAddToCart,
   onFavorite,
-}: CardProps) {
+}: ProductCardProps) {
   const status = getProductStatusLabel(product);
   const isEliminado = status === "eliminado";
 

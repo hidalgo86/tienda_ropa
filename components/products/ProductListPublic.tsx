@@ -1,12 +1,6 @@
 import React from "react";
-import { Product } from "@/types/product.type";
+import type { ProductListPublicProps } from "@/types/ui/products";
 import ProductCardPublic from "./productCardPublic";
-
-interface ProductListPublicProps {
-  products: Product[];
-  onAddToCart?: (id: string) => void;
-  onFavorite?: (id: string) => void;
-}
 
 const ProductListPublic: React.FC<ProductListPublicProps> = ({
   products,

@@ -1,4 +1,8 @@
-import { Genre, ProductAvailability, ProductState } from "@/types/product.type";
+import {
+  Genre,
+  ProductAvailability,
+  ProductState,
+} from "@/types/domain/products";
 
 export const toGraphqlAvailability = (
   availability?: ProductAvailability,

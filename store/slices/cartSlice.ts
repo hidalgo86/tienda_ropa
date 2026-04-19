@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ProductServer, findVariantBySelection } from "@/types/product.type";
+import { Product, findVariantBySelection } from "@/types/domain/products";
 
-interface CartItem extends ProductServer {
+interface CartItem extends Product {
   quantity: number;
   selectedSize?: string;
   selectedColor?: string;
@@ -68,7 +68,7 @@ const cartSlice = createSlice({
     addToCart: (
       state,
       action: PayloadAction<{
-        product: ProductServer;
+        product: Product;
         quantity?: number;
         selectedSize?: string;
         selectedColor?: string;

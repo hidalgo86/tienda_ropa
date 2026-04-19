@@ -8,7 +8,7 @@ import {
   ProductAvailability,
   ProductState,
   parseAdminProductFilter,
-} from "@/types/product.type";
+} from "@/types/domain/products";
 import ProductListAdmin from "@/components/products/ProductListAdmin";
 import Pagination from "@/components/Pagination";
 import { useAdminProducts } from "./useAdminProducts";

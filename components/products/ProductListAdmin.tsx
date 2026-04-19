@@ -1,14 +1,6 @@
 import React from "react";
-import { Product } from "@/types/product.type";
+import type { ProductListAdminProps } from "@/types/ui/products";
 import ProductCardAdmin from "./productCardAdmin";
-
-interface ProductListAdminProps {
-  products: Product[];
-  onEdit?: (id: string) => void;
-  onDelete?: (id: string) => void;
-  onRestore?: (id: string) => void;
-  actionLoadingId?: string | null;
-}
 
 const ProductListAdmin: React.FC<ProductListAdminProps> = ({
   products,

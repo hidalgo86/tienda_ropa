@@ -8,7 +8,7 @@ import {
   parseGenre,
   parseProductAvailability,
   parseProductState,
-} from "@/types/product.type";
+} from "@/types/domain/products";
 import {
   toGraphqlAvailability,
   toGraphqlGenre,

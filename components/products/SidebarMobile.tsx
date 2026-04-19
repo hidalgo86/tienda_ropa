@@ -1,12 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import React from "react";
-import { SidebarItem } from "./SidebarDesktop";
-
-interface SidebarMobileProps {
-  items: SidebarItem[];
-  activeOption: string;
-}
+import type { SidebarMobileProps } from "@/types/ui/products";
 
 const SidebarMobile: React.FC<SidebarMobileProps> = ({
   items,

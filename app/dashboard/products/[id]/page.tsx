@@ -1,12 +1,9 @@
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { Product } from "@/types/product.type";
-import ProductDetailClient from "../../../products/[id]/ProductDetailClient";
+import { Product } from "@/types/domain/products";
+import type { DashboardProductDetailPageProps } from "@/types/ui/products";
+import ProductDetailClient from "../../../(site)/(store)/products/[id]/ProductDetailClient";
 import { getProductById } from "@/services/products";
-
-interface DashboardProductDetailPageProps {
-  params: Promise<{ id: string }>;
-}
 
 export default async function DashboardProductDetailPage({
   params,

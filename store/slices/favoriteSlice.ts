@@ -1,12 +1,12 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { ProductServer } from "@/types/product.type";
+import { Product } from "@/types/domain/products";
 
 interface FavoriteState {
-  items: ProductServer[];
+  items: Product[];
 }
 
 // Función para cargar favoritos desde localStorage
-const loadFavoritesFromStorage = (): ProductServer[] => {
+const loadFavoritesFromStorage = (): Product[] => {
   if (typeof window === "undefined") return [];
 
   try {
@@ -19,7 +19,7 @@ const loadFavoritesFromStorage = (): ProductServer[] => {
 };
 
 // Función para guardar favoritos en localStorage
-const saveFavoritesToStorage = (favorites: ProductServer[]): void => {
+const saveFavoritesToStorage = (favorites: Product[]): void => {
   if (typeof window === "undefined") return;
 
   try {
@@ -37,9 +37,9 @@ const favoriteSlice = createSlice({
   name: "favorites",
   initialState,
   reducers: {
-    addToFavorites: (state, action: PayloadAction<ProductServer>) => {
+    addToFavorites: (state, action: PayloadAction<Product>) => {
       const existingItem = state.items.find(
-        (item) => item.id === action.payload.id
+        (item) => item.id === action.payload.id,
       );
       if (!existingItem) {
         state.items.push(action.payload);
@@ -50,13 +50,13 @@ const favoriteSlice = createSlice({
       state.items = state.items.filter((item) => item.id !== action.payload);
       saveFavoritesToStorage(state.items);
     },
-    toggleFavorite: (state, action: PayloadAction<ProductServer>) => {
+    toggleFavorite: (state, action: PayloadAction<Product>) => {
       const existingItem = state.items.find(
-        (item) => item.id === action.payload.id
+        (item) => item.id === action.payload.id,
       );
       if (existingItem) {
         state.items = state.items.filter(
-          (item) => item.id !== action.payload.id
+          (item) => item.id !== action.payload.id,
         );
       } else {
         state.items.push(action.payload);
@@ -68,7 +68,7 @@ const favoriteSlice = createSlice({
       saveFavoritesToStorage(state.items);
     },
     // Para futuro: sincronizar favoritos del usuario logueado
-    syncFavorites: (state, action: PayloadAction<ProductServer[]>) => {
+    syncFavorites: (state, action: PayloadAction<Product[]>) => {
       state.items = action.payload;
       saveFavoritesToStorage(state.items);
     },

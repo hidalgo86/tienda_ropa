@@ -11,7 +11,7 @@ import {
   ProductStatus,
   ProductStats,
   VariantProduct,
-} from "@/types/product.type";
+} from "@/types/domain/products";
 
 type UnknownRecord = Record<string, unknown>;
 

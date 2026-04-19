@@ -1,21 +1,14 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { getProductStatusLabel, Product } from "@/types/product.type";
+import { getProductStatusLabel } from "@/types/domain/products";
+import type { ProductCardAdminProps } from "@/types/ui/products";
 
 const statusColors: Record<string, string> = {
   disponible: "bg-green-100 text-green-700 border-green-300",
   agotado: "bg-gray-200 text-gray-700 border-gray-300",
   eliminado: "bg-red-100 text-red-700 border-red-300",
 };
-
-interface ProductCardAdminProps {
-  product: Product;
-  onEdit?: (id: string) => void;
-  onDelete?: (id: string) => void;
-  onRestore?: (id: string) => void;
-  actionLoadingId?: string | null;
-}
 
 const PLACEHOLDER = "/placeholder.webp";
 

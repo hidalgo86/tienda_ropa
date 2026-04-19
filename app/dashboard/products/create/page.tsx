@@ -12,11 +12,15 @@ import {
   formatSizeLabel,
   getVariantName,
   isClothingCategory,
-} from "@/types/product.type";
+} from "@/types/domain/products";
+import type {
+  ProductCreateFormState,
+  ProductVariantDraft,
+  ProductVariantDraftErrors,
+} from "@/types/ui/products";
+import { PRODUCT_FORM_MAX_IMAGES } from "@/types/ui/products";
 import { createProduct, uploadProductImage } from "@/services/products";
 import { useCategories } from "@/services/categories/useCategories";
-
-const MAX_IMAGES = 4;
 
 const CreateProductPage: React.FC = () => {
   const router = useRouter();
@@ -26,7 +30,7 @@ const CreateProductPage: React.FC = () => {
     : legacyProductCategoryOptions;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState<Partial<CreateProduct>>({
+  const [form, setForm] = useState<ProductCreateFormState>({
     categoryId: "",
     name: "",
     category: "",
@@ -52,16 +56,14 @@ const CreateProductPage: React.FC = () => {
     input.click();
   };
   // Estado para variantes temporales
-  type VariantDraft = { size: Size; stock: number | ""; price: number | "" };
-  const [variant, setVariant] = useState<VariantDraft>({
+  const [variant, setVariant] = useState<ProductVariantDraft>({
     size: Size.RN,
     stock: 1,
     price: 1,
   });
-  const [variantErrors, setVariantErrors] = useState<{
-    stock?: string;
-    price?: string;
-  }>({});
+  const [variantErrors, setVariantErrors] = useState<ProductVariantDraftErrors>(
+    {},
+  );
   const preventStockInvalidKeys = (
     e: React.KeyboardEvent<HTMLInputElement>,
   ) => {
@@ -173,17 +175,17 @@ const CreateProductPage: React.FC = () => {
     const selectedFiles = Array.from(e.target.files || []);
     if (!selectedFiles.length) return;
 
-    if (images.length >= MAX_IMAGES) {
-      setError(`Máximo ${MAX_IMAGES} imágenes permitidas.`);
+    if (images.length >= PRODUCT_FORM_MAX_IMAGES) {
+      setError(`Máximo ${PRODUCT_FORM_MAX_IMAGES} imágenes permitidas.`);
       e.currentTarget.value = "";
       return;
     }
 
-    const availableSlots = MAX_IMAGES - images.length;
+    const availableSlots = PRODUCT_FORM_MAX_IMAGES - images.length;
     const filesToAdd = selectedFiles.slice(0, availableSlots);
 
     if (filesToAdd.length < selectedFiles.length) {
-      setError(`Solo puedes subir hasta ${MAX_IMAGES} imágenes.`);
+      setError(`Solo puedes subir hasta ${PRODUCT_FORM_MAX_IMAGES} imágenes.`);
     } else {
       setError(null);
     }
@@ -302,8 +304,10 @@ const CreateProductPage: React.FC = () => {
         );
       }
 
-      if (images.length > MAX_IMAGES) {
-        throw new Error(`Máximo ${MAX_IMAGES} imágenes permitidas`);
+      if (images.length > PRODUCT_FORM_MAX_IMAGES) {
+        throw new Error(
+          `Máximo ${PRODUCT_FORM_MAX_IMAGES} imágenes permitidas`,
+        );
       }
 
       if (!String(form.categoryId || "").trim()) {
@@ -521,7 +525,7 @@ const CreateProductPage: React.FC = () => {
             <>
               <div className="text-xs text-gray-600">
                 {imagePreviews.length} imagen(es) seleccionada(s) de{" "}
-                {MAX_IMAGES}
+                {PRODUCT_FORM_MAX_IMAGES}
               </div>
               <div className="grid grid-cols-4 gap-2 w-full max-w-md">
                 {imagePreviews.map((preview, idx) => (

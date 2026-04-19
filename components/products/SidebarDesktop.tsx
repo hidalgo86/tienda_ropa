@@ -1,18 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import React from "react";
+import type { SidebarDesktopProps, SidebarItem } from "@/types/ui/products";
 
-export interface SidebarItem {
-  src: string;
-  alt: string;
-  label: string;
-  href: string;
-}
-
-interface SidebarDesktopProps {
-  items: SidebarItem[];
-  activeOption: string;
-}
+export type { SidebarItem };
 
 const SidebarDesktop: React.FC<SidebarDesktopProps> = ({
   items,

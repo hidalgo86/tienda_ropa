@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { Category } from "@/types/product.type";
+import type { Category } from "@/types/domain/products";
 
 interface GraphqlResponse {
   data?: Record<string, unknown>;

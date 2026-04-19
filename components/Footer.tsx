@@ -1,22 +1,26 @@
-"use client";
-
 import Link from "next/link";
 import Image from "next/image";
 import { FaFacebook, FaInstagram, FaTiktok } from "react-icons/fa";
-import { useEffect, useState } from "react";
+
+const socialLinks = [
+  {
+    href: "https://facebook.com",
+    label: "Síguenos en Facebook",
+    Icon: FaFacebook,
+  },
+  {
+    href: "https://instagram.com",
+    label: "Síguenos en Instagram",
+    Icon: FaInstagram,
+  },
+  {
+    href: "https://tiktok.com",
+    label: "Síguenos en TikTok",
+    Icon: FaTiktok,
+  },
+];
 
 export default function Footer() {
-  const [iconSize, setIconSize] = useState(24);
-
-  useEffect(() => {
-    const updateSize = () => {
-      const w = typeof window !== "undefined" ? window.innerWidth : 1024;
-      setIconSize(w < 640 ? 20 : w < 1024 ? 22 : 24);
-    };
-    updateSize();
-    window.addEventListener("resize", updateSize);
-    return () => window.removeEventListener("resize", updateSize);
-  }, []);
   return (
     <footer
       className="bg-pink-50 border-t border-pink-200 
@@ -30,7 +34,6 @@ export default function Footer() {
                       grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 
                       gap-6 sm:gap-8 lg:gap-12"
       >
-        {/* Logo + descripción */}
         <div
           className="flex flex-col items-center sm:items-start 
                         col-span-1 sm:col-span-2 lg:col-span-1"
@@ -54,7 +57,6 @@ export default function Footer() {
           </p>
         </div>
 
-        {/* Redes sociales */}
         <div className="flex flex-col items-center sm:items-start">
           <h3
             className="text-gray-800 font-semibold 
@@ -64,43 +66,21 @@ export default function Footer() {
             Síguenos
           </h3>
           <div className="flex gap-3 sm:gap-4 lg:gap-6 text-pink-500">
-            <Link
-              href="https://facebook.com"
-              target="_blank"
-              aria-label="Síguenos en Facebook"
-              className="p-2 sm:p-1 hover:bg-pink-100 rounded-full transition-all duration-200"
-            >
-              <FaFacebook
-                size={iconSize}
-                className="hover:text-pink-700 transition-colors"
-              />
-            </Link>
-            <Link
-              href="https://instagram.com"
-              target="_blank"
-              aria-label="Síguenos en Instagram"
-              className="p-2 sm:p-1 hover:bg-pink-100 rounded-full transition-all duration-200"
-            >
-              <FaInstagram
-                size={iconSize}
-                className="hover:text-pink-700 transition-colors"
-              />
-            </Link>
-            <Link
-              href="https://tiktok.com"
-              target="_blank"
-              aria-label="Síguenos en TikTok"
-              className="p-2 sm:p-1 hover:bg-pink-100 rounded-full transition-all duration-200"
-            >
-              <FaTiktok
-                size={iconSize}
-                className="hover:text-pink-700 transition-colors"
-              />
-            </Link>
+            {socialLinks.map(({ href, label, Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={label}
+                className="p-2 sm:p-1 hover:bg-pink-100 rounded-full transition-all duration-200"
+              >
+                <Icon className="size-5 lg:size-6 hover:text-pink-700 transition-colors" />
+              </Link>
+            ))}
           </div>
         </div>
 
-        {/* Newsletter */}
         <div className="flex flex-col items-center sm:items-start">
           <h3
             className="text-gray-800 font-semibold 
@@ -143,7 +123,6 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Copyright */}
       <div
         className="bg-pink-100 text-gray-600 text-center 
                       py-3 sm:py-4 lg:py-5 

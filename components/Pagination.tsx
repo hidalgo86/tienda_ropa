@@ -1,16 +1,11 @@
 import React from "react";
-
-interface PaginationProps {
-  currentPage: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-}
+import type { ProductPaginationProps } from "@/types/ui/products";
 
 export default function Pagination({
   currentPage,
   totalPages,
   onPageChange,
-}: PaginationProps) {
+}: ProductPaginationProps) {
   if (totalPages <= 1) return null;
 
   // Función para obtener páginas visibles según el tamaño de pantalla

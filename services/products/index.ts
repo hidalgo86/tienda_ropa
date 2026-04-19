@@ -5,7 +5,7 @@ import type {
   ProductImage,
   ProductSearchFilters,
   UploadProduct,
-} from "@/types/product.type";
+} from "@/types/domain/products";
 
 interface ApiOptions {
   baseUrl?: string;

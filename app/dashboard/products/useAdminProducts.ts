@@ -6,7 +6,7 @@ import {
   Product,
   ProductAvailability,
   ProductState,
-} from "@/types/product.type";
+} from "@/types/domain/products";
 import { listProducts } from "@/services/products";
 
 interface UseAdminProductsParams {

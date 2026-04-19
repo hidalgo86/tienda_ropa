@@ -18,15 +18,18 @@ import {
   hasProductVariants,
   isClothingCategory,
   resolveCategoryOption,
-} from "@/types/product.type";
+} from "@/types/domain/products";
+import type {
+  ProductEditFormState,
+  ProductVariantDraftValuesByIndex,
+} from "@/types/ui/products";
+import { PRODUCT_FORM_MAX_IMAGES } from "@/types/ui/products";
 import {
   getProductById,
   updateProduct,
   uploadProductImage,
 } from "@/services/products";
 import { useCategories } from "@/services/categories/useCategories";
-
-const MAX_IMAGES = 4;
 
 const EditProductPage: React.FC = () => {
   const router = useRouter();
@@ -46,10 +49,9 @@ const EditProductPage: React.FC = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState<Partial<UploadProduct>>({});
-  const [variantDraftValues, setVariantDraftValues] = useState<
-    Record<number, { stock: string; price: string }>
-  >({});
+  const [form, setForm] = useState<ProductEditFormState>({});
+  const [variantDraftValues, setVariantDraftValues] =
+    useState<ProductVariantDraftValuesByIndex>({});
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 
@@ -95,7 +97,7 @@ const EditProductPage: React.FC = () => {
         });
 
         // Inicializar draftValues para inputs
-        const drafts: Record<number, { stock: string; price: string }> = {};
+        const drafts: ProductVariantDraftValuesByIndex = {};
         data.variants?.forEach((v, idx) => {
           drafts[idx] = {
             stock: v.stock != null ? String(v.stock) : "",
@@ -129,16 +131,16 @@ const EditProductPage: React.FC = () => {
 
     const currentImagesCount = form.images?.length || 0;
     const availableSlots =
-      MAX_IMAGES - currentImagesCount - selectedFiles.length;
+      PRODUCT_FORM_MAX_IMAGES - currentImagesCount - selectedFiles.length;
 
     if (availableSlots <= 0) {
-      setError(`Máximo ${MAX_IMAGES} imágenes permitidas.`);
+      setError(`Máximo ${PRODUCT_FORM_MAX_IMAGES} imágenes permitidas.`);
       return;
     }
 
     const filesToAdd = incomingFiles.slice(0, availableSlots);
     if (filesToAdd.length < incomingFiles.length) {
-      setError(`Solo puedes subir hasta ${MAX_IMAGES} imágenes.`);
+      setError(`Solo puedes subir hasta ${PRODUCT_FORM_MAX_IMAGES} imágenes.`);
     } else {
       setError(null);
     }
@@ -209,8 +211,10 @@ const EditProductPage: React.FC = () => {
 
         nextImages = [...(form.images || []), ...uploadedImages];
 
-        if (nextImages.length > MAX_IMAGES) {
-          throw new Error(`Máximo ${MAX_IMAGES} imágenes permitidas.`);
+        if (nextImages.length > PRODUCT_FORM_MAX_IMAGES) {
+          throw new Error(
+            `Máximo ${PRODUCT_FORM_MAX_IMAGES} imágenes permitidas.`,
+          );
         }
       }
 
@@ -412,7 +416,8 @@ const EditProductPage: React.FC = () => {
         {currentImagesCount > 0 && (
           <div className="space-y-2">
             <p className="text-sm text-gray-600">
-              Imágenes actuales: {currentImagesCount} de {MAX_IMAGES}
+              Imágenes actuales: {currentImagesCount} de{" "}
+              {PRODUCT_FORM_MAX_IMAGES}
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {(form.images || []).map((image, idx) => (
@@ -446,7 +451,7 @@ const EditProductPage: React.FC = () => {
               Se agregarán a las imágenes actuales al guardar.
             </p>
             <p className="text-xs text-gray-500">
-              Total previsto: {totalSelectedCount} de {MAX_IMAGES}
+              Total previsto: {totalSelectedCount} de {PRODUCT_FORM_MAX_IMAGES}
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {previewUrls.map((preview, idx) => (

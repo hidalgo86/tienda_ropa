@@ -1,15 +1,10 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { getProductStatusLabel, Product } from "@/types/product.type";
+import { getProductStatusLabel } from "@/types/domain/products";
+import type { ProductCardPublicProps } from "@/types/ui/products";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
-
-interface ProductCardPublicProps {
-  product: Product;
-  onAddToCart?: (id: string) => void;
-  onFavorite?: (id: string) => void;
-}
 
 const PLACEHOLDER = "/placeholder.webp";
 

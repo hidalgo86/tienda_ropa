@@ -5,7 +5,7 @@ import {
   buildProductCategoryOptions,
   type Category,
   type ProductCategoryOption,
-} from "@/types/product.type";
+} from "@/types/domain/products";
 import { listCategories } from "./index";
 
 export const useCategories = () => {

@@ -1,17 +1,7 @@
 // app/api/products/get/[id]/route.ts
 import { NextResponse } from "next/server";
+import type { ProductByIdQueryResponse } from "@/types/api/products/graphql";
 import { normalizeProduct } from "../../normalizeProduct";
-
-interface GraphqlError {
-  message?: string;
-}
-
-interface ProductByIdResponse {
-  data?: {
-    product?: unknown;
-  };
-  errors?: GraphqlError[];
-}
 
 export async function GET(
   req: Request,
@@ -51,7 +41,7 @@ export async function GET(
       body: JSON.stringify({ query, variables: { id } }),
     });
 
-    const data = (await res.json()) as ProductByIdResponse;
+    const data = (await res.json()) as ProductByIdQueryResponse;
 
     if (data.errors?.length) {
       const message = data.errors.map((e) => e.message || "Error").join(", ");
