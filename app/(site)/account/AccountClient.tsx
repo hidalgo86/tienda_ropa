@@ -2,236 +2,518 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { FiEye, FiEyeOff } from "react-icons/fi";
+import { toast } from "sonner";
+import {
+  changePassword,
+  clearStoredSession,
+  getCurrentUser,
+  getStoredAuthToken,
+  getStoredUser,
+  resendVerification,
+  updateProfile,
+  updateStoredUser,
+} from "@/services/users";
+import type { User } from "@/types/domain/users";
+import type {
+  AccountProfileFormState,
+  ChangePasswordFormState,
+} from "@/types/ui/users";
+
+const initialProfileForm: AccountProfileFormState = {
+  name: "",
+  phone: "",
+  address: "",
+};
+
+const initialPasswordForm: ChangePasswordFormState = {
+  oldPassword: "",
+  newPassword: "",
+  confirmPassword: "",
+};
 
 export default function AccountClient() {
   const router = useRouter();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const [userInfo, setUserInfo] = useState<{
-    id?: string;
-    name?: string;
-    email?: string;
-    role?: string;
-  } | null>(null);
+  const storedUser = getStoredUser();
+  const [isLoading, setIsLoading] = useState(true);
+  const [userInfo, setUserInfo] = useState<User | null>(null);
+  const [profileForm, setProfileForm] =
+    useState<AccountProfileFormState>(initialProfileForm);
+  const [passwordForm, setPasswordForm] =
+    useState<ChangePasswordFormState>(initialPasswordForm);
+  const [profileError, setProfileError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [verificationMessage, setVerificationMessage] = useState("");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [isResendingVerification, setIsResendingVerification] = useState(false);
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
-    // Verificar si el usuario está autenticado
-    const checkAuth = () => {
-      // Aquí puedes implementar tu lógica de autenticación
-      // Por ahora simularé verificando localStorage o cookies
+    const token = getStoredAuthToken();
 
-      // Ejemplo: verificar token en localStorage
-      const token = localStorage.getItem("authToken");
-      const user = localStorage.getItem("userData");
+    if (!token) {
+      const currentPath = window.location.pathname;
+      router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
+      return;
+    }
 
-      if (token && user) {
-        try {
-          const parsedUser = JSON.parse(user);
-          setUserInfo(parsedUser);
-          setIsAuthenticated(true);
-        } catch (error) {
-          console.error("Error parsing user data:", error);
-          setIsAuthenticated(false);
-        }
-      } else {
-        setIsAuthenticated(false);
+    const loadUser = async () => {
+      try {
+        const user = await getCurrentUser({ token });
+        setUserInfo(user);
+        setProfileForm({
+          name: user.name ?? "",
+          phone: user.phone ?? "",
+          address: user.address ?? "",
+        });
+      } catch (loadError) {
+        clearStoredSession();
+        const message =
+          loadError instanceof Error
+            ? loadError.message
+            : "No se pudo cargar tu perfil";
+        toast.error(message);
+        router.push("/login?redirect=%2Faccount");
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    checkAuth();
-  }, []);
+    void loadUser();
+  }, [router]);
 
-  useEffect(() => {
-    // Redireccionar a login si no está autenticado
-    if (isAuthenticated === false) {
-      // Incluir la URL actual como parámetro de redirect
-      const currentPath = window.location.pathname;
-      router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
+  const handleLogout = () => {
+    clearStoredSession();
+    router.push("/");
+  };
+
+  const handleResendVerification = async () => {
+    const resolvedUserId = userInfo?.id?.trim() || storedUser?.id?.trim() || "";
+    const token = getStoredAuthToken();
+
+    if (!resolvedUserId) {
+      const message =
+        "No pudimos identificar tu cuenta para reenviar el codigo. Cierra sesion e inicia nuevamente.";
+      setVerificationMessage(message);
+      toast.error(message);
+      return;
     }
-  }, [isAuthenticated, router]);
 
-  // Mostrar loading mientras verificamos autenticación
-  if (isAuthenticated === null) {
+    setVerificationMessage("");
+    setIsResendingVerification(true);
+
+    try {
+      const response = await resendVerification(
+        { userId: resolvedUserId },
+        { token },
+      );
+      setVerificationMessage(response.message);
+      toast.success(response.message);
+    } catch (resendError) {
+      const message =
+        resendError instanceof Error
+          ? resendError.message
+          : "No se pudo reenviar el codigo de verificacion";
+      setVerificationMessage(message);
+      toast.error(message);
+    } finally {
+      setIsResendingVerification(false);
+    }
+  };
+
+  const handleProfileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setProfileError("");
+    setIsSavingProfile(true);
+
+    try {
+      const updatedUser = await updateProfile({
+        name: profileForm.name.trim() || undefined,
+        phone: profileForm.phone.trim() || undefined,
+        address: profileForm.address.trim() || undefined,
+      });
+
+      setUserInfo(updatedUser);
+      setProfileForm({
+        name: updatedUser.name ?? "",
+        phone: updatedUser.phone ?? "",
+        address: updatedUser.address ?? "",
+      });
+      updateStoredUser(updatedUser);
+      toast.success("Perfil actualizado");
+    } catch (updateError) {
+      const message =
+        updateError instanceof Error
+          ? updateError.message
+          : "No se pudo actualizar el perfil";
+      setProfileError(message);
+      toast.error(message);
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError("");
+
+    if (passwordForm.newPassword.length < 6) {
+      setPasswordError("La nueva contrasena debe tener al menos 6 caracteres");
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError("Las contrasenas no coinciden");
+      return;
+    }
+
+    setIsChangingPassword(true);
+
+    try {
+      const response = await changePassword({
+        oldPassword: passwordForm.oldPassword,
+        newPassword: passwordForm.newPassword,
+      });
+
+      setPasswordForm(initialPasswordForm);
+      toast.success(response.message || "Contrasena actualizada");
+    } catch (changeError) {
+      const message =
+        changeError instanceof Error
+          ? changeError.message
+          : "No se pudo cambiar la contrasena";
+      setPasswordError(message);
+      toast.error(message);
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Verificando autenticación...</p>
+          <p className="mt-4 text-gray-600">Cargando tu cuenta...</p>
         </div>
       </div>
     );
   }
 
-  // Si no está autenticado, no mostrar nada (ya se redirige)
-  if (!isAuthenticated) {
+  if (!userInfo) {
     return null;
   }
 
-  // Contenido de la página de cuenta para usuarios autenticados
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-6">
-            <h1 className="text-2xl font-bold text-gray-900">Mi Cuenta</h1>
-            <p className="mt-1 text-sm text-gray-600">
-              Gestiona tu información personal y preferencias
-            </p>
+          <div className="py-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Mi Cuenta</h1>
+              <p className="mt-1 text-sm text-gray-600">
+                Gestiona tu informacion personal y tu acceso.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => router.push("/")}
+                className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Ir al inicio
+              </button>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="inline-flex items-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+              >
+                Cerrar sesion
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Contenido principal */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {!userInfo.isEmailVerified && (
+          <div className="mb-8 rounded-lg border border-amber-200 bg-amber-50 px-6 py-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-amber-900">
+                  Correo pendiente de verificacion
+                </h2>
+                <p className="mt-1 text-sm text-amber-800">
+                  Tu cuenta aun no esta verificada. Puedes verificarla ahora o
+                  reenviar un nuevo codigo a tu correo.
+                </p>
+                {verificationMessage && (
+                  <p className="mt-2 text-sm text-amber-900">
+                    {verificationMessage}
+                  </p>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => router.push(`/verify?userId=${userInfo.id}`)}
+                  className="inline-flex items-center rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
+                >
+                  Verificar ahora
+                </button>
+                <button
+                  type="button"
+                  onClick={handleResendVerification}
+                  className="inline-flex items-center rounded-md border border-amber-300 bg-white px-4 py-2 text-sm font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-60"
+                  disabled={isResendingVerification}
+                >
+                  {isResendingVerification ? "Reenviando..." : "Reenviar codigo"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Sidebar de navegación */}
           <div className="md:col-span-1">
             <div className="bg-white shadow rounded-lg">
               <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900">
-                  Navegación
-                </h3>
+                <h3 className="text-lg font-medium text-gray-900">Resumen</h3>
               </div>
-              <nav className="px-6 py-4 space-y-2">
-                <a
-                  href="#profile"
-                  className="block px-3 py-2 rounded-md text-sm font-medium text-pink-600 bg-pink-50"
-                >
-                  Información Personal
-                </a>
-                <a
-                  href="#orders"
-                  className="block px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-pink-600 hover:bg-gray-50"
-                >
-                  Mis Pedidos
-                </a>
-                <a
-                  href="#favorites"
-                  className="block px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-pink-600 hover:bg-gray-50"
-                >
-                  Favoritos
-                </a>
-                <a
-                  href="#addresses"
-                  className="block px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-pink-600 hover:bg-gray-50"
-                >
-                  Direcciones
-                </a>
-                <button
-                  onClick={() => {
-                    localStorage.removeItem("authToken");
-                    localStorage.removeItem("userData");
-                    router.push("/login");
-                  }}
-                  className="block w-full text-left px-3 py-2 rounded-md text-sm font-medium text-red-600 hover:bg-red-50"
-                >
-                  Cerrar Sesión
-                </button>
-              </nav>
+              <div className="px-6 py-4 space-y-3 text-sm text-gray-700">
+                <div>
+                  <span className="font-medium text-gray-900">Usuario:</span>{" "}
+                  {userInfo.username}
+                </div>
+                <div>
+                  <span className="font-medium text-gray-900">Email:</span>{" "}
+                  {userInfo.email}
+                </div>
+                <div>
+                  <span className="font-medium text-gray-900">Verificado:</span>{" "}
+                  {userInfo.isEmailVerified ? "Si" : "No"}
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Contenido principal */}
-          <div className="md:col-span-2">
+          <div className="md:col-span-2 space-y-8">
             <div className="bg-white shadow rounded-lg">
               <div className="px-6 py-4 border-b border-gray-200">
                 <h3 className="text-lg font-medium text-gray-900">
-                  Información Personal
+                  Informacion personal
                 </h3>
               </div>
-              <div className="px-6 py-4">
-                <div className="space-y-6">
-                  {/* Información del usuario */}
-                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Nombre
-                      </label>
-                      <div className="mt-1 text-sm text-gray-900">
-                        {userInfo?.name || "Usuario"}
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Email
-                      </label>
-                      <div className="mt-1 text-sm text-gray-900">
-                        {userInfo?.email || "usuario@ejemplo.com"}
-                      </div>
-                    </div>
+              <form onSubmit={handleProfileSubmit} className="px-6 py-4 space-y-6">
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Nombre
+                    </label>
+                    <input
+                      className="mt-1 w-full border rounded px-3 py-2"
+                      value={profileForm.name}
+                      onChange={(e) =>
+                        setProfileForm((current) => ({
+                          ...current,
+                          name: e.target.value,
+                        }))
+                      }
+                      placeholder="Tu nombre"
+                    />
                   </div>
-
-                  {/* Estadísticas rápidas */}
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                    <div className="bg-pink-50 p-4 rounded-lg">
-                      <div className="text-2xl font-bold text-pink-600">0</div>
-                      <div className="text-sm text-gray-600">
-                        Pedidos realizados
-                      </div>
-                    </div>
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">0</div>
-                      <div className="text-sm text-gray-600">
-                        Productos favoritos
-                      </div>
-                    </div>
-                    <div className="bg-green-50 p-4 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">
-                        $0
-                      </div>
-                      <div className="text-sm text-gray-600">Total gastado</div>
-                    </div>
-                  </div>
-
-                  {/* Botones de acción */}
-                  <div className="flex space-x-3">
-                    <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-pink-600 hover:bg-pink-700">
-                      Editar Perfil
-                    </button>
-                    <button className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
-                      Cambiar Contraseña
-                    </button>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Telefono
+                    </label>
+                    <input
+                      className="mt-1 w-full border rounded px-3 py-2"
+                      value={profileForm.phone}
+                      onChange={(e) =>
+                        setProfileForm((current) => ({
+                          ...current,
+                          phone: e.target.value,
+                        }))
+                      }
+                      placeholder="Tu telefono"
+                    />
                   </div>
                 </div>
-              </div>
+
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Usuario
+                    </label>
+                    <input
+                      className="mt-1 w-full border rounded px-3 py-2 bg-gray-50"
+                      value={userInfo.username}
+                      readOnly
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Email
+                    </label>
+                    <input
+                      className="mt-1 w-full border rounded px-3 py-2 bg-gray-50"
+                      value={userInfo.email}
+                      readOnly
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Direccion
+                  </label>
+                  <textarea
+                    className="mt-1 w-full border rounded px-3 py-2 min-h-24"
+                    value={profileForm.address}
+                    onChange={(e) =>
+                      setProfileForm((current) => ({
+                        ...current,
+                        address: e.target.value,
+                      }))
+                    }
+                    placeholder="Tu direccion"
+                  />
+                </div>
+
+                {profileError && (
+                  <div className="text-red-500 text-sm">{profileError}</div>
+                )}
+
+                <button
+                  type="submit"
+                  className="inline-flex items-center px-4 py-2 rounded-md text-white bg-pink-600 hover:bg-pink-700 disabled:opacity-60"
+                  disabled={isSavingProfile}
+                >
+                  {isSavingProfile ? "Guardando..." : "Guardar perfil"}
+                </button>
+              </form>
             </div>
 
-            {/* Sección de pedidos recientes */}
-            <div className="mt-8 bg-white shadow rounded-lg">
+            <div className="bg-white shadow rounded-lg">
               <div className="px-6 py-4 border-b border-gray-200">
                 <h3 className="text-lg font-medium text-gray-900">
-                  Pedidos Recientes
+                  Cambiar contrasena
                 </h3>
               </div>
-              <div className="px-6 py-4">
-                <div className="text-center py-8 text-gray-500">
-                  <svg
-                    className="mx-auto h-12 w-12 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+              <form onSubmit={handlePasswordSubmit} className="px-6 py-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Contrasena actual
+                  </label>
+                  <div className="relative mt-1">
+                    <input
+                      type={showOldPassword ? "text" : "password"}
+                      className="w-full border rounded px-3 py-2 pr-12"
+                      value={passwordForm.oldPassword}
+                      onChange={(e) =>
+                        setPasswordForm((current) => ({
+                          ...current,
+                          oldPassword: e.target.value,
+                        }))
+                      }
+                      required
                     />
-                  </svg>
-                  <h4 className="mt-4 text-lg font-medium">
-                    No tienes pedidos aún
-                  </h4>
-                  <p className="mt-2 text-sm">
-                    Explora nuestros productos y realiza tu primera compra.
-                  </p>
-                  <button
-                    onClick={() => router.push("/products")}
-                    className="mt-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-pink-600 hover:bg-pink-700"
-                  >
-                    Explorar productos
-                  </button>
+                    <button
+                      type="button"
+                      aria-label={
+                        showOldPassword
+                          ? "Ocultar contrasena actual"
+                          : "Mostrar contrasena actual"
+                      }
+                      className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700"
+                      onClick={() => setShowOldPassword((current) => !current)}
+                    >
+                      {showOldPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                    </button>
+                  </div>
                 </div>
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Nueva contrasena
+                  </label>
+                  <div className="relative mt-1">
+                    <input
+                      type={showNewPassword ? "text" : "password"}
+                      className="w-full border rounded px-3 py-2 pr-12"
+                      value={passwordForm.newPassword}
+                      onChange={(e) =>
+                        setPasswordForm((current) => ({
+                          ...current,
+                          newPassword: e.target.value,
+                        }))
+                      }
+                      required
+                    />
+                    <button
+                      type="button"
+                      aria-label={
+                        showNewPassword
+                          ? "Ocultar nueva contrasena"
+                          : "Mostrar nueva contrasena"
+                      }
+                      className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700"
+                      onClick={() => setShowNewPassword((current) => !current)}
+                    >
+                      {showNewPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Confirmar nueva contrasena
+                  </label>
+                  <div className="relative mt-1">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      className="w-full border rounded px-3 py-2 pr-12"
+                      value={passwordForm.confirmPassword}
+                      onChange={(e) =>
+                        setPasswordForm((current) => ({
+                          ...current,
+                          confirmPassword: e.target.value,
+                        }))
+                      }
+                      required
+                    />
+                    <button
+                      type="button"
+                      aria-label={
+                        showConfirmPassword
+                          ? "Ocultar confirmacion de contrasena"
+                          : "Mostrar confirmacion de contrasena"
+                      }
+                      className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700"
+                      onClick={() => setShowConfirmPassword((current) => !current)}
+                    >
+                      {showConfirmPassword ? (
+                        <FiEyeOff size={18} />
+                      ) : (
+                        <FiEye size={18} />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {passwordError && (
+                  <div className="text-red-500 text-sm">{passwordError}</div>
+                )}
+
+                <button
+                  type="submit"
+                  className="inline-flex items-center px-4 py-2 rounded-md text-white bg-gray-900 hover:bg-black disabled:opacity-60"
+                  disabled={isChangingPassword}
+                >
+                  {isChangingPassword ? "Actualizando..." : "Actualizar contrasena"}
+                </button>
+              </form>
             </div>
           </div>
         </div>

@@ -1,15 +1,37 @@
+"use client";
+
+import React, { Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import SidebarDesktop, {
   SidebarItem,
 } from "../../components/products/SidebarDesktop";
 import SidebarMobile from "../../components/products/SidebarMobile";
-import React from "react";
+import { getStoredAuthToken, getStoredUser } from "@/services/users";
+
+const isAdminRole = (role?: string | null): boolean =>
+  role?.trim().toLowerCase() === "administrador";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // Sidebar items
+  return (
+    <Suspense fallback={null}>
+      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+    </Suspense>
+  );
+}
+
+function DashboardLayoutContent({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isAllowed, setIsAllowed] = React.useState<boolean | null>(null);
+
   const sidebarItems: SidebarItem[] = [
     {
       src: "/dashboard/productos.png",
@@ -43,11 +65,24 @@ export default function DashboardLayout({
     },
   ];
 
-  // Detectar opción activa desde la URL (solo en cliente)
-  let activeOption = "products";
-  if (typeof window !== "undefined") {
-    const params = new URLSearchParams(window.location.search);
-    activeOption = params.get("option") || "products";
+  const activeOption = searchParams.get("option") || "products";
+
+  React.useEffect(() => {
+    const token = getStoredAuthToken();
+    const user = getStoredUser();
+    const isAdmin = Boolean(token) && isAdminRole(user?.role);
+
+    if (!isAdmin) {
+      router.replace("/");
+      setIsAllowed(false);
+      return;
+    }
+
+    setIsAllowed(true);
+  }, [router]);
+
+  if (isAllowed !== true) {
+    return null;
   }
 
   return (

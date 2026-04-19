@@ -3,6 +3,7 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSelector } from "react-redux";
+import { getStoredAuthToken, getStoredUser } from "@/services/users";
 import { RootState } from "@/store";
 import {
   MdFavorite,
@@ -18,31 +19,39 @@ import {
 const navLinks = [
   { href: "/", icon: <MdHome />, label: "Inicio" },
   { href: "/products", icon: <MdStore />, label: "Productos" },
-  { href: "/account", icon: <MdPerson />, label: "Cuenta" },
   { href: "/dashboard/products", icon: <MdBarChart />, label: "Dashboard" },
   { href: "/acerca", icon: <MdInfo />, label: "Acerca" },
 ];
 
+const isAdminRole = (role?: string | null): boolean =>
+  role?.trim().toLowerCase() === "administrador";
+
 export default function Navbar() {
-  // Hooks siempre en el mismo orden
   const cartCount = useSelector((state: RootState) => state.cart.totalItems);
   const favoritesCount = useSelector((state: RootState) =>
     state.favorites && Array.isArray(state.favorites.items)
       ? state.favorites.items.length
-      : 0
+      : 0,
   );
   const [mounted, setMounted] = React.useState(false);
+  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
+  const [isAdmin, setIsAdmin] = React.useState(false);
+
   React.useEffect(() => {
     setMounted(true);
+    setIsAuthenticated(Boolean(getStoredAuthToken()));
+    setIsAdmin(isAdminRole(getStoredUser()?.role));
   }, []);
+
   const displayCart = mounted ? cartCount : 0;
   const displayFav = mounted ? favoritesCount : 0;
+  const visibleNavLinks = navLinks.filter(
+    (link) => link.href !== "/dashboard/products" || isAdmin,
+  );
 
   return (
     <>
-      {/* Navbar superior */}
       <nav className="w-full bg-pink-50 shadow-md border-b border-pink-200 flex items-center justify-between px-4 sm:px-6 lg:px-8 xl:px-10 h-16 sm:h-20 md:h-24 lg:h-28 xl:h-32 2xl:h-36 transition-all">
-        {/* Logo */}
         <div className="flex items-center h-full min-w-0">
           <Image
             src="/chikitoslandia.png"
@@ -54,9 +63,9 @@ export default function Navbar() {
             className="object-contain object-left w-full h-32 sm:h-40 md:h-48 lg:h-56 xl:h-64 2xl:h-72 max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl xl:max-w-3xl 2xl:max-w-[900px]"
           />
         </div>
-        {/* Links en desktop */}
+
         <div className="hidden md:flex flex-1 justify-center gap-6 lg:gap-10 xl:gap-12">
-          {navLinks.map((link) => (
+          {visibleNavLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -70,7 +79,6 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Iconos a la derecha - Solo desktop */}
         <div className="hidden md:flex gap-4 lg:gap-6 items-center">
           <Link href="/favorites" title="Favoritos" className="relative group">
             <MdFavorite
@@ -84,7 +92,6 @@ export default function Navbar() {
             )}
           </Link>
 
-          {/* Carrito con badge */}
           <Link href="/cart" title="Carrito" className="relative group">
             <MdShoppingCart
               size={28}
@@ -97,15 +104,25 @@ export default function Navbar() {
             )}
           </Link>
 
-          <Link href="/login" title="Login" className="group">
-            <MdLogin
-              size={28}
-              className="text-gray-500 hover:text-gray-700 transition-colors lg:w-8 lg:h-8 xl:w-9 xl:h-9"
-            />
+          <Link
+            href={isAuthenticated ? "/account" : "/login"}
+            title={isAuthenticated ? "Mi Cuenta" : "Login"}
+            className="group"
+          >
+            {isAuthenticated ? (
+              <MdPerson
+                size={28}
+                className="text-gray-500 hover:text-gray-700 transition-colors lg:w-8 lg:h-8 xl:w-9 xl:h-9"
+              />
+            ) : (
+              <MdLogin
+                size={28}
+                className="text-gray-500 hover:text-gray-700 transition-colors lg:w-8 lg:h-8 xl:w-9 xl:h-9"
+              />
+            )}
           </Link>
         </div>
 
-        {/* Solo carrito visible en móvil */}
         <div className="md:hidden flex items-center gap-2">
           <Link href="/cart" title="Carrito" className="relative">
             <MdShoppingCart
@@ -121,10 +138,8 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Menú inferior tipo Instagram - Solo móvil */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-pink-200 z-50 shadow-lg">
         <div className="flex justify-around items-center py-2 px-2">
-          {/* Inicio */}
           <Link
             href="/"
             className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500"
@@ -137,7 +152,6 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {/* Productos */}
           <Link
             href="/products"
             className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500"
@@ -150,7 +164,6 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {/* Favoritos */}
           <Link
             href="/favorites"
             className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500 relative"
@@ -167,7 +180,7 @@ export default function Navbar() {
               Favoritos
             </span>
           </Link>
-          {/* Cuenta */}
+
           <Link
             href="/account"
             className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500"
@@ -179,18 +192,20 @@ export default function Navbar() {
               Cuenta
             </span>
           </Link>
-          {/* Dashboard */}
-          <Link
-            href="/dashboard/products"
-            className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500"
-          >
-            <div className="p-2 rounded-full hover:bg-pink-100 transition-colors">
-              <MdBarChart size={20} />
-            </div>
-            <span className="text-xs mt-1 text-center truncate w-full font-normal">
-              Dashboard
-            </span>
-          </Link>
+
+          {isAdmin && (
+            <Link
+              href="/dashboard/products"
+              className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500"
+            >
+              <div className="p-2 rounded-full hover:bg-pink-100 transition-colors">
+                <MdBarChart size={20} />
+              </div>
+              <span className="text-xs mt-1 text-center truncate w-full font-normal">
+                Dashboard
+              </span>
+            </Link>
+          )}
         </div>
       </div>
     </>

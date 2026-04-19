@@ -1,6 +1,6 @@
 // src/app/dashboard/products/edit/[id]/page.tsx
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import React, { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import {
@@ -31,7 +31,7 @@ import {
 } from "@/services/products";
 import { useCategories } from "@/services/categories/useCategories";
 
-const EditProductPage: React.FC = () => {
+const EditProductContent: React.FC = () => {
   const router = useRouter();
   const { options } = useCategories();
   const categoryOptions = options.length
@@ -700,6 +700,14 @@ const EditProductPage: React.FC = () => {
         </button>
       </form>
     </div>
+  );
+};
+
+const EditProductPage: React.FC = () => {
+  return (
+    <Suspense fallback={<div className="py-10 text-center">Cargando...</div>}>
+      <EditProductContent />
+    </Suspense>
   );
 };
 

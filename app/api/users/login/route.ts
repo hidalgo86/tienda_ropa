@@ -1,0 +1,93 @@
+import { NextRequest, NextResponse } from "next/server";
+import { executeUsersGraphql } from "../graphqlClient";
+import { UserApiRouteError } from "../userApi.error";
+
+const loginMutation = `
+  mutation Login($input: LoginInput!) {
+    login(input: $input) {
+      access_token
+      refresh_token
+      user {
+        id
+        username
+        email
+        isEmailVerified
+        status
+        role
+        name
+        phone
+        address
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+
+const mapLoginError = (message: string): { message: string; status: number } => {
+  const normalized = message.trim().toLowerCase();
+
+  if (
+    normalized.includes("credenciales") ||
+    normalized.includes("usuario o contrasena") ||
+    normalized.includes("usuario o contraseña") ||
+    normalized.includes("invalid credentials") ||
+    normalized.includes("unauthorized")
+  ) {
+    return {
+      message: "Usuario o contrasena incorrectos.",
+      status: 401,
+    };
+  }
+
+  if (
+    normalized.includes("unknown type") ||
+    normalized.includes("cannot query field") ||
+    normalized.includes("syntax error") ||
+    normalized.includes("graphql")
+  ) {
+    return {
+      message: "El inicio de sesion no esta disponible temporalmente.",
+      status: 502,
+    };
+  }
+
+  return {
+    message: "No se pudo iniciar sesion. Intenta nuevamente.",
+    status: 400,
+  };
+};
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const data = await executeUsersGraphql<
+      {
+        login: {
+          access_token: string;
+          refresh_token: string;
+          user: Record<string, unknown>;
+        };
+      },
+      { input: { username: string; password: string } }
+    >({
+      query: loginMutation,
+      variables: { input: body },
+    });
+
+    return NextResponse.json(data.login);
+  } catch (error) {
+    if (error instanceof UserApiRouteError) {
+      const mappedError = mapLoginError(error.message);
+      return NextResponse.json(
+        { error: mappedError.message },
+        { status: mappedError.status },
+      );
+    }
+
+    return NextResponse.json(
+      { error: "No se pudo iniciar sesion. Intenta nuevamente." },
+      { status: 500 },
+    );
+  }
+}

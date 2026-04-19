@@ -1,47 +1,65 @@
 "use client";
-import { useState } from "react";
+
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { FiEye, FiEyeOff } from "react-icons/fi";
+import { toast } from "sonner";
+import { getStoredAuthToken, loginUser, storeAuthSession } from "@/services/users";
+import type { LoginFormState } from "@/types/ui/users";
+
+const initialFormState: LoginFormState = {
+  username: "",
+  password: "",
+};
 
 export default function LoginPage() {
-  const [usuario, setUsuario] = useState("");
-  const [password, setPassword] = useState("");
+  const [form, setForm] = useState<LoginFormState>(initialFormState);
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (getStoredAuthToken()) {
+      router.replace("/account");
+    }
+  }, [router]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    // Aquí iría la lógica real de login
-    if (!usuario || !password) {
-      setError("Usuario y contraseña requeridos");
+    if (!form.username.trim() || !form.password) {
+      setError("Usuario y contrasena requeridos");
       return;
     }
 
-    // Simulación de login exitoso - en producción esto vendría del backend
+    setIsSubmitting(true);
+
     try {
-      // Simular datos del usuario autenticado
-      const userData = {
-        id: "1",
-        name: usuario,
-        email: `${usuario}@ejemplo.com`,
-        role: "user",
-      };
+      const session = await loginUser({
+        username: form.username.trim(),
+        password: form.password,
+      });
 
-      // Simular token de autenticación
-      const authToken = `token_${Date.now()}_${Math.random()}`;
+      storeAuthSession(session);
+      toast.success("Sesion iniciada");
 
-      // Guardar en localStorage (en producción usarías cookies httpOnly)
-      localStorage.setItem("authToken", authToken);
-      localStorage.setItem("userData", JSON.stringify(userData));
-
-      // Redirigir a la página que el usuario intentaba acceder o al dashboard
       const redirectTo =
         new URLSearchParams(window.location.search).get("redirect") ||
-        "/account";
+        "/";
       router.push(redirectTo);
-    } catch {
-      setError("Error al iniciar sesión. Intenta nuevamente.");
+    } catch (submissionError) {
+      const message =
+        submissionError instanceof Error
+          ? submissionError.message
+          : "No se pudo iniciar sesion. Intenta nuevamente.";
+      setError(message);
+      toast.error(message, {
+        description: "Verifica tus datos o vuelve a intentarlo en unos minutos.",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -54,7 +72,7 @@ export default function LoginPage() {
           className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none"
           onClick={() => router.push("/")}
         >
-          ×
+          x
         </button>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -62,36 +80,54 @@ export default function LoginPage() {
             <input
               type="text"
               className="w-full border rounded px-3 py-2"
-              value={usuario}
-              onChange={(e) => setUsuario(e.target.value)}
+              value={form.username}
+              onChange={(e) =>
+                setForm((current) => ({ ...current, username: e.target.value }))
+              }
               required
             />
           </div>
           <div>
-            <label className="block mb-1 font-medium">Contraseña</label>
-            <input
-              type="password"
-              className="w-full border rounded px-3 py-2"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <label className="block mb-1 font-medium">Contrasena</label>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                className="w-full border rounded px-3 py-2 pr-12"
+                value={form.password}
+                onChange={(e) =>
+                  setForm((current) => ({ ...current, password: e.target.value }))
+                }
+                required
+              />
+              <button
+                type="button"
+                aria-label={showPassword ? "Ocultar contrasena" : "Mostrar contrasena"}
+                className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700"
+                onClick={() => setShowPassword((current) => !current)}
+              >
+                {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+              </button>
+            </div>
           </div>
-          {error && <div className="text-red-500 text-sm">{error}</div>}
+          {error && (
+            <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
+              {error}
+            </div>
+          )}
           <div className="flex flex-col items-start mt-2 space-y-1">
             <button
               className="text-blue-600 text-sm hover:underline"
               type="button"
               onClick={() => router.push("/forgot-password")}
             >
-              Olvidé mi contraseña
+              Olvide mi contrasena
             </button>
             <button
               className="text-blue-600 text-sm hover:underline"
               type="button"
               onClick={() => router.push("/forgot-username")}
             >
-              Olvidé mi usuario
+              Olvide mi usuario
             </button>
           </div>
           <div className="flex gap-4 mt-6">
@@ -99,14 +135,16 @@ export default function LoginPage() {
               type="button"
               className="bg-blue-500 text-white px-4 py-2 rounded w-full"
               onClick={() => router.push("/register")}
+              disabled={isSubmitting}
             >
               Registrarse
             </button>
             <button
               type="submit"
-              className="bg-green-600 text-white px-4 py-2 rounded w-full"
+              className="bg-green-600 text-white px-4 py-2 rounded w-full disabled:opacity-60"
+              disabled={isSubmitting}
             >
-              Iniciar sesión
+              {isSubmitting ? "Entrando..." : "Iniciar sesion"}
             </button>
           </div>
         </form>
