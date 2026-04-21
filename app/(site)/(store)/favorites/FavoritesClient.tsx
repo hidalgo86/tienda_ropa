@@ -1,24 +1,23 @@
 "use client";
 
-import { useSelector, useDispatch } from "react-redux";
 import Link from "next/link";
-import { RootState } from "@/store";
-import { toggleFavorite, clearFavorites } from "@/store/slices/favoriteSlice";
-import { addToCart } from "@/store/slices/cartSlice";
 import ProductListPublic from "@/components/products/ProductListPublic";
 import { Product, getVariantName } from "@/types/domain/products";
 import { MdDeleteSweep } from "react-icons/md";
+import { useCartActions } from "@/lib/useCartActions";
+import { useFavoriteActions } from "@/lib/useFavoriteActions";
+import { getStoredAuthToken } from "@/services/users";
 
 export default function FavoritesClient() {
-  const dispatch = useDispatch();
-  const favoriteItems = useSelector(
-    (state: RootState) => state.favorites.items,
-  );
+  const { addProductToCart } = useCartActions();
+  const { favoriteItems, toggleProductFavorite, clearAllFavorites } =
+    useFavoriteActions();
+  const isAuthenticated = Boolean(getStoredAuthToken());
 
   const handleFavorite = (productId: string) => {
     const producto = favoriteItems.find((p) => p.id === productId);
     if (!producto) return;
-    dispatch(toggleFavorite(producto));
+    void toggleProductFavorite(producto);
   };
 
   const handleAddToCart = (productId: string) => {
@@ -28,34 +27,31 @@ export default function FavoritesClient() {
     const selectedVariant =
       variants.find((v) => (v.stock || 0) > 0) || variants[0];
     const variantName = getVariantName(selectedVariant);
-    dispatch(
-      addToCart({
+    void addProductToCart({
         product: producto,
         quantity: 1,
         selectedSize: variantName || undefined,
-      }),
-    );
+      });
   };
 
   const handleClearAllFavorites = () => {
-    if (confirm("¿Estás seguro de que quieres eliminar todos los favoritos?")) {
-      dispatch(clearFavorites());
+    if (confirm("Estas seguro de que quieres eliminar todos los favoritos?")) {
+      void clearAllFavorites();
     }
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-        {/* Header */}
         <div className="mb-6 sm:mb-8 lg:mb-10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">
-                ❤️ Mis Favoritos
+                Mis Favoritos
               </h1>
               <p className="text-sm sm:text-base text-gray-600">
                 {favoriteItems.length === 0
-                  ? "Aún no tienes productos favoritos"
+                  ? "Aun no tienes productos favoritos"
                   : `${favoriteItems.length} producto${
                       favoriteItems.length === 1 ? "" : "s"
                     } guardado${favoriteItems.length === 1 ? "" : "s"}`}
@@ -74,18 +70,16 @@ export default function FavoritesClient() {
           </div>
         </div>
 
-        {/* Contenido */}
         {favoriteItems.length === 0 ? (
-          // Estado vacío
           <div className="text-center py-16 sm:py-20 lg:py-24">
             <div className="max-w-md mx-auto">
-              <div className="text-6xl sm:text-7xl lg:text-8xl mb-6">💔</div>
+              <div className="text-6xl sm:text-7xl lg:text-8xl mb-6">♡</div>
               <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4">
-                No tienes favoritos aún
+                No tienes favoritos aun
               </h2>
               <p className="text-gray-600 mb-8">
-                Explora nuestros productos y marca los que más te gusten tocando
-                el corazón ❤️
+                Explora nuestros productos y marca los que mas te gusten tocando
+                el corazon.
               </p>
               <Link
                 href="/products"
@@ -96,9 +90,7 @@ export default function FavoritesClient() {
             </div>
           </div>
         ) : (
-          // Lista de favoritos
           <div className="space-y-6">
-            {/* Info adicional */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-start gap-3">
                 <div className="text-blue-500 mt-0.5">
@@ -116,19 +108,21 @@ export default function FavoritesClient() {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-sm font-medium text-blue-900 mb-1">
-                    💾 Guardado en memoria local
+                    {isAuthenticated
+                      ? "Favoritos sincronizados con tu cuenta"
+                      : "Guardado en memoria local"}
                   </h3>
                   <p className="text-sm text-blue-700">
-                    Tus favoritos se guardan en este dispositivo. Cuando inicies
-                    sesión, podrás sincronizarlos con tu cuenta.
+                    {isAuthenticated
+                      ? "Tus favoritos ya estan vinculados a tu usuario y se conservaran cuando vuelvas a iniciar sesion."
+                      : "Tus favoritos se guardan en este dispositivo. Cuando inicies sesion, se sincronizaran con tu cuenta."}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Lista pública reutilizada para favoritos */}
             <ProductListPublic
-              products={favoriteItems as unknown as Product[]}
+              products={favoriteItems as Product[]}
               onAddToCart={handleAddToCart}
               onFavorite={handleFavorite}
             />

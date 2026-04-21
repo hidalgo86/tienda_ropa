@@ -1,23 +1,23 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
 import {
   Product,
   ProductAvailability,
   getVariantName,
 } from "@/types/domain/products";
 import ProductListPublic from "@/components/products/ProductListPublic";
-import { addToCart } from "@/store/slices/cartSlice";
-import { toggleFavorite } from "@/store/slices/favoriteSlice";
 import { listProducts } from "@/services/products";
 import Link from "next/link";
+import { useCartActions } from "@/lib/useCartActions";
+import { useFavoriteActions } from "@/lib/useFavoriteActions";
 
 export default function Cards() {
   const [productos, setProductos] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const dispatch = useDispatch();
+  const { addProductToCart } = useCartActions();
+  const { toggleProductFavorite } = useFavoriteActions();
 
   const loadProducts = async () => {
     try {
@@ -98,19 +98,17 @@ export default function Cards() {
     const selectedVariant =
       variants.find((v) => (v.stock || 0) > 0) || variants[0];
     const variantName = getVariantName(selectedVariant);
-    dispatch(
-      addToCart({
+    void addProductToCart({
         product: producto,
         quantity: 1,
         selectedSize: variantName || undefined,
-      }),
-    );
+      });
   };
 
   const handleFavorite = (id: string) => {
     const producto = productos.find((p) => p.id === id);
     if (!producto) return;
-    dispatch(toggleFavorite(producto));
+    void toggleProductFavorite(producto);
   };
 
   return (

@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { toast } from "sonner";
+import { MdReceiptLong } from "react-icons/md";
 import {
   changePassword,
   clearStoredSession,
@@ -14,6 +16,7 @@ import {
   updateProfile,
   updateStoredUser,
 } from "@/services/users";
+import { listMyOrders } from "@/services/orders";
 import type { User } from "@/types/domain/users";
 import type {
   AccountProfileFormState,
@@ -36,7 +39,10 @@ export default function AccountClient() {
   const router = useRouter();
   const storedUser = getStoredUser();
   const [isLoading, setIsLoading] = useState(true);
+  const [ordersLoading, setOrdersLoading] = useState(true);
   const [userInfo, setUserInfo] = useState<User | null>(null);
+  const [ordersCount, setOrdersCount] = useState(0);
+  const [pendingOrdersCount, setPendingOrdersCount] = useState(0);
   const [profileForm, setProfileForm] =
     useState<AccountProfileFormState>(initialProfileForm);
   const [passwordForm, setPasswordForm] =
@@ -60,10 +66,18 @@ export default function AccountClient() {
       return;
     }
 
-    const loadUser = async () => {
+    const loadUserAndOrders = async () => {
       try {
-        const user = await getCurrentUser({ token });
+        const [user, orderList] = await Promise.all([
+          getCurrentUser({ token }),
+          listMyOrders({ token }),
+        ]);
+
         setUserInfo(user);
+        setOrdersCount(orderList.length);
+        setPendingOrdersCount(
+          orderList.filter((order) => order.status === "pending").length,
+        );
         setProfileForm({
           name: user.name ?? "",
           phone: user.phone ?? "",
@@ -79,15 +93,30 @@ export default function AccountClient() {
         router.push("/login?redirect=%2Faccount");
       } finally {
         setIsLoading(false);
+        setOrdersLoading(false);
       }
     };
 
-    void loadUser();
+    void loadUserAndOrders();
   }, [router]);
 
-  const handleLogout = () => {
-    clearStoredSession();
-    router.push("/");
+  const refreshOrders = async () => {
+    const token = getStoredAuthToken();
+    if (!token) return;
+
+    try {
+      const orderList = await listMyOrders({ token });
+      setOrdersCount(orderList.length);
+      setPendingOrdersCount(
+        orderList.filter((order) => order.status === "pending").length,
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "No se pudieron actualizar tus pedidos";
+      toast.error(message);
+    }
   };
 
   const handleResendVerification = async () => {
@@ -215,24 +244,8 @@ export default function AccountClient() {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Mi Cuenta</h1>
               <p className="mt-1 text-sm text-gray-600">
-                Gestiona tu informacion personal y tu acceso.
+                Gestiona tu informacion personal, tus pedidos y tu acceso.
               </p>
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => router.push("/")}
-                className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Ir al inicio
-              </button>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="inline-flex items-center rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
-              >
-                Cerrar sesion
-              </button>
             </div>
           </div>
         </div>
@@ -270,7 +283,9 @@ export default function AccountClient() {
                   className="inline-flex items-center rounded-md border border-amber-300 bg-white px-4 py-2 text-sm font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-60"
                   disabled={isResendingVerification}
                 >
-                  {isResendingVerification ? "Reenviando..." : "Reenviar codigo"}
+                  {isResendingVerification
+                    ? "Reenviando..."
+                    : "Reenviar codigo"}
                 </button>
               </div>
             </div>
@@ -278,7 +293,7 @@ export default function AccountClient() {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="md:col-span-1">
+          <div className="md:col-span-1 space-y-8">
             <div className="bg-white shadow rounded-lg">
               <div className="px-6 py-4 border-b border-gray-200">
                 <h3 className="text-lg font-medium text-gray-900">Resumen</h3>
@@ -298,6 +313,46 @@ export default function AccountClient() {
                 </div>
               </div>
             </div>
+
+            <div className="bg-white shadow rounded-lg">
+              <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-2">
+                <MdReceiptLong className="text-pink-600" size={20} />
+                <h3 className="text-lg font-medium text-gray-900">
+                  Mis pedidos
+                </h3>
+              </div>
+              <div className="px-6 py-4">
+                <p className="text-sm text-gray-600">
+                  {ordersLoading
+                    ? "Cargando pedidos..."
+                    : ordersCount === 0
+                      ? "Aun no tienes pedidos registrados."
+                      : `${ordersCount} pedido${ordersCount === 1 ? "" : "s"} registrado${ordersCount === 1 ? "" : "s"}.`}
+                </p>
+                {!ordersLoading && pendingOrdersCount > 0 && (
+                  <p className="mt-2 text-sm text-amber-700">
+                    Tienes {pendingOrdersCount} pedido
+                    {pendingOrdersCount === 1 ? "" : "s"} pendiente
+                    {pendingOrdersCount === 1 ? "" : "s"}.
+                  </p>
+                )}
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => void refreshOrders()}
+                    className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Actualizar pedidos
+                  </button>
+                  <Link
+                    href="/orders"
+                    className="inline-flex items-center rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-black"
+                  >
+                    Ver mis pedidos
+                  </Link>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="md:col-span-2 space-y-8">
@@ -307,7 +362,10 @@ export default function AccountClient() {
                   Informacion personal
                 </h3>
               </div>
-              <form onSubmit={handleProfileSubmit} className="px-6 py-4 space-y-6">
+              <form
+                onSubmit={handleProfileSubmit}
+                className="px-6 py-4 space-y-6"
+              >
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                   <div>
                     <label className="block text-sm font-medium text-gray-700">
@@ -403,7 +461,10 @@ export default function AccountClient() {
                   Cambiar contrasena
                 </h3>
               </div>
-              <form onSubmit={handlePasswordSubmit} className="px-6 py-4 space-y-4">
+              <form
+                onSubmit={handlePasswordSubmit}
+                className="px-6 py-4 space-y-4"
+              >
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
                     Contrasena actual
@@ -431,7 +492,11 @@ export default function AccountClient() {
                       className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700"
                       onClick={() => setShowOldPassword((current) => !current)}
                     >
-                      {showOldPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                      {showOldPassword ? (
+                        <FiEyeOff size={18} />
+                      ) : (
+                        <FiEye size={18} />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -462,7 +527,11 @@ export default function AccountClient() {
                       className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700"
                       onClick={() => setShowNewPassword((current) => !current)}
                     >
-                      {showNewPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                      {showNewPassword ? (
+                        <FiEyeOff size={18} />
+                      ) : (
+                        <FiEye size={18} />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -491,7 +560,9 @@ export default function AccountClient() {
                           : "Mostrar confirmacion de contrasena"
                       }
                       className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700"
-                      onClick={() => setShowConfirmPassword((current) => !current)}
+                      onClick={() =>
+                        setShowConfirmPassword((current) => !current)
+                      }
                     >
                       {showConfirmPassword ? (
                         <FiEyeOff size={18} />
@@ -511,7 +582,9 @@ export default function AccountClient() {
                   className="inline-flex items-center px-4 py-2 rounded-md text-white bg-gray-900 hover:bg-black disabled:opacity-60"
                   disabled={isChangingPassword}
                 >
-                  {isChangingPassword ? "Actualizando..." : "Actualizar contrasena"}
+                  {isChangingPassword
+                    ? "Actualizando..."
+                    : "Actualizar contrasena"}
                 </button>
               </form>
             </div>

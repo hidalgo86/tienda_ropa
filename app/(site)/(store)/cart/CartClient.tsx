@@ -1,33 +1,19 @@
 "use client";
 
-import { useSelector, useDispatch } from "react-redux";
 import Link from "next/link";
 import Image from "next/image";
-import { RootState } from "@/store";
-import {
-  removeFromCart,
-  updateQuantity,
-  clearCart,
-} from "@/store/slices/cartSlice";
-import {
-  MdDelete,
-  MdDeleteSweep,
-  MdAdd,
-  MdRemove,
-  MdShoppingBag,
-} from "react-icons/md";
+import { MdDelete, MdDeleteSweep, MdAdd, MdRemove, MdShoppingBag } from "react-icons/md";
 import { useState } from "react";
-import {
-  findVariantBySelection,
-  formatVariantLabel,
-} from "@/types/domain/products";
+import { findVariantBySelection, formatVariantLabel } from "@/types/domain/products";
+import { useCartActions } from "@/lib/useCartActions";
+import { getStoredAuthToken } from "@/services/users";
 
 export default function CartClient() {
-  const dispatch = useDispatch();
-  const { items, totalItems, totalPrice } = useSelector(
-    (state: RootState) => state.cart,
-  );
+  const { cart, changeCartItemQuantity, removeCartItem, clearAllCart } =
+    useCartActions();
+  const { items, totalItems, totalPrice } = cart;
   const [isClearing, setIsClearing] = useState(false);
+  const isAuthenticated = Boolean(getStoredAuthToken());
 
   const handleQuantityChange = (
     productId: string,
@@ -35,14 +21,12 @@ export default function CartClient() {
     selectedSize?: string,
     selectedColor?: string,
   ) => {
-    dispatch(
-      updateQuantity({
-        productId,
-        quantity: newQuantity,
-        selectedSize,
-        selectedColor,
-      }),
-    );
+    void changeCartItemQuantity({
+      productId,
+      quantity: newQuantity,
+      selectedSize,
+      selectedColor,
+    });
   };
 
   const handleRemoveItem = (
@@ -50,29 +34,25 @@ export default function CartClient() {
     selectedSize?: string,
     selectedColor?: string,
   ) => {
-    dispatch(removeFromCart({ productId, selectedSize, selectedColor }));
+    void removeCartItem({ productId, selectedSize, selectedColor });
   };
 
   const handleClearCart = async () => {
     setIsClearing(true);
-    // Pequeña animación antes de limpiar
     setTimeout(() => {
-      dispatch(clearCart());
-      setIsClearing(false);
+      void clearAllCart().finally(() => setIsClearing(false));
     }, 300);
   };
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("es-MX", {
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat("es-MX", {
       style: "currency",
       currency: "MXN",
     }).format(price);
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8 pb-24 md:pb-8">
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-3">
@@ -81,21 +61,16 @@ export default function CartClient() {
             </h1>
             <p className="text-gray-600 mt-1">
               {totalItems > 0
-                ? `${totalItems} ${
-                    totalItems === 1 ? "producto" : "productos"
-                  } en tu carrito`
-                : "Tu carrito está vacío"}
+                ? `${totalItems} ${totalItems === 1 ? "producto" : "productos"} en tu carrito`
+                : "Tu carrito esta vacio"}
             </p>
           </div>
 
-          {/* Botón limpiar carrito */}
           {items.length > 0 && (
             <button
               onClick={handleClearCart}
               disabled={isClearing}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 
-                         disabled:bg-red-300 text-white rounded-lg transition-colors
-                         text-sm font-medium"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white rounded-lg transition-colors text-sm font-medium"
             >
               <MdDeleteSweep size={18} />
               {isClearing ? "Limpiando..." : "Limpiar carrito"}
@@ -103,17 +78,23 @@ export default function CartClient() {
           )}
         </div>
 
+        {items.length > 0 && (
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+            {isAuthenticated
+              ? "Tu carrito esta vinculado a tu cuenta."
+              : "Tu carrito se guarda en este dispositivo. Al iniciar sesion se sincronizara con tu cuenta."}
+          </div>
+        )}
+
         {items.length === 0 ? (
-          // Estado vacío
           <div className="text-center py-16 sm:py-20 lg:py-24">
             <div className="max-w-md mx-auto">
               <div className="text-6xl sm:text-7xl lg:text-8xl mb-6">🛒</div>
               <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4">
-                Tu carrito está vacío
+                Tu carrito esta vacio
               </h2>
               <p className="text-gray-600 mb-8">
-                Explora nuestros productos y agrega los que más te gusten al
-                carrito 🛍️
+                Explora nuestros productos y agrega los que mas te gusten al carrito.
               </p>
               <Link
                 href="/products"
@@ -124,9 +105,7 @@ export default function CartClient() {
             </div>
           </div>
         ) : (
-          // Lista del carrito
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Lista de productos */}
             <div className="lg:col-span-2 space-y-4">
               {items.map((item, index) => {
                 const variantPrice = findVariantBySelection(
@@ -143,7 +122,6 @@ export default function CartClient() {
                     className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-200 p-4 sm:p-6"
                   >
                     <div className="flex flex-col sm:flex-row gap-4">
-                      {/* Imagen del producto */}
                       <div className="w-full sm:w-24 h-32 sm:h-24 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                         <Image
                           src={itemImage}
@@ -154,7 +132,6 @@ export default function CartClient() {
                         />
                       </div>
 
-                      {/* Info del producto */}
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
                           <div className="flex-1 min-w-0">
@@ -162,12 +139,10 @@ export default function CartClient() {
                               {item.name || "Producto sin nombre"}
                             </h3>
 
-                            {/* Detalles de selección */}
                             <div className="flex flex-wrap gap-2 mt-2">
                               {item.selectedSize && (
                                 <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
-                                  Variante:{" "}
-                                  {formatVariantLabel(item.selectedSize)}
+                                  Variante: {formatVariantLabel(item.selectedSize)}
                                 </span>
                               )}
                               {item.selectedColor && (
@@ -177,13 +152,11 @@ export default function CartClient() {
                               )}
                             </div>
 
-                            {/* Precio unitario */}
                             <p className="text-blue-600 font-semibold mt-2">
                               {formatPrice(itemPrice)} c/u
                             </p>
                           </div>
 
-                          {/* Botón eliminar */}
                           <button
                             onClick={() =>
                               handleRemoveItem(
@@ -199,12 +172,9 @@ export default function CartClient() {
                           </button>
                         </div>
 
-                        {/* Controles de cantidad y total */}
                         <div className="flex items-center justify-between mt-4">
                           <div className="flex items-center gap-3">
-                            <span className="text-sm text-gray-600">
-                              Cantidad:
-                            </span>
+                            <span className="text-sm text-gray-600">Cantidad:</span>
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() =>
@@ -241,7 +211,6 @@ export default function CartClient() {
                             </div>
                           </div>
 
-                          {/* Total del item */}
                           <div className="text-right">
                             <p className="font-bold text-gray-900">
                               {formatPrice(itemTotal)}
@@ -255,7 +224,6 @@ export default function CartClient() {
               })}
             </div>
 
-            {/* Resumen del pedido */}
             <div className="lg:col-span-1">
               <div className="bg-white rounded-xl shadow-md p-6 sticky top-4">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -264,15 +232,11 @@ export default function CartClient() {
 
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">
-                      Productos ({totalItems})
-                    </span>
-                    <span className="font-medium">
-                      {formatPrice(totalPrice)}
-                    </span>
+                    <span className="text-gray-600">Productos ({totalItems})</span>
+                    <span className="font-medium">{formatPrice(totalPrice)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Envío</span>
+                    <span className="text-gray-600">Envio</span>
                     <span className="font-medium text-green-600">Gratis</span>
                   </div>
                   <div className="border-t pt-3">

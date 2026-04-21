@@ -35,6 +35,7 @@ interface ApiOptions {
 const AUTH_TOKEN_KEY = "authToken";
 const REFRESH_TOKEN_KEY = "refreshToken";
 const USER_DATA_KEY = "userData";
+const AUTH_SESSION_EVENT = "auth:session-changed";
 
 const genericErrorMessages = new Set([
   "bad request exception",
@@ -143,6 +144,11 @@ const parseResponseOrThrow = async <T>(
 
 const isBrowser = (): boolean => typeof window !== "undefined";
 
+const notifyAuthSessionChange = (): void => {
+  if (!isBrowser()) return;
+  window.dispatchEvent(new Event(AUTH_SESSION_EVENT));
+};
+
 export const getStoredAuthToken = (): string | null => {
   if (!isBrowser()) return null;
   return window.localStorage.getItem(AUTH_TOKEN_KEY);
@@ -173,6 +179,7 @@ export const storeAuthSession = (session: AuthSession): void => {
   window.localStorage.setItem(AUTH_TOKEN_KEY, session.access_token);
   window.localStorage.setItem(REFRESH_TOKEN_KEY, session.refresh_token);
   window.localStorage.setItem(USER_DATA_KEY, JSON.stringify(session.user));
+  notifyAuthSessionChange();
 };
 
 export const updateStoredUser = (user: User): void => {
@@ -185,6 +192,7 @@ const storeTokens = (tokens: RefreshTokenApiResponse): void => {
 
   window.localStorage.setItem(AUTH_TOKEN_KEY, tokens.access_token);
   window.localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token);
+  notifyAuthSessionChange();
 };
 
 export const clearStoredSession = (): void => {
@@ -193,6 +201,7 @@ export const clearStoredSession = (): void => {
   window.localStorage.removeItem(AUTH_TOKEN_KEY);
   window.localStorage.removeItem(REFRESH_TOKEN_KEY);
   window.localStorage.removeItem(USER_DATA_KEY);
+  notifyAuthSessionChange();
 };
 
 export const registerUser = async (

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import Image from "next/image";
 import {
   findVariantBySelection,
@@ -17,8 +17,8 @@ import {
 import type { ProductDetailClientProps } from "@/types/ui/products";
 import { useCategories } from "@/services/categories/useCategories";
 import { RootState } from "@/store";
-import { addToCart } from "@/store/slices/cartSlice";
-import { toggleFavorite } from "@/store/slices/favoriteSlice";
+import { useCartActions } from "@/lib/useCartActions";
+import { useFavoriteActions } from "@/lib/useFavoriteActions";
 import {
   MdArrowBack,
   MdShoppingCart,
@@ -34,7 +34,6 @@ export default function ProductDetailClient({
   mode = "public",
 }: ProductDetailClientProps) {
   const router = useRouter();
-  const dispatch = useDispatch();
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -42,6 +41,8 @@ export default function ProductDetailClient({
   const isAdminMode = mode === "admin";
   const isRopa = hasProductVariants(producto) || Boolean(producto.genre);
   const { options } = useCategories();
+  const { addProductToCart } = useCartActions();
+  const { toggleProductFavorite } = useFavoriteActions();
   const categoryOptions = options.length
     ? options
     : legacyProductCategoryOptions;
@@ -103,13 +104,11 @@ export default function ProductDetailClient({
       return;
     }
 
-    dispatch(
-      addToCart({
+    void addProductToCart({
         product: producto,
         quantity,
         selectedSize: isRopa ? selectedSize : undefined,
-      }),
-    );
+      });
 
     // Mostrar confirmación visual
     setShowAddedToCart(true);
@@ -117,7 +116,7 @@ export default function ProductDetailClient({
   };
 
   const handleFavoriteToggle = () => {
-    dispatch(toggleFavorite(producto));
+    void toggleProductFavorite(producto);
   };
 
   const handleBuyNow = () => {

@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Product, findVariantBySelection } from "@/types/domain/products";
 
-interface CartItem extends Product {
+export interface CartItem extends Product {
   quantity: number;
   selectedSize?: string;
   selectedColor?: string;
@@ -13,32 +13,15 @@ interface CartState {
   totalPrice: number;
 }
 
-// Función para cargar carrito desde localStorage
-const loadCartFromStorage = (): CartItem[] => {
-  if (typeof window === "undefined") return [];
+const GUEST_CART_KEY = "guestCart";
+const AUTH_TOKEN_KEY = "authToken";
 
-  try {
-    const savedCart = localStorage.getItem("cart");
-    return savedCart ? JSON.parse(savedCart) : [];
-  } catch (error) {
-    console.error("Error loading cart from localStorage:", error);
-    return [];
-  }
+const hasActiveSession = (): boolean => {
+  if (typeof window === "undefined") return false;
+  return Boolean(window.localStorage.getItem(AUTH_TOKEN_KEY));
 };
 
-// Función para guardar carrito en localStorage
-const saveCartToStorage = (cartItems: CartItem[]): void => {
-  if (typeof window === "undefined") return;
-
-  try {
-    localStorage.setItem("cart", JSON.stringify(cartItems));
-  } catch (error) {
-    console.error("Error saving cart to localStorage:", error);
-  }
-};
-
-// Función para calcular totales
-const calculateTotals = (items: CartItem[]) => {
+export const calculateCartTotals = (items: CartItem[]) => {
   const totalItems = items.reduce((total, item) => total + item.quantity, 0);
   const totalPrice = items.reduce((total, item) => {
     const variantPrice = findVariantBySelection(
@@ -52,13 +35,45 @@ const calculateTotals = (items: CartItem[]) => {
   return { totalItems, totalPrice };
 };
 
-const initialCartItems = loadCartFromStorage();
-const { totalItems, totalPrice } = calculateTotals(initialCartItems);
+export const getGuestCart = (): CartItem[] => {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const savedCart = window.localStorage.getItem(GUEST_CART_KEY);
+    return savedCart ? (JSON.parse(savedCart) as CartItem[]) : [];
+  } catch (error) {
+    console.error("Error loading guest cart from localStorage:", error);
+    return [];
+  }
+};
+
+export const setGuestCart = (cartItems: CartItem[]): void => {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(GUEST_CART_KEY, JSON.stringify(cartItems));
+  } catch (error) {
+    console.error("Error saving guest cart to localStorage:", error);
+  }
+};
+
+export const clearGuestCart = (): void => {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(GUEST_CART_KEY);
+};
+
+const persistGuestCart = (items: CartItem[]): void => {
+  if (hasActiveSession()) return;
+  setGuestCart(items);
+};
+
+const initialCartItems = getGuestCart();
+const initialTotals = calculateCartTotals(initialCartItems);
 
 const initialState: CartState = {
   items: initialCartItems,
-  totalItems,
-  totalPrice,
+  totalItems: initialTotals.totalItems,
+  totalPrice: initialTotals.totalPrice,
 };
 
 const cartSlice = createSlice({
@@ -81,7 +96,6 @@ const cartSlice = createSlice({
         selectedColor,
       } = action.payload;
 
-      // Buscar si el producto ya existe con las mismas características
       const existingItemIndex = state.items.findIndex(
         (item) =>
           item.id === product.id &&
@@ -90,26 +104,20 @@ const cartSlice = createSlice({
       );
 
       if (existingItemIndex >= 0) {
-        // Si existe, aumentar la cantidad
         state.items[existingItemIndex].quantity += quantity;
       } else {
-        // Si no existe, agregar nuevo item
-        const newItem: CartItem = {
+        state.items.push({
           ...product,
           quantity,
           selectedSize,
           selectedColor,
-        };
-        state.items.push(newItem);
+        });
       }
 
-      // Recalcular totales
-      const totals = calculateTotals(state.items);
+      const totals = calculateCartTotals(state.items);
       state.totalItems = totals.totalItems;
       state.totalPrice = totals.totalPrice;
-
-      // Guardar en localStorage
-      saveCartToStorage(state.items);
+      persistGuestCart(state.items);
     },
 
     removeFromCart: (
@@ -131,13 +139,10 @@ const cartSlice = createSlice({
           ),
       );
 
-      // Recalcular totales
-      const totals = calculateTotals(state.items);
+      const totals = calculateCartTotals(state.items);
       state.totalItems = totals.totalItems;
       state.totalPrice = totals.totalPrice;
-
-      // Guardar en localStorage
-      saveCartToStorage(state.items);
+      persistGuestCart(state.items);
     },
 
     updateQuantity: (
@@ -161,47 +166,35 @@ const cartSlice = createSlice({
 
       if (itemIndex >= 0) {
         if (quantity <= 0) {
-          // Si la cantidad es 0 o menos, remover el item
           state.items.splice(itemIndex, 1);
         } else {
-          // Actualizar cantidad
           state.items[itemIndex].quantity = quantity;
         }
       }
 
-      // Recalcular totales
-      const totals = calculateTotals(state.items);
+      const totals = calculateCartTotals(state.items);
       state.totalItems = totals.totalItems;
       state.totalPrice = totals.totalPrice;
-
-      // Guardar en localStorage
-      saveCartToStorage(state.items);
+      persistGuestCart(state.items);
     },
 
     clearCart: (state) => {
       state.items = [];
       state.totalItems = 0;
       state.totalPrice = 0;
-      saveCartToStorage(state.items);
+      persistGuestCart(state.items);
     },
 
-    // Para futuro: sincronizar carrito del usuario logueado
     syncCart: (state, action: PayloadAction<CartItem[]>) => {
       state.items = action.payload;
-      const totals = calculateTotals(state.items);
+      const totals = calculateCartTotals(state.items);
       state.totalItems = totals.totalItems;
       state.totalPrice = totals.totalPrice;
-      saveCartToStorage(state.items);
     },
   },
 });
 
-export const {
-  addToCart,
-  removeFromCart,
-  updateQuantity,
-  clearCart,
-  syncCart,
-} = cartSlice.actions;
+export const { addToCart, removeFromCart, updateQuantity, clearCart, syncCart } =
+  cartSlice.actions;
 
 export default cartSlice.reducer;

@@ -2,31 +2,38 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
-import { getStoredAuthToken, getStoredUser } from "@/services/users";
+import {
+  clearStoredSession,
+  getStoredAuthToken,
+  getStoredUser,
+} from "@/services/users";
 import { RootState } from "@/store";
 import {
   MdFavorite,
   MdShoppingCart,
   MdLogin,
+  MdLogout,
   MdStore,
   MdHome,
   MdPerson,
   MdBarChart,
   MdInfo,
+  MdReceiptLong,
 } from "react-icons/md";
 
 const navLinks = [
   { href: "/", icon: <MdHome />, label: "Inicio" },
   { href: "/products", icon: <MdStore />, label: "Productos" },
   { href: "/dashboard/products", icon: <MdBarChart />, label: "Dashboard" },
-  { href: "/acerca", icon: <MdInfo />, label: "Acerca" },
 ];
 
 const isAdminRole = (role?: string | null): boolean =>
   role?.trim().toLowerCase() === "administrador";
 
 export default function Navbar() {
+  const router = useRouter();
   const cartCount = useSelector((state: RootState) => state.cart.totalItems);
   const favoritesCount = useSelector((state: RootState) =>
     state.favorites && Array.isArray(state.favorites.items)
@@ -38,9 +45,18 @@ export default function Navbar() {
   const [isAdmin, setIsAdmin] = React.useState(false);
 
   React.useEffect(() => {
-    setMounted(true);
-    setIsAuthenticated(Boolean(getStoredAuthToken()));
-    setIsAdmin(isAdminRole(getStoredUser()?.role));
+    const syncAuthState = () => {
+      setMounted(true);
+      setIsAuthenticated(Boolean(getStoredAuthToken()));
+      setIsAdmin(isAdminRole(getStoredUser()?.role));
+    };
+
+    syncAuthState();
+    window.addEventListener("auth:session-changed", syncAuthState);
+
+    return () => {
+      window.removeEventListener("auth:session-changed", syncAuthState);
+    };
   }, []);
 
   const displayCart = mounted ? cartCount : 0;
@@ -48,6 +64,30 @@ export default function Navbar() {
   const visibleNavLinks = navLinks.filter(
     (link) => link.href !== "/dashboard/products" || isAdmin,
   );
+  const accountNavLinks = isAuthenticated
+    ? [
+        {
+          href: "/account",
+          icon: <MdPerson />,
+          label: "Mi Cuenta",
+        },
+        {
+          href: "/orders",
+          icon: <MdReceiptLong />,
+          label: "Pedidos",
+        },
+        {
+          href: "/acerca",
+          icon: <MdInfo />,
+          label: "Acerca",
+        },
+      ]
+    : [];
+
+  const handleLogout = () => {
+    clearStoredSession();
+    router.push("/");
+  };
 
   return (
     <>
@@ -65,7 +105,7 @@ export default function Navbar() {
         </div>
 
         <div className="hidden md:flex flex-1 justify-center gap-6 lg:gap-10 xl:gap-12">
-          {visibleNavLinks.map((link) => (
+          {[...visibleNavLinks, ...accountNavLinks].map((link) => (
             <Link
               key={link.href}
               href={link.href}
@@ -104,26 +144,43 @@ export default function Navbar() {
             )}
           </Link>
 
-          <Link
-            href={isAuthenticated ? "/account" : "/login"}
-            title={isAuthenticated ? "Mi Cuenta" : "Login"}
-            className="group"
-          >
-            {isAuthenticated ? (
-              <MdPerson
-                size={28}
-                className="text-gray-500 hover:text-gray-700 transition-colors lg:w-8 lg:h-8 xl:w-9 xl:h-9"
-              />
-            ) : (
+          {isAuthenticated ? (
+            <button
+              type="button"
+              onClick={handleLogout}
+              title="Logout"
+              className="group text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              <MdLogout size={28} className="lg:w-8 lg:h-8 xl:w-9 xl:h-9" />
+            </button>
+          ) : (
+            <Link href="/login" title="Login" className="group">
               <MdLogin
                 size={28}
                 className="text-gray-500 hover:text-gray-700 transition-colors lg:w-8 lg:h-8 xl:w-9 xl:h-9"
               />
-            )}
-          </Link>
+            </Link>
+          )}
         </div>
 
         <div className="md:hidden flex items-center gap-2">
+          {isAuthenticated ? (
+            <button
+              type="button"
+              onClick={handleLogout}
+              title="Logout"
+              className="text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              <MdLogout size={26} />
+            </button>
+          ) : (
+            <Link href="/login" title="Login" className="relative">
+              <MdLogin
+                size={26}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+              />
+            </Link>
+          )}
           <Link href="/cart" title="Carrito" className="relative">
             <MdShoppingCart
               size={26}
@@ -164,34 +221,67 @@ export default function Navbar() {
             </span>
           </Link>
 
-          <Link
-            href="/favorites"
-            className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500 relative"
-          >
-            <div className="p-2 rounded-full hover:bg-pink-100 transition-colors relative">
-              <MdFavorite size={20} />
-              {displayFav > 0 && (
+          {displayFav > 0 && (
+            <Link
+              href="/favorites"
+              className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500 relative"
+            >
+              <div className="p-2 rounded-full hover:bg-pink-100 transition-colors relative">
+                <MdFavorite size={20} />
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center text-[10px]">
                   {displayFav > 9 ? "9+" : displayFav}
                 </span>
-              )}
-            </div>
-            <span className="text-xs mt-1 text-center truncate w-full font-normal">
-              Favoritos
-            </span>
-          </Link>
+              </div>
+              <span className="text-xs mt-1 text-center truncate w-full font-normal">
+                Favoritos
+              </span>
+            </Link>
+          )}
 
-          <Link
-            href="/account"
-            className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500"
-          >
-            <div className="p-2 rounded-full hover:bg-pink-100 transition-colors">
-              <MdPerson size={20} />
-            </div>
-            <span className="text-xs mt-1 text-center truncate w-full font-normal">
-              Cuenta
-            </span>
-          </Link>
+          {displayCart > 0 && (
+            <Link
+              href="/cart"
+              className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500 relative"
+            >
+              <div className="p-2 rounded-full hover:bg-pink-100 transition-colors relative">
+                <MdShoppingCart size={20} />
+                <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center text-[10px]">
+                  {displayCart > 9 ? "9+" : displayCart}
+                </span>
+              </div>
+              <span className="text-xs mt-1 text-center truncate w-full font-normal">
+                Carrito
+              </span>
+            </Link>
+          )}
+
+          {isAuthenticated && (
+            <>
+              <Link
+                href="/account"
+                className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500"
+              >
+                <div className="p-2 rounded-full hover:bg-pink-100 transition-colors">
+                  <MdPerson size={20} />
+                </div>
+                <span className="text-xs mt-1 text-center truncate w-full font-normal">
+                  Cuenta
+                </span>
+              </Link>
+
+              <Link
+                href="/orders"
+                className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500"
+              >
+                <div className="p-2 rounded-full hover:bg-pink-100 transition-colors">
+                  <MdReceiptLong size={20} />
+                </div>
+                <span className="text-xs mt-1 text-center truncate w-full font-normal">
+                  Pedidos
+                </span>
+              </Link>
+            </>
+          )}
 
           {isAdmin && (
             <Link
