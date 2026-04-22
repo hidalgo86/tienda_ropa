@@ -112,12 +112,12 @@ export default function Cards() {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 lg:space-y-8">
-      <div className="text-center sm:text-left">
-        <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2 sm:mb-0">
+    <div className="space-y-5 sm:space-y-6 lg:space-y-8">
+      <div className="mx-auto max-w-2xl text-center sm:max-w-none sm:text-left">
+        <h2 className="text-xl font-bold text-gray-900 sm:text-2xl lg:text-3xl">
           Nuestros Productos
         </h2>
-        <p className="text-sm sm:text-base text-gray-600 lg:text-lg">
+        <p className="mt-2 text-sm text-gray-600 sm:text-base lg:text-lg">
           Descubre nuestra colección de ropa para bebés
         </p>
       </div>
@@ -128,10 +128,10 @@ export default function Cards() {
         onFavorite={handleFavorite}
       />
 
-      <div className="flex justify-center">
+      <div className="flex justify-center sm:justify-start">
         <Link
           href="/products"
-          className="inline-flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm sm:text-base shadow"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow hover:bg-blue-700 sm:w-auto sm:px-6 sm:text-base"
           aria-label="Ver todos los productos"
         >
           Ver todos

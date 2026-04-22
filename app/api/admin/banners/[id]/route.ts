@@ -1,0 +1,140 @@
+export const runtime = "nodejs";
+
+import { NextRequest, NextResponse } from "next/server";
+
+const updateMutation = `
+  mutation UpdateBanner($id: String!, $input: UpdateBannerInput!) {
+    updateBanner(id: $id, input: $input) {
+      id
+      title
+      imageUrl
+      imagePublicId
+      altText
+      subtitle
+      linkUrl
+      ctaLabel
+      order
+      isActive
+      startsAt
+      endsAt
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+const deleteMutation = `
+  mutation DeleteBanner($id: String!) {
+    deleteBanner(id: $id) {
+      id
+      title
+      imageUrl
+      imagePublicId
+      altText
+      subtitle
+      linkUrl
+      ctaLabel
+      order
+      isActive
+      startsAt
+      endsAt
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export async function PATCH(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
+  const apiUrl = process.env.API_URL?.trim();
+
+  if (!apiUrl) {
+    return NextResponse.json({ error: "Falta API_URL" }, { status: 500 });
+  }
+
+  try {
+    const { id } = await context.params;
+    const input = await req.json();
+
+    const response = await fetch(`${apiUrl}/graphql`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(req.headers.get("authorization")
+          ? { Authorization: req.headers.get("authorization") as string }
+          : {}),
+      },
+      body: JSON.stringify({
+        query: updateMutation,
+        variables: { id, input },
+      }),
+    });
+
+    const payload = await response.json();
+
+    if (!response.ok || payload.errors) {
+      throw new Error(
+        payload.errors?.[0]?.message || "Error al actualizar banner",
+      );
+    }
+
+    return NextResponse.json(payload.data?.updateBanner);
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error ? error.message : "Error al actualizar banner",
+      },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(
+  req: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
+  const apiUrl = process.env.API_URL?.trim();
+
+  if (!apiUrl) {
+    return NextResponse.json({ error: "Falta API_URL" }, { status: 500 });
+  }
+
+  try {
+    const { id } = await context.params;
+
+    const response = await fetch(`${apiUrl}/graphql`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(req.headers.get("authorization")
+          ? { Authorization: req.headers.get("authorization") as string }
+          : {}),
+      },
+      body: JSON.stringify({
+        query: deleteMutation,
+        variables: { id },
+      }),
+    });
+
+    const payload = await response.json();
+
+    if (!response.ok || payload.errors) {
+      throw new Error(
+        payload.errors?.[0]?.message || "Error al eliminar banner",
+      );
+    }
+
+    return NextResponse.json(payload.data?.deleteBanner);
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error ? error.message : "Error al eliminar banner",
+      },
+      { status: 500 },
+    );
+  }
+}

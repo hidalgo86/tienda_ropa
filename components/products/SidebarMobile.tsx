@@ -7,7 +7,7 @@ const SidebarMobile: React.FC<SidebarMobileProps> = ({
   items,
   activeOption,
 }) => (
-  <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 shadow-lg">
+  <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 shadow-lg lg:hidden">
     <div
       className="grid gap-1 py-2 px-2 safe-area-inset-bottom"
       style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}

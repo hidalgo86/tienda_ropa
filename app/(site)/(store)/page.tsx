@@ -4,12 +4,12 @@ import ClientCards from "../../../components/ClientCards";
 export default function Home() {
   return (
     <div className="bg-white min-h-screen">
-      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pb-20 md:pb-6 lg:pb-4">
-        <div className="mt-4 sm:mt-6 lg:mt-8">
+      <main className="mx-auto max-w-7xl px-3 pb-24 pt-4 sm:px-6 sm:pb-10 sm:pt-6 lg:px-8 lg:pb-6 lg:pt-8">
+        <div className="mt-2 sm:mt-4 lg:mt-0">
           <Carrusel />
         </div>
 
-        <section className="mt-8 sm:mt-12 lg:mt-16 mb-8 sm:mb-12 lg:mb-16">
+        <section className="mt-8 mb-8 sm:mt-12 sm:mb-12 lg:mt-16 lg:mb-16">
           <ClientCards />
         </section>
       </main>

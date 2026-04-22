@@ -2,32 +2,71 @@
 
 import Image from "next/image";
 import { useState, useEffect } from "react";
+import { listPublicBanners } from "@/services/banners";
+import type { Banner } from "@/types/domain/banners";
 
-const imagenes = [
+const imagenesFallback = [
   { src: "/bebe2.png", alt: "Pago Movil" },
   { src: "/bebe3.png", alt: "Banner 2" },
   { src: "/bebe.png", alt: "Banner 3" },
 ];
 
 export default function Carrusel() {
+  const [banners, setBanners] = useState<Banner[]>([]);
   const [actual, setActual] = useState(0);
 
   useEffect(() => {
+    let isMounted = true;
+
+    void listPublicBanners()
+      .then((items) => {
+        if (!isMounted || !items.length) return;
+        setBanners(items);
+        setActual(0);
+      })
+      .catch(() => undefined);
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const imagenes =
+    banners.length > 0
+      ? banners.map((banner) => ({
+          src: banner.imageUrl,
+          alt: banner.altText || banner.title,
+          title: banner.title,
+          subtitle: banner.subtitle,
+          href: banner.linkUrl || undefined,
+          ctaLabel: banner.ctaLabel,
+        }))
+      : imagenesFallback.map((image) => ({
+          ...image,
+          href: undefined,
+          title: "",
+          subtitle: "",
+          ctaLabel: "",
+        }));
+  const totalImagenes = imagenes.length;
+  const currentImage = imagenes[actual];
+
+  useEffect(() => {
     const timer = setInterval(() => {
-      setActual((prev) => (prev + 1) % imagenes.length);
+      setActual((prev) => (prev + 1) % totalImagenes);
     }, 3000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [totalImagenes]);
 
-  const siguiente = () => setActual((prev) => (prev + 1) % imagenes.length);
+  const siguiente = () => setActual((prev) => (prev + 1) % totalImagenes);
   const anterior = () =>
-    setActual((prev) => (prev - 1 + imagenes.length) % imagenes.length);
+    setActual((prev) => (prev - 1 + totalImagenes) % totalImagenes);
 
   return (
     <div
       className="relative w-full 
-                    max-w-sm sm:max-w-2xl lg:max-w-5xl xl:max-w-6xl 
+                    max-w-full sm:max-w-2xl lg:max-w-5xl xl:max-w-6xl 
                     mx-auto 
                     rounded-lg sm:rounded-xl lg:rounded-2xl 
                     overflow-hidden 
@@ -35,18 +74,61 @@ export default function Carrusel() {
     >
       <div
         className="w-full 
-                      h-[180px] sm:h-[280px] lg:h-[400px] xl:h-[480px] 
+                      h-[200px] min-[420px]:h-[240px] sm:h-[280px] lg:h-[400px] xl:h-[480px] 
                       bg-pink-50 flex items-center justify-center relative"
       >
-        <Image
-          src={imagenes[actual].src}
-          alt={imagenes[actual].alt}
-          fill
-          style={{ objectFit: "contain" }}
-          className="rounded-lg sm:rounded-xl lg:rounded-2xl"
-          priority
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 70vw"
-        />
+        {currentImage.href ? (
+          <a
+            href={currentImage.href}
+            className="block h-full w-full"
+            aria-label={currentImage.alt}
+          >
+            <Image
+              src={currentImage.src}
+              alt={currentImage.alt}
+              fill
+              style={{ objectFit: "cover" }}
+              className="rounded-lg sm:rounded-xl lg:rounded-2xl"
+              priority
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 70vw"
+            />
+          </a>
+        ) : (
+          <Image
+            src={currentImage.src}
+            alt={currentImage.alt}
+            fill
+            style={{ objectFit: "cover" }}
+            className="rounded-lg sm:rounded-xl lg:rounded-2xl"
+            priority
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 70vw"
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-black/10" />
+        {(currentImage.title || currentImage.subtitle || currentImage.ctaLabel) && (
+          <div className="absolute inset-x-0 bottom-0 z-10 p-4 sm:p-6 lg:p-10">
+            <div className="max-w-2xl text-white">
+              {currentImage.title && (
+                <p className="text-xl font-bold leading-tight sm:text-3xl lg:text-5xl">
+                  {currentImage.title}
+                </p>
+              )}
+              {currentImage.subtitle && (
+                <p className="mt-2 max-w-xl text-sm text-white/90 sm:text-base lg:mt-3 lg:text-lg">
+                  {currentImage.subtitle}
+                </p>
+              )}
+              {currentImage.href && currentImage.ctaLabel && (
+                <a
+                  href={currentImage.href}
+                  className="mt-4 inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-gray-900 transition-colors hover:bg-pink-100 sm:px-5 sm:py-2.5 sm:text-base"
+                >
+                  {currentImage.ctaLabel}
+                </a>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <button
@@ -54,6 +136,7 @@ export default function Carrusel() {
         className="absolute top-1/2 
                    left-2 sm:left-4 lg:left-6 
                    -translate-y-1/2 
+                   hidden min-[420px]:inline-flex
                    bg-pink-200 hover:bg-pink-300 active:bg-pink-400
                    text-gray-700 
                    rounded-full 
@@ -72,6 +155,7 @@ export default function Carrusel() {
         className="absolute top-1/2 
                    right-2 sm:right-4 lg:right-6 
                    -translate-y-1/2 
+                   hidden min-[420px]:inline-flex
                    bg-pink-200 hover:bg-pink-300 active:bg-pink-400
                    text-gray-700 
                    rounded-full 

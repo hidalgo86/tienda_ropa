@@ -64,22 +64,33 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded shadow-md w-full max-w-md relative">
+    <div className="min-h-screen bg-gray-100 px-4 py-6 sm:px-6 sm:py-10">
+      <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-md items-center justify-center sm:min-h-[calc(100vh-5rem)]">
+        <div className="relative w-full rounded-2xl bg-white p-5 shadow-md sm:p-8">
         <button
           type="button"
           aria-label="Cerrar"
-          className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-2xl font-bold focus:outline-none"
+          className="absolute right-3 top-3 text-2xl font-bold text-gray-400 focus:outline-none hover:text-gray-700 sm:right-4 sm:top-4"
           onClick={() => router.push("/")}
         >
           x
         </button>
+        <div className="mb-6 pr-8">
+          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+            Iniciar sesion
+          </h1>
+          <p className="mt-2 text-sm text-gray-600 sm:text-base">
+            Accede a tu cuenta para ver favoritos, carrito y pedidos.
+          </p>
+        </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block mb-1 font-medium">Usuario</label>
+            <label className="mb-1 block text-sm font-medium sm:text-base">
+              Usuario
+            </label>
             <input
               type="text"
-              className="w-full border rounded px-3 py-2"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm sm:text-base"
               value={form.username}
               onChange={(e) =>
                 setForm((current) => ({ ...current, username: e.target.value }))
@@ -88,11 +99,13 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="block mb-1 font-medium">Contrasena</label>
+            <label className="mb-1 block text-sm font-medium sm:text-base">
+              Contrasena
+            </label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
-                className="w-full border rounded px-3 py-2 pr-12"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 pr-12 text-sm sm:text-base"
                 value={form.password}
                 onChange={(e) =>
                   setForm((current) => ({ ...current, password: e.target.value }))
@@ -130,10 +143,10 @@ export default function LoginPage() {
               Olvide mi usuario
             </button>
           </div>
-          <div className="flex gap-4 mt-6">
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <button
               type="button"
-              className="bg-blue-500 text-white px-4 py-2 rounded w-full"
+              className="w-full rounded-lg bg-blue-500 px-4 py-2.5 text-white"
               onClick={() => router.push("/register")}
               disabled={isSubmitting}
             >
@@ -141,13 +154,14 @@ export default function LoginPage() {
             </button>
             <button
               type="submit"
-              className="bg-green-600 text-white px-4 py-2 rounded w-full disabled:opacity-60"
+              className="w-full rounded-lg bg-green-600 px-4 py-2.5 text-white disabled:opacity-60"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Entrando..." : "Iniciar sesion"}
             </button>
           </div>
         </form>
+      </div>
       </div>
     </div>
   );

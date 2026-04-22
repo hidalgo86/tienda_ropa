@@ -9,7 +9,7 @@ const SidebarDesktop: React.FC<SidebarDesktopProps> = ({
   items,
   activeOption,
 }) => (
-  <aside className="w-full max-w-xs min-w-[220px] p-3 sm:p-4 lg:p-6 bg-white border-r border-gray-200 hidden md:block">
+  <aside className="hidden w-full max-w-xs min-w-[240px] border-r border-gray-200 bg-white p-4 lg:block xl:p-6">
     <div className="flex flex-col items-center justify-start w-full h-full gap-4 lg:gap-6 pt-4">
       {items.map((img, idx) => (
         <Link

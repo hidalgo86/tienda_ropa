@@ -91,111 +91,111 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="w-full bg-pink-50 shadow-md border-b border-pink-200 flex items-center justify-between px-4 sm:px-6 lg:px-8 xl:px-10 h-16 sm:h-20 md:h-24 lg:h-28 xl:h-32 2xl:h-36 transition-all">
-        <div className="flex items-center h-full min-w-0">
-          <Image
-            src="/chikitoslandia.png"
-            alt="Logo"
-            width={900}
-            height={260}
-            priority
-            unoptimized
-            className="object-contain object-left w-full h-32 sm:h-40 md:h-48 lg:h-56 xl:h-64 2xl:h-72 max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl xl:max-w-3xl 2xl:max-w-[900px]"
-          />
-        </div>
-
-        <div className="hidden md:flex flex-1 justify-center gap-6 lg:gap-10 xl:gap-12">
-          {[...visibleNavLinks, ...accountNavLinks].map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="flex items-center gap-2 text-gray-700 hover:text-pink-500 transition-colors text-sm lg:text-base xl:text-lg font-medium"
-            >
-              <span className="text-lg lg:text-xl xl:text-2xl">
-                {link.icon}
-              </span>
-              <span>{link.label}</span>
-            </Link>
-          ))}
-        </div>
-
-        <div className="hidden md:flex gap-4 lg:gap-6 items-center">
-          <Link href="/favorites" title="Favoritos" className="relative group">
-            <MdFavorite
-              size={28}
-              className="text-pink-400 hover:text-pink-600 transition-colors lg:w-8 lg:h-8 xl:w-9 xl:h-9"
+      <nav className="sticky top-0 z-40 border-b border-pink-200 bg-pink-50/95 shadow-md backdrop-blur supports-[backdrop-filter]:bg-pink-50/90">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-3 sm:h-20 sm:px-5 lg:h-24 lg:px-8">
+          <Link href="/" className="flex min-w-0 flex-1 items-center">
+            <Image
+              src="/chikitoslandia.png"
+              alt="Logo"
+              width={900}
+              height={260}
+              priority
+              unoptimized
+              className="h-12 w-auto max-w-[180px] object-contain object-left sm:h-14 sm:max-w-[220px] md:max-w-[260px] lg:h-16 lg:max-w-[320px] xl:max-w-[360px]"
             />
-            {displayFav > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs lg:text-sm rounded-full px-1.5 lg:px-2 min-w-[20px] lg:min-w-[24px] h-5 lg:h-6 flex items-center justify-center">
-                {displayFav}
-              </span>
-            )}
           </Link>
 
-          <Link href="/cart" title="Carrito" className="relative group">
-            <MdShoppingCart
-              size={28}
-              className="text-sky-400 hover:text-sky-600 transition-colors lg:w-8 lg:h-8 xl:w-9 xl:h-9"
-            />
-            {displayCart > 0 && (
-              <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs lg:text-sm rounded-full px-1.5 lg:px-2 min-w-[20px] lg:min-w-[24px] h-5 lg:h-6 flex items-center justify-center">
-                {displayCart}
-              </span>
-            )}
-          </Link>
+          <div className="hidden min-w-0 flex-1 items-center justify-center gap-5 lg:flex xl:gap-8">
+            {[...visibleNavLinks, ...accountNavLinks].map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="flex items-center gap-2 whitespace-nowrap text-sm font-medium text-gray-700 transition-colors hover:text-pink-500 xl:text-base"
+              >
+                <span className="text-lg xl:text-xl">{link.icon}</span>
+                <span>{link.label}</span>
+              </Link>
+            ))}
+          </div>
 
-          {isAuthenticated ? (
-            <button
-              type="button"
-              onClick={handleLogout}
-              title="Logout"
-              className="group text-gray-500 hover:text-gray-700 transition-colors"
-            >
-              <MdLogout size={28} className="lg:w-8 lg:h-8 xl:w-9 xl:h-9" />
-            </button>
-          ) : (
-            <Link href="/login" title="Login" className="group">
-              <MdLogin
-                size={28}
-                className="text-gray-500 hover:text-gray-700 transition-colors lg:w-8 lg:h-8 xl:w-9 xl:h-9"
-              />
-            </Link>
-          )}
-        </div>
-
-        <div className="md:hidden flex items-center gap-2">
-          {isAuthenticated ? (
-            <button
-              type="button"
-              onClick={handleLogout}
-              title="Logout"
-              className="text-gray-500 hover:text-gray-700 transition-colors"
-            >
-              <MdLogout size={26} />
-            </button>
-          ) : (
-            <Link href="/login" title="Login" className="relative">
-              <MdLogin
+          <div className="hidden items-center gap-3 lg:flex xl:gap-4">
+            <Link href="/favorites" title="Favoritos" className="relative group">
+              <MdFavorite
                 size={26}
-                className="text-gray-500 hover:text-gray-700 transition-colors"
+                className="text-pink-400 transition-colors hover:text-pink-600 xl:h-7 xl:w-7"
               />
+              {displayFav > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs text-white xl:h-6 xl:min-w-[24px]">
+                  {displayFav}
+                </span>
+              )}
             </Link>
-          )}
-          <Link href="/cart" title="Carrito" className="relative">
-            <MdShoppingCart
-              size={26}
-              className="text-sky-400 hover:text-sky-600 transition-colors"
-            />
-            {displayCart > 0 && (
-              <span className="absolute -top-2 -right-2 bg-pink-500 text-white text-xs rounded-full px-1.5 min-w-[18px] h-5 flex items-center justify-center">
-                {displayCart}
-              </span>
+
+            <Link href="/cart" title="Carrito" className="relative group">
+              <MdShoppingCart
+                size={26}
+                className="text-sky-400 transition-colors hover:text-sky-600 xl:h-7 xl:w-7"
+              />
+              {displayCart > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-pink-500 px-1.5 text-xs text-white xl:h-6 xl:min-w-[24px]">
+                  {displayCart}
+                </span>
+              )}
+            </Link>
+
+            {isAuthenticated ? (
+              <button
+                type="button"
+                onClick={handleLogout}
+                title="Logout"
+                className="text-gray-500 transition-colors hover:text-gray-700"
+              >
+                <MdLogout size={26} className="xl:h-7 xl:w-7" />
+              </button>
+            ) : (
+              <Link href="/login" title="Login" className="group">
+                <MdLogin
+                  size={26}
+                  className="text-gray-500 transition-colors hover:text-gray-700 xl:h-7 xl:w-7"
+                />
+              </Link>
             )}
-          </Link>
+          </div>
+
+          <div className="flex items-center gap-2 lg:hidden">
+            {isAuthenticated ? (
+              <button
+                type="button"
+                onClick={handleLogout}
+                title="Logout"
+                className="text-gray-500 transition-colors hover:text-gray-700"
+              >
+                <MdLogout size={24} />
+              </button>
+            ) : (
+              <Link href="/login" title="Login" className="relative">
+                <MdLogin
+                  size={24}
+                  className="text-gray-500 transition-colors hover:text-gray-700"
+                />
+              </Link>
+            )}
+            <Link href="/cart" title="Carrito" className="relative">
+              <MdShoppingCart
+                size={24}
+                className="text-sky-400 transition-colors hover:text-sky-600"
+              />
+              {displayCart > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-5 min-w-[18px] items-center justify-center rounded-full bg-pink-500 px-1.5 text-xs text-white">
+                  {displayCart}
+                </span>
+              )}
+            </Link>
+          </div>
         </div>
       </nav>
 
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-pink-200 z-50 shadow-lg">
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-pink-200 bg-white shadow-lg lg:hidden">
         <div className="flex justify-around items-center py-2 px-2">
           <Link
             href="/"
@@ -221,41 +221,41 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {displayFav > 0 && (
-            <Link
-              href="/favorites"
-              className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500 relative"
-            >
-              <div className="p-2 rounded-full hover:bg-pink-100 transition-colors relative">
-                <MdFavorite size={20} />
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center text-[10px]">
+          <Link
+            href="/favorites"
+            className="relative flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 text-gray-600 transition-colors hover:text-pink-500"
+          >
+            <div className="relative rounded-full p-2 transition-colors hover:bg-pink-100">
+              <MdFavorite size={20} />
+              {displayFav > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">
                   {displayFav > 9 ? "9+" : displayFav}
                 </span>
-              </div>
-              <span className="text-xs mt-1 text-center truncate w-full font-normal">
-                Favoritos
-              </span>
-            </Link>
-          )}
+              )}
+            </div>
+            <span className="text-xs mt-1 text-center truncate w-full font-normal">
+              Favoritos
+            </span>
+          </Link>
 
-          {displayCart > 0 && (
-            <Link
-              href="/cart"
-              className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500 relative"
-            >
-              <div className="p-2 rounded-full hover:bg-pink-100 transition-colors relative">
-                <MdShoppingCart size={20} />
-                <span className="absolute -top-1 -right-1 bg-pink-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center text-[10px]">
+          <Link
+            href="/cart"
+            className="relative flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 text-gray-600 transition-colors hover:text-pink-500"
+          >
+            <div className="relative rounded-full p-2 transition-colors hover:bg-pink-100">
+              <MdShoppingCart size={20} />
+              {displayCart > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-pink-500 text-[10px] text-white">
                   {displayCart > 9 ? "9+" : displayCart}
                 </span>
-              </div>
-              <span className="text-xs mt-1 text-center truncate w-full font-normal">
-                Carrito
-              </span>
-            </Link>
-          )}
+              )}
+            </div>
+            <span className="text-xs mt-1 text-center truncate w-full font-normal">
+              Carrito
+            </span>
+          </Link>
 
-          {isAuthenticated && (
+          {isAuthenticated ? (
             <>
               <Link
                 href="/account"
@@ -281,6 +281,18 @@ export default function Navbar() {
                 </span>
               </Link>
             </>
+          ) : (
+            <Link
+              href="/login"
+              className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500"
+            >
+              <div className="p-2 rounded-full hover:bg-pink-100 transition-colors">
+                <MdLogin size={20} />
+              </div>
+              <span className="text-xs mt-1 text-center truncate w-full font-normal">
+                Ingresar
+              </span>
+            </Link>
           )}
 
           {isAdmin && (

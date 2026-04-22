@@ -53,26 +53,32 @@ export default function Page() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded shadow-md w-full max-w-md relative">
+    <div className="min-h-screen bg-gray-100 px-4 py-6 sm:px-6 sm:py-10">
+      <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-md items-center justify-center sm:min-h-[calc(100vh-5rem)]">
+        <div className="relative w-full rounded-2xl bg-white p-5 shadow-md sm:p-8">
         <button
           type="button"
           aria-label="Cerrar"
-          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 border-none bg-transparent"
+          className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center border-none bg-transparent text-gray-400 hover:text-gray-600 sm:right-4 sm:top-4"
           style={{ borderRadius: 0, background: "none" }}
           onClick={() => router.push("/")}
         >
           <span className="text-2xl font-bold">x</span>
         </button>
-        <h1 className="text-2xl font-bold mb-6 text-center">
+        <h1 className="mb-2 text-center text-2xl font-bold text-gray-900 sm:text-3xl">
           Recuperar usuario
         </h1>
+        <p className="mb-6 text-center text-sm text-gray-600 sm:text-base">
+          Te enviaremos tu usuario al correo asociado con la cuenta.
+        </p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block mb-1 font-medium">Correo electronico</label>
+            <label className="mb-1 block text-sm font-medium sm:text-base">
+              Correo electronico
+            </label>
             <input
               type="email"
-              className="w-full border rounded px-3 py-2"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm sm:text-base"
               value={form.email}
               onChange={(e) =>
                 setForm((current) => ({ ...current, email: e.target.value }))
@@ -80,14 +86,20 @@ export default function Page() {
               required
             />
           </div>
-          {error && <div className="text-red-500 text-sm">{error}</div>}
-          {successMessage && (
-            <div className="text-green-600 text-sm">{successMessage}</div>
+          {error && (
+            <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {error}
+            </div>
           )}
-          <div className="mt-4 flex justify-around gap-4">
+          {successMessage && (
+            <div className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
+              {successMessage}
+            </div>
+          )}
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row">
             <button
               type="button"
-              className="bg-gray-300 text-gray-700 px-6 py-2 rounded hover:bg-gray-400 w-32"
+              className="w-full rounded-lg bg-gray-300 px-6 py-2.5 text-gray-700 hover:bg-gray-400 sm:w-1/2"
               onClick={() => router.push("/login")}
               disabled={isSubmitting}
             >
@@ -95,13 +107,14 @@ export default function Page() {
             </button>
             <button
               type="submit"
-              className="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 w-32 disabled:opacity-60"
+              className="w-full rounded-lg bg-green-600 px-6 py-2.5 text-white hover:bg-green-700 disabled:opacity-60 sm:w-1/2"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Enviando..." : "Enviar"}
             </button>
           </div>
         </form>
+      </div>
       </div>
     </div>
   );

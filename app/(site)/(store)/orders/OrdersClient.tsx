@@ -135,7 +135,7 @@ export default function OrdersClient() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-6 pb-24 sm:py-8 sm:pb-24 lg:pb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
@@ -210,13 +210,13 @@ export default function OrdersClient() {
                     </div>
                   </div>
 
-                  <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div className="mt-5 grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
                     <div>
                       <p className="text-gray-500">Envio</p>
                       <p className="text-gray-900 font-medium">
                         {order.shippingAddress.address}
                       </p>
-                      <p className="text-gray-600">
+                      <p className="break-words text-gray-600">
                         {order.shippingAddress.name || "Sin nombre"}
                         {order.shippingAddress.phone
                           ? ` • ${order.shippingAddress.phone}`
@@ -240,9 +240,9 @@ export default function OrdersClient() {
                     {order.items.map((item, index) => (
                       <div
                         key={`${order.id}-${item.productId}-${index}`}
-                        className="flex items-center justify-between gap-4 rounded-lg bg-gray-50 px-4 py-3"
+                        className="flex flex-col gap-2 rounded-lg bg-gray-50 px-4 py-3 min-[440px]:flex-row min-[440px]:items-center min-[440px]:justify-between"
                       >
-                        <div>
+                        <div className="min-w-0">
                           <p className="font-medium text-gray-900">
                             {item.productName}
                           </p>
@@ -253,7 +253,7 @@ export default function OrdersClient() {
                               : ""}
                           </p>
                         </div>
-                        <p className="font-semibold text-gray-900">
+                        <p className="font-semibold text-gray-900 min-[440px]:text-right">
                           {formatCurrency(item.lineTotal)}
                         </p>
                       </div>
@@ -261,12 +261,12 @@ export default function OrdersClient() {
                   </div>
 
                   {isPending && (
-                    <div className="mt-5 flex flex-wrap gap-3">
+                    <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                       <button
                         type="button"
                         onClick={() => void handlePayOrder(order.id)}
                         disabled={isBusy || !PAYMENTS_ENABLED}
-                        className="inline-flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                       >
                         <MdCreditCard size={18} />
                         {!PAYMENTS_ENABLED
@@ -279,7 +279,7 @@ export default function OrdersClient() {
                         type="button"
                         onClick={() => void handleCancelOrder(order.id)}
                         disabled={isBusy}
-                        className="inline-flex items-center gap-2 rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-60"
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-60 sm:w-auto"
                       >
                         <MdCancel size={18} />
                         {isBusy ? "Procesando..." : "Cancelar pedido"}

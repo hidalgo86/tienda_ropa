@@ -56,7 +56,7 @@ export default function CartClient() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8 pb-24 md:pb-8">
+      <div className="container mx-auto px-4 py-6 pb-24 sm:py-8 sm:pb-24 lg:pb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-3">
@@ -74,7 +74,7 @@ export default function CartClient() {
             <button
               onClick={handleClearCart}
               disabled={isClearing}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 disabled:bg-red-300 text-white rounded-lg transition-colors text-sm font-medium"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:bg-red-300 sm:w-auto"
             >
               <MdDeleteSweep size={18} />
               {isClearing ? "Limpiando..." : "Limpiar carrito"}
@@ -109,7 +109,7 @@ export default function CartClient() {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
             <div className="lg:col-span-2 space-y-4">
               {items.map((item, index) => {
                 const variantPrice = findVariantBySelection(
@@ -176,7 +176,7 @@ export default function CartClient() {
                           </button>
                         </div>
 
-                        <div className="flex items-center justify-between mt-4">
+                        <div className="mt-4 flex flex-col gap-3 min-[440px]:flex-row min-[440px]:items-center min-[440px]:justify-between">
                           <div className="flex items-center gap-3">
                             <span className="text-sm text-gray-600">Cantidad:</span>
                             <div className="flex items-center gap-2">
@@ -215,7 +215,7 @@ export default function CartClient() {
                             </div>
                           </div>
 
-                          <div className="text-right">
+                          <div className="text-left min-[440px]:text-right">
                             <p className="font-bold text-gray-900">
                               {formatPrice(itemTotal)}
                             </p>
@@ -229,7 +229,7 @@ export default function CartClient() {
             </div>
 
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-xl shadow-md p-6 sticky top-4">
+              <div className="sticky top-24 rounded-xl bg-white p-5 shadow-md sm:p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
                   Resumen del pedido
                 </h3>

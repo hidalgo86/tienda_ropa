@@ -251,9 +251,9 @@ export default function AccountClient() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-6 pb-24 sm:px-6 sm:py-8 sm:pb-24 lg:px-8 lg:pb-8">
         {!userInfo.isEmailVerified && (
-          <div className="mb-8 rounded-lg border border-amber-200 bg-amber-50 px-6 py-5">
+          <div className="mb-8 rounded-lg border border-amber-200 bg-amber-50 px-4 py-5 sm:px-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-amber-900">
@@ -269,18 +269,18 @@ export default function AccountClient() {
                   </p>
                 )}
               </div>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <button
                   type="button"
                   onClick={() => router.push(`/verify?userId=${userInfo.id}`)}
-                  className="inline-flex items-center rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700"
+                  className="inline-flex w-full items-center justify-center rounded-md bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 sm:w-auto"
                 >
                   Verificar ahora
                 </button>
                 <button
                   type="button"
                   onClick={handleResendVerification}
-                  className="inline-flex items-center rounded-md border border-amber-300 bg-white px-4 py-2 text-sm font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-60"
+                  className="inline-flex w-full items-center justify-center rounded-md border border-amber-300 bg-white px-4 py-2 text-sm font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-60 sm:w-auto"
                   disabled={isResendingVerification}
                 >
                   {isResendingVerification
@@ -292,8 +292,8 @@ export default function AccountClient() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="md:col-span-1 space-y-8">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
+          <div className="space-y-6 lg:col-span-1 lg:space-y-8">
             <div className="bg-white shadow rounded-lg">
               <div className="px-6 py-4 border-b border-gray-200">
                 <h3 className="text-lg font-medium text-gray-900">Resumen</h3>
@@ -336,17 +336,17 @@ export default function AccountClient() {
                     {pendingOrdersCount === 1 ? "" : "s"}.
                   </p>
                 )}
-                <div className="mt-4 flex flex-wrap gap-3">
+                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                   <button
                     type="button"
                     onClick={() => void refreshOrders()}
-                    className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    className="inline-flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 sm:w-auto"
                   >
                     Actualizar pedidos
                   </button>
                   <Link
                     href="/orders"
-                    className="inline-flex items-center rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-black"
+                    className="inline-flex w-full items-center justify-center rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-black sm:w-auto"
                   >
                     Ver mis pedidos
                   </Link>
@@ -355,7 +355,7 @@ export default function AccountClient() {
             </div>
           </div>
 
-          <div className="md:col-span-2 space-y-8">
+          <div className="space-y-6 lg:col-span-2 lg:space-y-8">
             <div className="bg-white shadow rounded-lg">
               <div className="px-6 py-4 border-b border-gray-200">
                 <h3 className="text-lg font-medium text-gray-900">
@@ -372,7 +372,7 @@ export default function AccountClient() {
                       Nombre
                     </label>
                     <input
-                      className="mt-1 w-full border rounded px-3 py-2"
+                      className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
                       value={profileForm.name}
                       onChange={(e) =>
                         setProfileForm((current) => ({
@@ -388,7 +388,7 @@ export default function AccountClient() {
                       Telefono
                     </label>
                     <input
-                      className="mt-1 w-full border rounded px-3 py-2"
+                      className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
                       value={profileForm.phone}
                       onChange={(e) =>
                         setProfileForm((current) => ({
@@ -407,7 +407,7 @@ export default function AccountClient() {
                       Usuario
                     </label>
                     <input
-                      className="mt-1 w-full border rounded px-3 py-2 bg-gray-50"
+                      className="mt-1 w-full rounded border border-gray-300 bg-gray-50 px-3 py-2"
                       value={userInfo.username}
                       readOnly
                     />
@@ -417,7 +417,7 @@ export default function AccountClient() {
                       Email
                     </label>
                     <input
-                      className="mt-1 w-full border rounded px-3 py-2 bg-gray-50"
+                      className="mt-1 w-full rounded border border-gray-300 bg-gray-50 px-3 py-2"
                       value={userInfo.email}
                       readOnly
                     />
@@ -429,7 +429,7 @@ export default function AccountClient() {
                     Direccion
                   </label>
                   <textarea
-                    className="mt-1 w-full border rounded px-3 py-2 min-h-24"
+                    className="mt-1 min-h-24 w-full rounded border border-gray-300 px-3 py-2"
                     value={profileForm.address}
                     onChange={(e) =>
                       setProfileForm((current) => ({
@@ -442,12 +442,14 @@ export default function AccountClient() {
                 </div>
 
                 {profileError && (
-                  <div className="text-red-500 text-sm">{profileError}</div>
+                  <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    {profileError}
+                  </div>
                 )}
 
                 <button
                   type="submit"
-                  className="inline-flex items-center px-4 py-2 rounded-md text-white bg-pink-600 hover:bg-pink-700 disabled:opacity-60"
+                  className="inline-flex w-full items-center justify-center rounded-md bg-pink-600 px-4 py-2 text-white hover:bg-pink-700 disabled:opacity-60 sm:w-auto"
                   disabled={isSavingProfile}
                 >
                   {isSavingProfile ? "Guardando..." : "Guardar perfil"}
@@ -472,7 +474,7 @@ export default function AccountClient() {
                   <div className="relative mt-1">
                     <input
                       type={showOldPassword ? "text" : "password"}
-                      className="w-full border rounded px-3 py-2 pr-12"
+                      className="w-full rounded border border-gray-300 px-3 py-2 pr-12"
                       value={passwordForm.oldPassword}
                       onChange={(e) =>
                         setPasswordForm((current) => ({
@@ -507,7 +509,7 @@ export default function AccountClient() {
                   <div className="relative mt-1">
                     <input
                       type={showNewPassword ? "text" : "password"}
-                      className="w-full border rounded px-3 py-2 pr-12"
+                      className="w-full rounded border border-gray-300 px-3 py-2 pr-12"
                       value={passwordForm.newPassword}
                       onChange={(e) =>
                         setPasswordForm((current) => ({
@@ -542,7 +544,7 @@ export default function AccountClient() {
                   <div className="relative mt-1">
                     <input
                       type={showConfirmPassword ? "text" : "password"}
-                      className="w-full border rounded px-3 py-2 pr-12"
+                      className="w-full rounded border border-gray-300 px-3 py-2 pr-12"
                       value={passwordForm.confirmPassword}
                       onChange={(e) =>
                         setPasswordForm((current) => ({
@@ -574,12 +576,14 @@ export default function AccountClient() {
                 </div>
 
                 {passwordError && (
-                  <div className="text-red-500 text-sm">{passwordError}</div>
+                  <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    {passwordError}
+                  </div>
                 )}
 
                 <button
                   type="submit"
-                  className="inline-flex items-center px-4 py-2 rounded-md text-white bg-gray-900 hover:bg-black disabled:opacity-60"
+                  className="inline-flex w-full items-center justify-center rounded-md bg-gray-900 px-4 py-2 text-white hover:bg-black disabled:opacity-60 sm:w-auto"
                   disabled={isChangingPassword}
                 >
                   {isChangingPassword

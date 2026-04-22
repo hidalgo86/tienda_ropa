@@ -25,7 +25,7 @@ export default function Footer() {
     <footer
       className="bg-pink-50 border-t border-pink-200 
                        mt-6 sm:mt-10 lg:mt-16 
-                       mb-16 sm:mb-20 md:mb-0"
+                       mb-20 sm:mb-24 lg:mb-0"
     >
       <div
         className="max-w-7xl mx-auto 

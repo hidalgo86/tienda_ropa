@@ -52,6 +52,12 @@ function DashboardLayoutContent({
       href: "/dashboard/orders",
     },
     {
+      src: "/dashboard/productos.png",
+      alt: "banners",
+      label: "Carrusel",
+      href: "/dashboard/banners",
+    },
+    {
       src: "/dashboard/salir.png",
       alt: "exit",
       label: "Salir",
@@ -62,6 +68,7 @@ function DashboardLayoutContent({
   const activeOption = React.useMemo(() => {
     if (pathname.includes("/dashboard/clients")) return "clients";
     if (pathname.includes("/dashboard/orders")) return "orders";
+    if (pathname.includes("/dashboard/banners")) return "banners";
     return "products";
   }, [pathname]);
 
@@ -85,9 +92,9 @@ function DashboardLayoutContent({
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <div className="flex flex-1 w-full">
+      <div className="flex flex-1 w-full min-w-0">
         <SidebarDesktop items={sidebarItems} activeOption={activeOption} />
-        <main className="flex-1 px-3 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 pb-20 md:pb-8 overflow-x-auto bg-white min-h-full">
+        <main className="min-w-0 flex-1 bg-white px-3 py-4 pb-20 sm:px-6 sm:py-6 sm:pb-24 lg:px-8 lg:py-8 lg:pb-8">
           {children}
         </main>
       </div>
