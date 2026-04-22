@@ -22,8 +22,9 @@ const hasActiveSession = (): boolean => {
 };
 
 export const calculateCartTotals = (items: CartItem[]) => {
-  const totalItems = items.reduce((total, item) => total + item.quantity, 0);
-  const totalPrice = items.reduce((total, item) => {
+  const safeItems = Array.isArray(items) ? items : [];
+  const totalItems = safeItems.reduce((total, item) => total + item.quantity, 0);
+  const totalPrice = safeItems.reduce((total, item) => {
     const variantPrice = findVariantBySelection(
       item.variants,
       item.selectedSize,
@@ -186,7 +187,7 @@ const cartSlice = createSlice({
     },
 
     syncCart: (state, action: PayloadAction<CartItem[]>) => {
-      state.items = action.payload;
+      state.items = Array.isArray(action.payload) ? action.payload : [];
       const totals = calculateCartTotals(state.items);
       state.totalItems = totals.totalItems;
       state.totalPrice = totals.totalPrice;

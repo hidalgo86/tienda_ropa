@@ -38,6 +38,7 @@ export default function FavoritesSyncProvider({
 
         const guestFavorites = getGuestFavorites();
         let remoteFavorites = await listFavoriteProducts({ token });
+        remoteFavorites = Array.isArray(remoteFavorites) ? remoteFavorites : [];
         const remoteIds = new Set(remoteFavorites.map((product) => product.id));
         const missingGuestFavorites = guestFavorites.filter(
           (product) => product.id && !remoteIds.has(product.id),
@@ -45,6 +46,9 @@ export default function FavoritesSyncProvider({
 
         for (const product of missingGuestFavorites) {
           remoteFavorites = await addFavoriteProduct(product.id, { token });
+          remoteFavorites = Array.isArray(remoteFavorites)
+            ? remoteFavorites
+            : [];
         }
 
         if (missingGuestFavorites.length > 0) {

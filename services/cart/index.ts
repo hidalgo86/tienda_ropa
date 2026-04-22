@@ -50,6 +50,9 @@ const parseResponseOrThrow = async <T>(response: Response): Promise<T> => {
   return data as T;
 };
 
+const ensureCartItemsArray = (value: unknown): CartItem[] =>
+  Array.isArray(value) ? (value as CartItem[]) : [];
+
 export const listCartItems = async (
   options: CartApiOptions = {},
 ): Promise<CartItem[]> => {
@@ -60,7 +63,8 @@ export const listCartItems = async (
     signal: options.signal,
   });
 
-  return parseResponseOrThrow<CartItem[]>(response);
+  const data = await parseResponseOrThrow<unknown>(response);
+  return ensureCartItemsArray(data);
 };
 
 export const upsertCartItem = async (
@@ -75,7 +79,8 @@ export const upsertCartItem = async (
     signal: options.signal,
   });
 
-  return parseResponseOrThrow<CartItem[]>(response);
+  const data = await parseResponseOrThrow<unknown>(response);
+  return ensureCartItemsArray(data);
 };
 
 export const clearRemoteCart = async (

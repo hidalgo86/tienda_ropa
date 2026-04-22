@@ -34,6 +34,7 @@ export default function CartSyncProvider({
 
         const guestCart = getGuestCart();
         let remoteCart = await listCartItems({ token });
+        remoteCart = Array.isArray(remoteCart) ? remoteCart : [];
 
         if (guestCart.length > 0) {
           const mergedEntries = new Map<string, { productId: string; variantName?: string; quantity: number }>();
@@ -68,6 +69,7 @@ export default function CartSyncProvider({
               },
               { token },
             );
+            remoteCart = Array.isArray(remoteCart) ? remoteCart : [];
           }
 
           clearGuestCart();

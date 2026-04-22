@@ -50,6 +50,9 @@ const parseResponseOrThrow = async <T>(response: Response): Promise<T> => {
   return data as T;
 };
 
+const ensureProductsArray = (value: unknown): Product[] =>
+  Array.isArray(value) ? (value as Product[]) : [];
+
 export const listFavoriteProducts = async (
   options: FavoriteApiOptions = {},
 ): Promise<Product[]> => {
@@ -60,7 +63,8 @@ export const listFavoriteProducts = async (
     signal: options.signal,
   });
 
-  return parseResponseOrThrow<Product[]>(response);
+  const data = await parseResponseOrThrow<unknown>(response);
+  return ensureProductsArray(data);
 };
 
 export const addFavoriteProduct = async (
@@ -75,7 +79,8 @@ export const addFavoriteProduct = async (
     signal: options.signal,
   });
 
-  return parseResponseOrThrow<Product[]>(response);
+  const data = await parseResponseOrThrow<unknown>(response);
+  return ensureProductsArray(data);
 };
 
 export const removeFavoriteProduct = async (
@@ -90,7 +95,8 @@ export const removeFavoriteProduct = async (
     signal: options.signal,
   });
 
-  return parseResponseOrThrow<Product[]>(response);
+  const data = await parseResponseOrThrow<unknown>(response);
+  return ensureProductsArray(data);
 };
 
 export const clearFavoriteProducts = async (
