@@ -13,6 +13,10 @@ import {
 import { cancelOrder, listMyOrders, payOrder } from "@/services/orders";
 import { getStoredAuthToken } from "@/services/users";
 import type { Order } from "@/types/domain/orders";
+import {
+  PAYMENTS_ENABLED,
+  paymentsDisabledMessage,
+} from "@/lib/commerceConfig";
 
 const formatCurrency = (value: number): string =>
   new Intl.NumberFormat("es-MX", {
@@ -76,6 +80,11 @@ export default function OrdersClient() {
   }, [loadOrders]);
 
   const handlePayOrder = async (orderId: string) => {
+    if (!PAYMENTS_ENABLED) {
+      toast.error(paymentsDisabledMessage);
+      return;
+    }
+
     setActiveOrderId(orderId);
 
     try {
@@ -256,11 +265,15 @@ export default function OrdersClient() {
                       <button
                         type="button"
                         onClick={() => void handlePayOrder(order.id)}
-                        disabled={isBusy}
-                        className="inline-flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-60"
+                        disabled={isBusy || !PAYMENTS_ENABLED}
+                        className="inline-flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed"
                       >
                         <MdCreditCard size={18} />
-                        {isBusy ? "Procesando..." : "Marcar como pagada"}
+                        {!PAYMENTS_ENABLED
+                          ? "Pago no disponible"
+                          : isBusy
+                            ? "Procesando..."
+                            : "Marcar como pagada"}
                       </button>
                       <button
                         type="button"
@@ -272,6 +285,11 @@ export default function OrdersClient() {
                         {isBusy ? "Procesando..." : "Cancelar pedido"}
                       </button>
                     </div>
+                  )}
+                  {isPending && !PAYMENTS_ENABLED && (
+                    <p className="mt-3 text-sm text-amber-700">
+                      {paymentsDisabledMessage}
+                    </p>
                   )}
                 </article>
               );

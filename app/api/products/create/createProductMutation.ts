@@ -17,6 +17,7 @@ const getGraphqlErrorMessage = (errors?: GraphqlError[]): string => {
 
 export const createProductInBackend = async (
   input: CreateProductGraphqlInput,
+  authorization?: string | null,
 ): Promise<Product> => {
   const apiUrl = process.env.API_URL?.trim();
   if (!apiUrl) {
@@ -28,7 +29,10 @@ export const createProductInBackend = async (
 
   const backendRes = await fetch(`${apiUrl}/graphql`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(authorization ? { Authorization: authorization } : {}),
+    },
     body: JSON.stringify({
       query: `
         mutation CreateProduct($input: CreateProductInput!) {

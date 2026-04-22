@@ -7,6 +7,10 @@ import { useState } from "react";
 import { findVariantBySelection, formatVariantLabel } from "@/types/domain/products";
 import { useCartActions } from "@/lib/useCartActions";
 import { getStoredAuthToken } from "@/services/users";
+import {
+  PAYMENTS_ENABLED,
+  checkoutDisabledMessage,
+} from "@/lib/commerceConfig";
 
 export default function CartClient() {
   const { cart, changeCartItemQuantity, removeCartItem, clearAllCart } =
@@ -250,18 +254,34 @@ export default function CartClient() {
                 </div>
 
                 <div className="space-y-3">
-                  <Link
-                    href="/checkout"
-                    className="w-full block text-center px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
-                  >
-                    Proceder al pago
-                  </Link>
+                  {PAYMENTS_ENABLED ? (
+                    <Link
+                      href="/checkout"
+                      className="w-full block text-center px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+                    >
+                      Proceder al pago
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled
+                      className="w-full block text-center px-6 py-3 bg-slate-300 text-slate-600 rounded-lg cursor-not-allowed font-medium"
+                      title={checkoutDisabledMessage}
+                    >
+                      Pago no disponible
+                    </button>
+                  )}
                   <Link
                     href="/products"
                     className="w-full block text-center px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     Seguir comprando
                   </Link>
+                  {!PAYMENTS_ENABLED && (
+                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3 leading-relaxed">
+                      {checkoutDisabledMessage}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

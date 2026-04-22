@@ -9,7 +9,10 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const productInput = buildCreateProductInput(body);
-    const product = await createProductInBackend(productInput);
+    const product = await createProductInBackend(
+      productInput,
+      req.headers.get("authorization"),
+    );
 
     return NextResponse.json(product);
   } catch (error: unknown) {

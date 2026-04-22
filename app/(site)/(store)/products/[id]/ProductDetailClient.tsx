@@ -10,6 +10,7 @@ import {
   formatVariantLabel,
   getProductCategoryLabel,
   getProductStatusLabel,
+  getProductStock,
   getVariantName,
   hasProductVariants,
   legacyProductCategoryOptions,
@@ -20,14 +21,20 @@ import { RootState } from "@/store";
 import { useCartActions } from "@/lib/useCartActions";
 import { useFavoriteActions } from "@/lib/useFavoriteActions";
 import {
+  MdAdd,
   MdArrowBack,
-  MdShoppingCart,
   MdFavorite,
   MdFavoriteBorder,
-  MdShare,
-  MdAdd,
   MdRemove,
+  MdShare,
+  MdShoppingCart,
 } from "react-icons/md";
+import {
+  PAYMENTS_ENABLED,
+  paymentsDisabledMessage,
+} from "@/lib/commerceConfig";
+
+const sizePattern = /^(RN|M3|M6|M9|M12|M18|M24|T2|T3|T4|T5|T6|T7|T8|T9|T10|T12)$/i;
 
 export default function ProductDetailClient({
   producto,
@@ -53,12 +60,10 @@ export default function ProductDetailClient({
       : [{ url: "/placeholder.webp", publicId: "placeholder" }];
   const selectedImage = images[selectedImageIndex] || images[0];
 
-  // Verificar si el producto está en favoritos
   const isFavorite = useSelector((state: RootState) =>
     state.favorites.items.some((item) => item.id === producto.id),
   );
 
-  // Inicializar selección de imagen/talla
   useEffect(() => {
     setSelectedImageIndex(0);
     if (isRopa && producto.variants && producto.variants.length > 0) {
@@ -93,6 +98,21 @@ export default function ProductDetailClient({
   const displayGenre = formatGenreLabel(producto.genre);
   const displayStatus = getProductStatusLabel(producto);
   const displayCategory = getProductCategoryLabel(producto, categoryOptions);
+  const hasOnlySizeVariants =
+    variants.length > 0 &&
+    variants.every((variant) =>
+      sizePattern.test(String(variant.name || variant.size || "").trim()),
+    );
+  const productModeLabel = !hasProductVariants(producto)
+    ? "Simple"
+    : hasOnlySizeVariants
+      ? "Ropa"
+      : "Variantes";
+  const productModeDetail = !hasProductVariants(producto)
+    ? `Stock total: ${getProductStock(producto)}`
+    : hasOnlySizeVariants
+      ? `${variants.length} talla(s)`
+      : `${variants.length} variante(s)`;
 
   const handleAddToCart = () => {
     if (isRopa && !selectedSize) {
@@ -100,17 +120,20 @@ export default function ProductDetailClient({
       return;
     }
     if (availableStock === 0) {
-      alert("No hay stock disponible para esta talla");
+      alert(
+        isRopa
+          ? "No hay stock disponible para esta talla"
+          : "No hay stock disponible",
+      );
       return;
     }
 
     void addProductToCart({
-        product: producto,
-        quantity,
-        selectedSize: isRopa ? selectedSize : undefined,
-      });
+      product: producto,
+      quantity,
+      selectedSize: isRopa ? selectedSize : undefined,
+    });
 
-    // Mostrar confirmación visual
     setShowAddedToCart(true);
     setTimeout(() => setShowAddedToCart(false), 2000);
   };
@@ -120,15 +143,23 @@ export default function ProductDetailClient({
   };
 
   const handleBuyNow = () => {
+    if (!PAYMENTS_ENABLED) {
+      alert(paymentsDisabledMessage);
+      return;
+    }
     if (isRopa && !selectedSize) {
       alert("Por favor selecciona una talla");
       return;
     }
     if (availableStock === 0) {
-      alert("No hay stock disponible para esta talla");
+      alert(
+        isRopa
+          ? "No hay stock disponible para esta talla"
+          : "No hay stock disponible",
+      );
       return;
     }
-    // TODO: Implementar compra directa
+
     console.log("Compra directa:", {
       producto: producto.id,
       size: isRopa ? selectedSize : null,
@@ -143,7 +174,6 @@ export default function ProductDetailClient({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header con navegación */}
       <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-wrap items-center justify-between gap-2">
           <button
@@ -170,11 +200,9 @@ export default function ProductDetailClient({
         </div>
       </div>
 
-      {/* Contenido principal */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-6 lg:p-8">
-            {/* Imagen del producto */}
             <div className="space-y-4">
               <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center relative">
                 <Image
@@ -215,7 +243,6 @@ export default function ProductDetailClient({
                 </div>
               )}
 
-              {/* Botones de acción secundarios */}
               {!isAdminMode && (
                 <div className="flex gap-2 justify-center">
                   <button
@@ -247,9 +274,7 @@ export default function ProductDetailClient({
               )}
             </div>
 
-            {/* Detalles del producto */}
             <div className="space-y-6">
-              {/* Título y precio */}
               <div>
                 <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
                   {producto.name}
@@ -263,20 +288,31 @@ export default function ProductDetailClient({
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
                         displayStatus === "disponible"
                           ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
+                          : displayStatus === "agotado"
+                            ? "bg-red-100 text-red-800"
+                            : "bg-gray-200 text-gray-700"
                       }`}
                     >
                       {displayStatus}
                     </span>
                   )}
                 </div>
+                {isAdminMode && (
+                  <div className="flex flex-wrap gap-2">
+                    <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                      {productModeLabel}
+                    </span>
+                    <span className="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
+                      {productModeDetail}
+                    </span>
+                  </div>
+                )}
               </div>
 
-              {/* Descripción */}
               {producto.description && (
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Descripción
+                    Descripcion
                   </h3>
                   <p className="text-gray-600 leading-relaxed">
                     {producto.description}
@@ -284,12 +320,11 @@ export default function ProductDetailClient({
                 </div>
               )}
 
-              {/* Información del producto */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="font-medium text-gray-900">Categoría:</span>
+                  <span className="font-medium text-gray-900">Categoria:</span>
                   <span className="ml-2 text-gray-600">
-                    {displayCategory || "Sin categoría"}
+                    {displayCategory || "Sin categoria"}
                   </span>
                 </div>
                 {!isRopa && (
@@ -310,13 +345,30 @@ export default function ProductDetailClient({
                 )}
                 {isRopa && (
                   <div>
-                    <span className="font-medium text-gray-900">Género:</span>
-                    <span className="ml-2 text-gray-600">{displayGenre}</span>
+                    <span className="font-medium text-gray-900">Genero:</span>
+                    <span className="ml-2 text-gray-600">
+                      {displayGenre || "Sin genero"}
+                    </span>
+                  </div>
+                )}
+                {isAdminMode && producto.sku && (
+                  <div>
+                    <span className="font-medium text-gray-900">SKU:</span>
+                    <span className="ml-2 text-gray-600">{producto.sku}</span>
+                  </div>
+                )}
+                {isAdminMode && (
+                  <div>
+                    <span className="font-medium text-gray-900">
+                      Stock total:
+                    </span>
+                    <span className="ml-2 text-gray-600">
+                      {getProductStock(producto)} unidades
+                    </span>
                   </div>
                 )}
               </div>
 
-              {/* Selector de tallas */}
               {isRopa && variants.length > 0 && (
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">
@@ -335,16 +387,13 @@ export default function ProductDetailClient({
                             hasStock && setSelectedSize(variantName)
                           }
                           disabled={!hasStock}
-                          className={`
-                            p-3 border rounded-lg text-sm font-medium transition-colors
-                            ${
-                              isSelected && hasStock
-                                ? "border-pink-500 bg-pink-50 text-pink-700"
-                                : hasStock
-                                  ? "border-gray-300 hover:border-pink-400 hover:bg-pink-50"
-                                  : "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
-                            }
-                          `}
+                          className={`p-3 border rounded-lg text-sm font-medium transition-colors ${
+                            isSelected && hasStock
+                              ? "border-pink-500 bg-pink-50 text-pink-700"
+                              : hasStock
+                                ? "border-gray-300 hover:border-pink-400 hover:bg-pink-50"
+                                : "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
+                          }`}
                         >
                           <div>{formatVariantLabel(variant)}</div>
                           <div className="text-xs text-gray-500">
@@ -358,7 +407,7 @@ export default function ProductDetailClient({
                   {selectedSize && currentVariant && (
                     <div className="mt-3 p-3 bg-gray-50 rounded-lg">
                       <div className="text-sm text-gray-600">
-                        Talla seleccionada:{" "}
+                        Variante seleccionada:{" "}
                         <span className="font-medium">
                           {formatVariantLabel(selectedSize)}
                         </span>{" "}
@@ -376,9 +425,32 @@ export default function ProductDetailClient({
                 </div>
               )}
 
+              {isAdminMode && variants.length > 0 && !hasOnlySizeVariants && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                    Resumen de variantes
+                  </h3>
+                  <div className="space-y-2">
+                    {variants.map((variant) => (
+                      <div
+                        key={getVariantName(variant)}
+                        className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm"
+                      >
+                        <div className="font-medium text-gray-800">
+                          {getVariantName(variant)}
+                        </div>
+                        <div className="text-gray-600">
+                          Stock: {variant.stock} · $
+                          {Number(variant.price || 0).toFixed(2)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {!isAdminMode && (
                 <>
-                  {/* Selector de cantidad */}
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-3">
                       Cantidad
@@ -406,24 +478,31 @@ export default function ProductDetailClient({
                     </div>
                   </div>
 
-                  {/* Botones de acción principales */}
                   <div className="space-y-3 pt-4">
                     <button
                       onClick={handleBuyNow}
-                      disabled={!selectedSize || availableStock === 0}
+                      disabled={
+                        !PAYMENTS_ENABLED ||
+                        (isRopa && !selectedSize) ||
+                        availableStock === 0
+                      }
                       className="w-full bg-gray-900 text-white py-3 px-6 rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Comprar ahora
+                      {PAYMENTS_ENABLED ? "Comprar ahora" : "Compra no disponible"}
                     </button>
+                    {!PAYMENTS_ENABLED && (
+                      <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                        {paymentsDisabledMessage}
+                      </p>
+                    )}
                   </div>
 
-                  {/* Notificación de agregado al carrito */}
                   {showAddedToCart && (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4 animate-pulse">
                       <div className="flex items-center gap-2 text-green-800">
                         <MdShoppingCart size={20} />
                         <span className="font-medium">
-                          ¡Producto agregado al carrito!
+                          Producto agregado al carrito
                         </span>
                       </div>
                     </div>
@@ -431,12 +510,11 @@ export default function ProductDetailClient({
                 </>
               )}
 
-              {/* Información adicional */}
               <div className="pt-6 border-t border-gray-200">
                 <div className="text-sm text-gray-600 space-y-2">
-                  <p>✓ Envío gratis en compras mayores a $50</p>
-                  <p>✓ Devoluciones gratuitas dentro de 30 días</p>
-                  <p>✓ Garantía de calidad 100%</p>
+                  <p>Entrega y condiciones sujetas a disponibilidad.</p>
+                  <p>Revisa stock y variantes antes de confirmar la compra.</p>
+                  <p>Si tienes dudas, consulta el detalle antes de editar.</p>
                 </div>
               </div>
             </div>

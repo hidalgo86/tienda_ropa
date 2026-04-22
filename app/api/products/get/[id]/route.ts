@@ -35,9 +35,13 @@ export async function GET(
   `;
 
   try {
+    const authorization = req.headers.get("authorization");
     const res = await fetch(`${process.env.API_URL}/graphql`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(authorization ? { Authorization: authorization } : {}),
+      },
       body: JSON.stringify({ query, variables: { id } }),
     });
 

@@ -1,4 +1,3 @@
-// src/app/dashboard/products/edit/[id]/page.tsx
 "use client";
 import React, { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
@@ -13,7 +12,6 @@ import {
   Size,
   Genre,
   formatSizeLabel,
-  getProductCategoryLabel,
   getVariantName,
   hasProductVariants,
   isClothingCategory,
@@ -29,6 +27,7 @@ import {
   updateProduct,
   uploadProductImage,
 } from "@/services/products";
+import { getStoredAuthToken } from "@/services/users";
 import { useCategories } from "@/services/categories/useCategories";
 
 const EditProductContent: React.FC = () => {
@@ -49,6 +48,7 @@ const EditProductContent: React.FC = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [useVariants, setUseVariants] = useState(false);
   const [form, setForm] = useState<ProductEditFormState>({});
   const [variantDraftValues, setVariantDraftValues] =
     useState<ProductVariantDraftValuesByIndex>({});
@@ -58,7 +58,6 @@ const EditProductContent: React.FC = () => {
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Función genérica para bloquear teclas inválidas
   const preventInvalidKeys = (
     e: React.KeyboardEvent<HTMLInputElement>,
     allowDecimal: boolean = false,
@@ -69,7 +68,6 @@ const EditProductContent: React.FC = () => {
     if (invalidKeys.includes(e.key)) e.preventDefault();
   };
 
-  // Abrir cámara
   const openCamera = () => {
     const input = cameraInputRef.current;
     if (!input) return;
@@ -80,23 +78,23 @@ const EditProductContent: React.FC = () => {
     input.click();
   };
 
-  // Cargar producto al montar
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    getProductById(id)
+    getProductById(id, { token: getStoredAuthToken() })
       .then((data) => {
         const inferredCategory =
           resolveCategoryOption(data.categoryId, categoryOptions)?.value ||
           resolveCategoryOption(data.category, categoryOptions)?.value;
+
         setProduct(data);
+        setUseVariants(Boolean(data.genre) || Boolean(data.variants?.length));
         setForm({
           ...data,
           category: inferredCategory ?? data.category,
           variants: data.variants?.map((v) => ({ ...v })) || [],
         });
 
-        // Inicializar draftValues para inputs
         const drafts: ProductVariantDraftValuesByIndex = {};
         data.variants?.forEach((v, idx) => {
           drafts[idx] = {
@@ -110,7 +108,6 @@ const EditProductContent: React.FC = () => {
       .finally(() => setLoading(false));
   }, [categoryOptions, id]);
 
-  // Generar preview de imágenes seleccionadas
   useEffect(() => {
     if (selectedFiles.length === 0) {
       setPreviewUrls([]);
@@ -134,13 +131,13 @@ const EditProductContent: React.FC = () => {
       PRODUCT_FORM_MAX_IMAGES - currentImagesCount - selectedFiles.length;
 
     if (availableSlots <= 0) {
-      setError(`Máximo ${PRODUCT_FORM_MAX_IMAGES} imágenes permitidas.`);
+      setError(`Maximo ${PRODUCT_FORM_MAX_IMAGES} imagenes permitidas.`);
       return;
     }
 
     const filesToAdd = incomingFiles.slice(0, availableSlots);
     if (filesToAdd.length < incomingFiles.length) {
-      setError(`Solo puedes subir hasta ${PRODUCT_FORM_MAX_IMAGES} imágenes.`);
+      setError(`Solo puedes subir hasta ${PRODUCT_FORM_MAX_IMAGES} imagenes.`);
     } else {
       setError(null);
     }
@@ -158,7 +155,6 @@ const EditProductContent: React.FC = () => {
     setError(null);
   };
 
-  // Manejar cambios de inputs generales
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
@@ -168,15 +164,48 @@ const EditProductContent: React.FC = () => {
 
     if (name === "categoryId") {
       const selectedOption = resolveCategoryOption(value, categoryOptions);
+      if (!selectedOption) return;
 
-      setForm((prev) => ({
-        ...prev,
-        categoryId: selectedOption?.categoryId || "",
-        category: selectedOption?.value || prev.category,
-        ...(selectedOption?.supportsGenre
-          ? { stock: undefined, price: undefined }
-          : { genre: undefined, variants: [] }),
-      }));
+      setForm((prev) => {
+        const wasClothingCategory = isClothingCategory(
+          prev.categoryId ?? prev.category,
+          categoryOptions,
+        );
+        const nextIsClothingCategory = selectedOption.supportsGenre;
+
+        return {
+          ...prev,
+          categoryId: selectedOption.categoryId,
+          category: selectedOption.value,
+          genre: nextIsClothingCategory ? prev.genre || Genre.UNISEX : undefined,
+          variants:
+            wasClothingCategory === nextIsClothingCategory
+              ? prev.variants
+              : [],
+          stock: nextIsClothingCategory
+            ? undefined
+            : (prev.stock ?? product?.stock ?? 0),
+          price: nextIsClothingCategory
+            ? undefined
+            : (prev.price ?? product?.price ?? 0),
+        };
+      });
+
+      if (selectedOption.supportsGenre) {
+        setUseVariants(true);
+      } else if (
+        isClothingCategory(form.categoryId ?? form.category, categoryOptions)
+      ) {
+        setUseVariants(false);
+      }
+
+      if (
+        isClothingCategory(form.categoryId ?? form.category, categoryOptions) !==
+        selectedOption.supportsGenre
+      ) {
+        setVariantDraftValues({});
+      }
+
       return;
     }
 
@@ -191,7 +220,22 @@ const EditProductContent: React.FC = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Manejar submit
+  const removeVariantAt = (index: number) => {
+    setForm((prev) => ({
+      ...prev,
+      variants: (prev.variants || []).filter((_, i) => i !== index),
+    }));
+    setVariantDraftValues((prev) => {
+      const next: ProductVariantDraftValuesByIndex = {};
+      Object.entries(prev).forEach(([key, value]) => {
+        const numericKey = Number(key);
+        if (numericKey < index) next[numericKey] = value;
+        if (numericKey > index) next[numericKey - 1] = value;
+      });
+      return next;
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -213,7 +257,7 @@ const EditProductContent: React.FC = () => {
 
         if (nextImages.length > PRODUCT_FORM_MAX_IMAGES) {
           throw new Error(
-            `Máximo ${PRODUCT_FORM_MAX_IMAGES} imágenes permitidas.`,
+            `Maximo ${PRODUCT_FORM_MAX_IMAGES} imagenes permitidas.`,
           );
         }
       }
@@ -221,6 +265,21 @@ const EditProductContent: React.FC = () => {
       if (!nextImages || nextImages.length === 0) {
         throw new Error("Agrega al menos una imagen");
       }
+
+      const categoryIsClothing = isClothingCategory(
+        form.categoryId ??
+          form.category ??
+          product?.categoryId ??
+          product?.category,
+        categoryOptions,
+      );
+      const isClothingProduct =
+        categoryIsClothing || Boolean(form.genre || product?.genre);
+      const shouldUseVariants =
+        isClothingProduct ||
+        useVariants ||
+        hasProductVariants(form) ||
+        hasProductVariants(product);
 
       const { status: formStatus, ...formWithoutStatus } = form;
       const payload: Partial<UploadProduct> = {
@@ -234,31 +293,31 @@ const EditProductContent: React.FC = () => {
           : {}),
       };
 
-      if (
-        hasProductVariants(form) ||
-        hasProductVariants(product) ||
-        form.genre ||
-        product?.genre
-      ) {
-        if (!form.genre) {
-          throw new Error("Selecciona un género para productos de ropa");
+      if (shouldUseVariants) {
+        if (isClothingProduct && !form.genre) {
+          throw new Error("Selecciona un genero para productos de ropa");
         }
 
         const normalizedVariants: VariantProduct[] = (form.variants || []).map(
           (variant, idx) => {
+            const variantName = String(getVariantName(variant)).trim();
             const stockRaw = variantDraftValues[idx]?.stock ?? "";
             const priceRaw = variantDraftValues[idx]?.price ?? "";
 
+            if (!variantName) {
+              throw new Error("Cada variante debe tener un nombre");
+            }
             if (!/^\d+$/.test(stockRaw)) {
-              throw new Error("Stock inválido: usa enteros no negativos");
+              throw new Error("Stock invalido: usa enteros no negativos");
             }
             if (!/^\d*\.?\d+$/.test(priceRaw)) {
-              throw new Error("Precio inválido: usa números no negativos");
+              throw new Error("Precio invalido: usa numeros no negativos");
             }
 
             return {
               ...variant,
-              name: getVariantName(variant),
+              name: variantName,
+              size: isClothingProduct ? variant.size : undefined,
               stock: Number(stockRaw),
               price: Number(priceRaw),
             };
@@ -271,7 +330,14 @@ const EditProductContent: React.FC = () => {
           );
         }
 
-        payload.genre = form.genre;
+        const uniqueNames = new Set(
+          normalizedVariants.map((variant) => variant.name.trim().toLowerCase()),
+        );
+        if (uniqueNames.size !== normalizedVariants.length) {
+          throw new Error("No repitas nombres de variantes");
+        }
+
+        payload.genre = isClothingProduct ? form.genre : undefined;
         payload.variants = normalizedVariants;
         payload.stock = undefined;
         payload.price = undefined;
@@ -284,11 +350,11 @@ const EditProductContent: React.FC = () => {
           nextStock < 0 ||
           !Number.isInteger(nextStock)
         ) {
-          throw new Error("Stock inválido: usa enteros no negativos");
+          throw new Error("Stock invalido: usa enteros no negativos");
         }
 
         if (!Number.isFinite(nextPrice) || nextPrice < 0) {
-          throw new Error("Precio inválido: usa números no negativos");
+          throw new Error("Precio invalido: usa numeros no negativos");
         }
 
         payload.genre = undefined;
@@ -298,7 +364,6 @@ const EditProductContent: React.FC = () => {
       }
 
       await updateProduct(id, payload);
-
       router.push(returnTo);
     } catch (err) {
       setError(
@@ -322,21 +387,21 @@ const EditProductContent: React.FC = () => {
     )?.value ||
     resolveCategoryOption(form.category ?? product.category, categoryOptions)
       ?.value;
-  const resolvedCategory = getProductCategoryLabel(
-    {
-      category: inferredCategory ?? form.category ?? product.category,
-      categoryId: form.categoryId ?? product.categoryId,
-    },
+  const selectedCategoryOption =
+    resolveCategoryOption(form.categoryId, categoryOptions) ||
+    resolveCategoryOption(form.category, categoryOptions) ||
+    resolveCategoryOption(product.categoryId, categoryOptions) ||
+    resolveCategoryOption(product.category, categoryOptions);
+  const categoryIsClothing = isClothingCategory(
+    form.categoryId ?? inferredCategory ?? form.category ?? product.category,
     categoryOptions,
   );
-  const isClothingProduct =
-    isClothingCategory(
-      form.categoryId ?? inferredCategory ?? form.category ?? product.category,
-      categoryOptions,
-    ) ||
+  const isClothingProduct = categoryIsClothing || Boolean(form.genre || product.genre);
+  const shouldUseVariants =
+    isClothingProduct ||
+    useVariants ||
     hasProductVariants(form) ||
-    hasProductVariants(product) ||
-    Boolean(form.genre || product.genre);
+    hasProductVariants(product);
   const currentImagesCount = form.images?.length || 0;
   const totalSelectedCount = currentImagesCount + selectedFiles.length;
   const currentImageUrl =
@@ -349,7 +414,7 @@ const EditProductContent: React.FC = () => {
         onClick={() => router.push(returnTo)}
         className="flex items-center gap-2 text-gray-600 hover:text-pink-500 transition-colors mb-4"
       >
-        <span aria-hidden="true">←</span>
+        <span aria-hidden="true">&lt;</span>
         <span className="text-sm font-medium">Volver</span>
       </button>
       <div className="flex justify-center mb-6 relative">
@@ -370,11 +435,11 @@ const EditProductContent: React.FC = () => {
         <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-3">
           <button
             type="button"
-            title="Subir desde galería"
+            title="Subir desde galeria"
             className="group relative bg-white/90 hover:bg-white text-emerald-600 hover:text-emerald-700 rounded-full p-3 shadow backdrop-blur"
             onClick={() => galleryInputRef.current?.click()}
           >
-            📁
+            Galeria
           </button>
           <button
             type="button"
@@ -382,7 +447,7 @@ const EditProductContent: React.FC = () => {
             className="group relative bg-white/90 hover:bg-white text-blue-600 hover:text-blue-700 rounded-full p-3 shadow backdrop-blur"
             onClick={openCamera}
           >
-            📷
+            Camara
           </button>
         </div>
       </div>
@@ -416,7 +481,7 @@ const EditProductContent: React.FC = () => {
         {currentImagesCount > 0 && (
           <div className="space-y-2">
             <p className="text-sm text-gray-600">
-              Imágenes actuales: {currentImagesCount} de{" "}
+              Imagenes actuales: {currentImagesCount} de{" "}
               {PRODUCT_FORM_MAX_IMAGES}
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -435,7 +500,7 @@ const EditProductContent: React.FC = () => {
                     onClick={() => removeExistingImage(idx)}
                     aria-label={`Quitar imagen actual ${idx + 1}`}
                   >
-                    ×
+                    x
                   </button>
                 </div>
               ))}
@@ -444,11 +509,9 @@ const EditProductContent: React.FC = () => {
         )}
         {selectedFiles.length > 0 && (
           <div className="space-y-2">
-            <p className="text-sm text-gray-600">
-              Nuevas imágenes seleccionadas
-            </p>
+            <p className="text-sm text-gray-600">Nuevas imagenes seleccionadas</p>
             <p className="text-xs text-gray-500">
-              Se agregarán a las imágenes actuales al guardar.
+              Se agregaran a las imagenes actuales al guardar.
             </p>
             <p className="text-xs text-gray-500">
               Total previsto: {totalSelectedCount} de {PRODUCT_FORM_MAX_IMAGES}
@@ -473,7 +536,7 @@ const EditProductContent: React.FC = () => {
                     }}
                     aria-label={`Quitar imagen ${idx + 1}`}
                   >
-                    ×
+                    x
                   </button>
                 </div>
               ))}
@@ -483,7 +546,7 @@ const EditProductContent: React.FC = () => {
               className="bg-gray-200 text-gray-800 px-3 py-1 rounded"
               onClick={() => setSelectedFiles([])}
             >
-              Restablecer imágenes
+              Restablecer imagenes
             </button>
           </div>
         )}
@@ -501,15 +564,52 @@ const EditProductContent: React.FC = () => {
           name="description"
           value={form.description || ""}
           onChange={handleChange}
-          placeholder="Descripción"
+          placeholder="Descripcion"
           className="w-full border rounded px-3 py-2"
         />
-        <input
-          type="text"
-          value={resolvedCategory}
-          className="w-full border rounded px-3 py-2 bg-gray-100 text-gray-600"
-          readOnly
-        />
+        <select
+          name="categoryId"
+          value={
+            selectedCategoryOption?.categoryId ||
+            selectedCategoryOption?.value ||
+            ""
+          }
+          onChange={handleChange}
+          className="w-full border rounded px-3 py-2"
+          required
+        >
+          <option value="" disabled>
+            Selecciona una categoria
+          </option>
+          {categoryOptions.map((option) => (
+            <option
+              key={option.categoryId || option.value}
+              value={option.categoryId || option.value}
+            >
+              {option.label}
+            </option>
+          ))}
+        </select>
+
+        {!isClothingProduct && (
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={shouldUseVariants}
+              onChange={(e) => {
+                const nextChecked = e.target.checked;
+                setUseVariants(nextChecked);
+                setForm((prev) => ({
+                  ...prev,
+                  variants: nextChecked ? prev.variants || [] : [],
+                  stock: nextChecked ? undefined : (prev.stock ?? product.stock ?? 0),
+                  price: nextChecked ? undefined : (prev.price ?? product.price ?? 0),
+                }));
+              }}
+            />
+            Este producto usa variantes
+          </label>
+        )}
 
         {isClothingProduct ? (
           <>
@@ -520,9 +620,9 @@ const EditProductContent: React.FC = () => {
               className="w-full border rounded px-3 py-2"
               required
             >
-              <option value="">Selecciona un género</option>
-              <option value={Genre.NINA}>Niña</option>
-              <option value={Genre.NINO}>Niño</option>
+              <option value="">Selecciona un genero</option>
+              <option value={Genre.NINA}>Nina</option>
+              <option value={Genre.NINO}>Nino</option>
               <option value={Genre.UNISEX}>Unisex</option>
             </select>
 
@@ -532,7 +632,7 @@ const EditProductContent: React.FC = () => {
                 <span>Talla</span>
                 <span>Stock</span>
                 <span>Precio</span>
-                <span className="sr-only">Acción</span>
+                <span className="sr-only">Accion</span>
               </div>
               {(form.variants || []).map((variant, idx) => (
                 <div key={idx} className="flex gap-2 items-center">
@@ -603,21 +703,9 @@ const EditProductContent: React.FC = () => {
                   <button
                     type="button"
                     className="text-red-600 font-bold px-2"
-                    onClick={() => {
-                      setForm((prev) => ({
-                        ...prev,
-                        variants: (prev.variants || []).filter(
-                          (_, i) => i !== idx,
-                        ),
-                      }));
-                      setVariantDraftValues((prev) => {
-                        const next = { ...prev };
-                        delete next[idx];
-                        return next;
-                      });
-                    }}
+                    onClick={() => removeVariantAt(idx)}
                   >
-                    ×
+                    x
                   </button>
                 </div>
               ))}
@@ -651,10 +739,103 @@ const EditProductContent: React.FC = () => {
                   }));
                 }}
               >
-                + Añadir talla
+                + Anadir talla
               </button>
             </div>
           </>
+        ) : shouldUseVariants ? (
+          <div className="space-y-2">
+            <label className="block font-semibold">Variantes del producto</label>
+            <div className="grid grid-cols-[minmax(0,1.3fr)_80px_96px_32px] gap-2 items-center text-xs font-medium text-gray-600">
+              <span>Nombre</span>
+              <span>Stock</span>
+              <span>Precio</span>
+              <span className="sr-only">Accion</span>
+            </div>
+            {(form.variants || []).map((variant, idx) => (
+              <div key={idx} className="flex gap-2 items-center">
+                <input
+                  type="text"
+                  value={getVariantName(variant) || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setForm((prev) => ({
+                      ...prev,
+                      variants: (prev.variants || []).map((v, i) =>
+                        i === idx ? { ...v, name: value, size: undefined } : v,
+                      ),
+                    }));
+                  }}
+                  className="border rounded px-2 py-1 flex-1"
+                  placeholder="Nombre de variante"
+                />
+
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={variantDraftValues[idx]?.stock || ""}
+                  onKeyDown={(e) => preventInvalidKeys(e)}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    setVariantDraftValues((prev) => ({
+                      ...prev,
+                      [idx]: { ...prev[idx], stock: raw },
+                    }));
+                  }}
+                  className="border rounded px-2 py-1 w-20"
+                  placeholder="Stock"
+                  required
+                />
+
+                <input
+                  type="number"
+                  min={0}
+                  step="any"
+                  value={variantDraftValues[idx]?.price || ""}
+                  onKeyDown={(e) => preventInvalidKeys(e, true)}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    setVariantDraftValues((prev) => ({
+                      ...prev,
+                      [idx]: { ...prev[idx], price: raw },
+                    }));
+                  }}
+                  className="border rounded px-2 py-1 w-24"
+                  placeholder="Precio"
+                  required
+                />
+
+                <button
+                  type="button"
+                  className="text-red-600 font-bold px-2"
+                  onClick={() => removeVariantAt(idx)}
+                >
+                  x
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              className="bg-green-600 text-white px-3 py-1 rounded"
+              onClick={() => {
+                const nextIndex = (form.variants || []).length;
+                setForm((prev) => ({
+                  ...prev,
+                  variants: [
+                    ...(prev.variants || []),
+                    { name: "", stock: 0, price: 0 },
+                  ],
+                }));
+                setVariantDraftValues((prev) => ({
+                  ...prev,
+                  [nextIndex]: { stock: "0", price: "0" },
+                }));
+              }}
+            >
+              + Anadir variante
+            </button>
+          </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <label className="block text-sm font-medium text-gray-700">

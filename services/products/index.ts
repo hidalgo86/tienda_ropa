@@ -6,11 +6,13 @@ import type {
   ProductSearchFilters,
   UploadProduct,
 } from "@/types/domain/products";
+import { getStoredAuthToken, refreshSession } from "@/services/users";
 
 interface ApiOptions {
   baseUrl?: string;
   cache?: RequestCache;
   signal?: AbortSignal;
+  token?: string | null;
 }
 
 const genericErrorMessages = new Set([
@@ -101,6 +103,72 @@ const parseResponseOrThrow = async <T>(
   return data as T;
 };
 
+const buildHeaders = (
+  options: ApiOptions,
+  includeJson: boolean = false,
+  token?: string | null,
+): HeadersInit => {
+  const headers: HeadersInit = {};
+
+  if (includeJson) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  return headers;
+};
+
+const storeRefreshedTokens = (tokens: {
+  access_token: string;
+  refresh_token: string;
+}) => {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem("authToken", tokens.access_token);
+  window.localStorage.setItem("refreshToken", tokens.refresh_token);
+  window.dispatchEvent(new Event("auth:session-changed"));
+};
+
+const fetchWithAuthRetry = async <T>(
+  requestFactory: (token: string) => Promise<T>,
+  fallbackErrorMessage: string,
+  options: ApiOptions = {},
+): Promise<T> => {
+  const token = options.token ?? getStoredAuthToken();
+
+  if (!token) {
+    throw new Error("No hay sesion activa");
+  }
+
+  try {
+    return await requestFactory(token);
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message.toLowerCase()
+        : fallbackErrorMessage.toLowerCase();
+
+    const shouldRetry =
+      !options.token &&
+      (message.includes("token") ||
+        message.includes("jwt") ||
+        message.includes("unauthorized") ||
+        message.includes("unauthoriz") ||
+        message.includes("sesion"));
+
+    if (!shouldRetry) {
+      throw error;
+    }
+
+    const refreshedTokens = await refreshSession();
+    storeRefreshedTokens(refreshedTokens);
+
+    return requestFactory(refreshedTokens.access_token);
+  }
+};
+
 export const listProducts = async (
   params: ProductSearchFilters = {},
   options: ApiOptions = {},
@@ -153,6 +221,7 @@ export const getProductById = async (
     buildApiUrl(`/api/products/get/${id}`, options.baseUrl),
     {
       cache: options.cache ?? "no-store",
+      headers: buildHeaders(options, false, options.token),
       signal: options.signal,
     },
   );
@@ -164,17 +233,19 @@ export const createProduct = async (
   input: CreateProduct,
   options: ApiOptions = {},
 ): Promise<Product> => {
-  const response = await fetch(
-    buildApiUrl("/api/products/create", options.baseUrl),
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
-      signal: options.signal,
-    },
-  );
+  return fetchWithAuthRetry(async (token) => {
+    const response = await fetch(
+      buildApiUrl("/api/products/create", options.baseUrl),
+      {
+        method: "POST",
+        headers: buildHeaders(options, true, options.token ?? token),
+        body: JSON.stringify(input),
+        signal: options.signal,
+      },
+    );
 
-  return parseResponseOrThrow<Product>(response, "Error al crear producto");
+    return parseResponseOrThrow<Product>(response, "Error al crear producto");
+  }, "Error al crear producto", options);
 };
 
 export const uploadProductImage = async (
@@ -207,18 +278,20 @@ export const updateProduct = async (
     id,
   };
 
-  const response = await fetch(
-    buildApiUrl(`/api/products/update/${id}`, options.baseUrl),
-    {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      signal: options.signal,
-    },
-  );
+  return fetchWithAuthRetry(async (token) => {
+    const response = await fetch(
+      buildApiUrl(`/api/products/update/${id}`, options.baseUrl),
+      {
+        method: "PATCH",
+        headers: buildHeaders(options, true, options.token ?? token),
+        body: JSON.stringify(payload),
+        signal: options.signal,
+      },
+    );
 
-  return parseResponseOrThrow<Product>(
-    response,
-    "Error al actualizar producto",
-  );
+    return parseResponseOrThrow<Product>(
+      response,
+      "Error al actualizar producto",
+    );
+  }, "Error al actualizar producto", options);
 };

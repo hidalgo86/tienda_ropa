@@ -9,6 +9,10 @@ import { MdCheckCircle, MdLocationOn, MdShoppingCart } from "react-icons/md";
 import { useCartActions } from "@/lib/useCartActions";
 import { checkoutCart } from "@/services/orders";
 import {
+  PAYMENTS_ENABLED,
+  checkoutDisabledMessage,
+} from "@/lib/commerceConfig";
+import {
   getCurrentUser,
   getStoredAuthToken,
   getStoredUser,
@@ -34,6 +38,11 @@ export default function CheckoutPage() {
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
 
   useEffect(() => {
+    if (!PAYMENTS_ENABLED) {
+      setIsLoadingUser(false);
+      return;
+    }
+
     const token = getStoredAuthToken();
 
     if (!token) {
@@ -82,6 +91,10 @@ export default function CheckoutPage() {
   );
 
   const handleCheckout = async () => {
+    if (!PAYMENTS_ENABLED) {
+      toast.error(checkoutDisabledMessage);
+      return;
+    }
     if (!canCheckout) return;
 
     setIsSubmitting(true);
@@ -108,6 +121,38 @@ export default function CheckoutPage() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto" />
           <p className="mt-4 text-gray-600">Preparando checkout...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!PAYMENTS_ENABLED) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-4xl mx-auto px-4 py-12">
+          <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
+            <MdShoppingCart className="mx-auto text-slate-400" size={64} />
+            <h1 className="mt-4 text-3xl font-bold text-gray-900">
+              Checkout no disponible todavia
+            </h1>
+            <p className="mt-3 text-gray-600 max-w-2xl mx-auto">
+              {checkoutDisabledMessage}
+            </p>
+            <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+              <Link
+                href="/cart"
+                className="px-6 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+              >
+                Volver al carrito
+              </Link>
+              <Link
+                href="/products"
+                className="px-6 py-3 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Seguir explorando
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     );

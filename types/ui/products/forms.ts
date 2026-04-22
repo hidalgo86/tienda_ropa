@@ -7,12 +7,14 @@ import type {
 export const PRODUCT_FORM_MAX_IMAGES = 4;
 
 export interface ProductVariantDraft {
-  size: Size;
+  name: string;
+  size: Size | "";
   stock: number | "";
   price: number | "";
 }
 
 export interface ProductVariantDraftErrors {
+  name?: string;
   stock?: string;
   price?: string;
 }

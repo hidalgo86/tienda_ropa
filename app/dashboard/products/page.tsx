@@ -15,28 +15,24 @@ import { useAdminProducts } from "./useAdminProducts";
 import { updateProduct } from "@/services/products";
 
 const ProductsContent: React.FC = () => {
-  // Dependencias de navegación para sincronizar estado <-> URL
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Estado inicial tomado de URL (deep-link y recarga de página)
   const initialLimit = Number(searchParams.get("limit")) || 50;
   const initialPage = Math.max(1, Number(searchParams.get("page")) || 1);
   const initialSearch = searchParams.get("search") || "";
   const initialFilter =
     parseAdminProductFilter(searchParams.get("status")) ||
     ADMIN_PRODUCT_FILTER_ALL;
+
   const [limit] = useState(initialLimit);
   const [page, setPage] = useState(initialPage);
   const [search, setSearch] = useState(initialSearch);
   const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
   const [filter, setFilter] = useState<AdminProductFilter>(initialFilter);
-
-  // Controla acciones por tarjeta para prevenir doble click en delete/restore
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
-  // Hook encargado de datos, loading, errores y refetch de productos
   const { products, setProducts, totalPages, loading, error, refetch } =
     useAdminProducts({
       filter,
@@ -45,7 +41,6 @@ const ProductsContent: React.FC = () => {
       search: debouncedSearch,
     });
 
-  // Debounce de la búsqueda para evitar múltiples requests por tecla
   useEffect(() => {
     const timeout = setTimeout(() => {
       setDebouncedSearch(search);
@@ -54,8 +49,6 @@ const ProductsContent: React.FC = () => {
   }, [search]);
 
   useEffect(() => {
-    // Escribe el estado actual en la URL sin recargar la página
-    // (permite compartir link, refrescar y usar botón atrás)
     const params = new URLSearchParams();
     params.set("page", String(page));
     params.set("limit", String(limit));
@@ -77,7 +70,6 @@ const ProductsContent: React.FC = () => {
   }, [page, filter, limit, debouncedSearch, pathname, router, searchParams]);
 
   useEffect(() => {
-    // Lee cambios de URL (ej. botón atrás/adelante) y actualiza estado local
     const nextPage = Math.max(1, Number(searchParams.get("page")) || 1);
     const nextStatus =
       parseAdminProductFilter(searchParams.get("status")) ||
@@ -94,14 +86,13 @@ const ProductsContent: React.FC = () => {
     return <div className="text-center py-10 text-red-600">{error}</div>;
   }
 
-  // Función para eliminar producto
   const handleDelete = async (id: string) => {
     if (actionLoadingId === id) return;
-    if (!window.confirm("¿Estás seguro de que deseas eliminar este producto?"))
+    if (!window.confirm("Estas seguro de que deseas eliminar este producto?")) {
       return;
+    }
 
     setActionLoadingId(id);
-    // Optimistic UI: removemos al instante para sensación de app rápida
     let previousProducts: Product[] = [];
     setProducts((prev) => {
       previousProducts = prev;
@@ -110,13 +101,10 @@ const ProductsContent: React.FC = () => {
 
     try {
       await updateProduct(id, { state: ProductState.ELIMINADO });
-
-      // Refetch silencioso: valida consistencia sin mostrar spinner global
       await refetch({ silent: true }).catch(() => {
         return;
       });
     } catch (err) {
-      // Rollback si falla el endpoint
       setProducts(previousProducts);
       alert(
         err instanceof Error ? err.message : "No se pudo eliminar el producto",
@@ -126,12 +114,10 @@ const ProductsContent: React.FC = () => {
     }
   };
 
-  // Función para restaurar producto
   const handleRestore = async (id: string) => {
     if (actionLoadingId === id) return;
 
     setActionLoadingId(id);
-    // Optimistic UI: removemos de la vista actual y luego sincronizamos
     let previousProducts: Product[] = [];
     setProducts((prev) => {
       previousProducts = prev;
@@ -140,13 +126,10 @@ const ProductsContent: React.FC = () => {
 
     try {
       await updateProduct(id, { state: ProductState.ACTIVO });
-
-      // Refetch silencioso para evitar parpadeo de loading general
       await refetch({ silent: true }).catch(() => {
         return;
       });
     } catch (err) {
-      // Rollback si falla la restauración
       setProducts(previousProducts);
       alert(
         err instanceof Error ? err.message : "No se pudo restaurar el producto",
@@ -156,7 +139,6 @@ const ProductsContent: React.FC = () => {
     }
   };
 
-  // Función para editar producto (redirecciona a la página de edición)
   const handleEdit = (id: string) => {
     const currentQuery = searchParams.toString();
     const returnTo = `${pathname}${currentQuery ? `?${currentQuery}` : ""}`;
@@ -166,13 +148,11 @@ const ProductsContent: React.FC = () => {
   };
 
   const handleStatusChange = (value: AdminProductFilter) => {
-    // Evitar re-fetch doble y resetear página
     setPage(1);
     setFilter(value);
   };
 
   const handleSearchChange = (value: string) => {
-    // Resetear página y aplicar debounce para requests
     setPage(1);
     setSearch(value);
   };
@@ -194,7 +174,7 @@ const ProductsContent: React.FC = () => {
               strokeLinejoin="round"
             />
           </svg>
-          Añadir
+          Anadir
         </button>
         <select
           value={filter}

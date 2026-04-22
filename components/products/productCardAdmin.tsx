@@ -1,7 +1,11 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { getProductStatusLabel } from "@/types/domain/products";
+import {
+  formatSizeLabel,
+  getProductStatusLabel,
+  getProductStock,
+} from "@/types/domain/products";
 import type { ProductCardAdminProps } from "@/types/ui/products";
 
 const statusColors: Record<string, string> = {
@@ -11,6 +15,32 @@ const statusColors: Record<string, string> = {
 };
 
 const PLACEHOLDER = "/placeholder.webp";
+
+const getProductMode = (product: ProductCardAdminProps["product"]) => {
+  const variants = product.variants ?? [];
+  if (variants.length === 0) {
+    return {
+      label: "Simple",
+      detail: `Stock total: ${getProductStock(product)}`,
+    };
+  }
+
+  const hasOnlySizeVariants = variants.every((variant) => {
+    const variantName = String(variant.name || variant.size || "").trim();
+    return formatSizeLabel(variantName) !== variantName
+      ? true
+      : /^(RN|M3|M6|M9|M12|M18|M24|T2|T3|T4|T5|T6|T7|T8|T9|T10|T12)$/i.test(
+          variantName,
+        );
+  });
+
+  return {
+    label: hasOnlySizeVariants ? "Ropa" : "Variantes",
+    detail: hasOnlySizeVariants
+      ? `${variants.length} talla(s)`
+      : `${variants.length} variante(s)`,
+  };
+};
 
 const ProductCardAdmin: React.FC<ProductCardAdminProps> = ({
   product,
@@ -35,6 +65,11 @@ const ProductCardAdmin: React.FC<ProductCardAdminProps> = ({
         ? directPrice
         : null;
   const coverImage = product.images?.[0]?.url || PLACEHOLDER;
+  const productMode = getProductMode(product);
+  const stockSummary =
+    variants.length > 0
+      ? `Stock total: ${getProductStock(product)}`
+      : `Stock: ${Math.max(0, Number(product.stock ?? 0))}`;
 
   return (
     <div
@@ -151,6 +186,24 @@ const ProductCardAdmin: React.FC<ProductCardAdminProps> = ({
             </span>
           )}
         </div>
+        <div className="flex flex-wrap gap-2 mb-3">
+          <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700">
+            {productMode.label}
+          </span>
+          <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-700">
+            {productMode.detail}
+          </span>
+        </div>
+        {variants.length > 0 && (
+          <div className="mb-2 text-xs text-gray-500 line-clamp-2">
+            {variants
+              .slice(0, 3)
+              .map((variant) => formatSizeLabel(variant.name || variant.size))
+              .join(" · ")}
+            {variants.length > 3 ? " · ..." : ""}
+          </div>
+        )}
+        <div className="text-xs text-gray-500">{stockSummary}</div>
         <div className="mt-auto pt-2 text-sm text-gray-700 flex justify-end items-end">
           {finalPrice !== null ? (
             <div className="font-bold text-lg text-gray-900 text-right min-w-[80px]">

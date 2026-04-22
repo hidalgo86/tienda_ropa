@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeUsersGraphql } from "../../users/graphqlClient";
 import { UserApiRouteError } from "../../users/userApi.error";
+import { PAYMENTS_ENABLED, paymentsDisabledMessage } from "@/lib/commerceConfig";
 
 const checkoutMutation = `
   mutation CheckoutMyCart {
@@ -34,6 +35,13 @@ const checkoutMutation = `
 `;
 
 export async function POST(req: NextRequest) {
+  if (!PAYMENTS_ENABLED) {
+    return NextResponse.json(
+      { error: paymentsDisabledMessage },
+      { status: 503 },
+    );
+  }
+
   try {
     const data = await executeUsersGraphql<{
       checkoutMyCart: Record<string, unknown>;

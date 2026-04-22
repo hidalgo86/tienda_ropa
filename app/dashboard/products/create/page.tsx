@@ -30,6 +30,7 @@ const CreateProductPage: React.FC = () => {
     : legacyProductCategoryOptions;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [useVariants, setUseVariants] = useState(false);
   const [form, setForm] = useState<ProductCreateFormState>({
     categoryId: "",
     name: "",
@@ -40,7 +41,6 @@ const CreateProductPage: React.FC = () => {
     stock: 1,
     price: 1,
   });
-  // Estado para la imagen y su previsualización
   const [images, setImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
@@ -55,8 +55,9 @@ const CreateProductPage: React.FC = () => {
     } catch {}
     input.click();
   };
-  // Estado para variantes temporales
+
   const [variant, setVariant] = useState<ProductVariantDraft>({
+    name: "",
     size: Size.RN,
     stock: 1,
     price: 1,
@@ -64,6 +65,7 @@ const CreateProductPage: React.FC = () => {
   const [variantErrors, setVariantErrors] = useState<ProductVariantDraftErrors>(
     {},
   );
+
   const preventStockInvalidKeys = (
     e: React.KeyboardEvent<HTMLInputElement>,
   ) => {
@@ -81,6 +83,7 @@ const CreateProductPage: React.FC = () => {
       e.preventDefault();
     }
   };
+
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
@@ -91,6 +94,7 @@ const CreateProductPage: React.FC = () => {
       const selectedOption = resolveCategoryOption(value, categoryOptions);
       setForm((prev) => {
         if (selectedOption?.supportsGenre) {
+          setUseVariants(true);
           return {
             ...prev,
             category: selectedOption.value,
@@ -101,6 +105,7 @@ const CreateProductPage: React.FC = () => {
           };
         }
 
+        setUseVariants(false);
         return {
           ...prev,
           category: selectedOption?.value || prev.category,
@@ -159,6 +164,7 @@ const CreateProductPage: React.FC = () => {
       }
 
       const defaultCategory = categoryOptions[0];
+      setUseVariants(defaultCategory.supportsGenre);
       return {
         ...prev,
         categoryId: defaultCategory.categoryId,
@@ -170,13 +176,12 @@ const CreateProductPage: React.FC = () => {
     });
   }, [categoryOptions]);
 
-  // Manejar cambio de imagen
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
     if (!selectedFiles.length) return;
 
     if (images.length >= PRODUCT_FORM_MAX_IMAGES) {
-      setError(`Máximo ${PRODUCT_FORM_MAX_IMAGES} imágenes permitidas.`);
+      setError(`Maximo ${PRODUCT_FORM_MAX_IMAGES} imagenes permitidas.`);
       e.currentTarget.value = "";
       return;
     }
@@ -185,7 +190,7 @@ const CreateProductPage: React.FC = () => {
     const filesToAdd = selectedFiles.slice(0, availableSlots);
 
     if (filesToAdd.length < selectedFiles.length) {
-      setError(`Solo puedes subir hasta ${PRODUCT_FORM_MAX_IMAGES} imágenes.`);
+      setError(`Solo puedes subir hasta ${PRODUCT_FORM_MAX_IMAGES} imagenes.`);
     } else {
       setError(null);
     }
@@ -196,15 +201,19 @@ const CreateProductPage: React.FC = () => {
       ...filesToAdd.map((file) => URL.createObjectURL(file)),
     ]);
 
-    // Permite volver a elegir el mismo archivo
     e.currentTarget.value = "";
   };
 
-  // Manejar cambios en los campos de variante
   const handleVariantChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
+    if (name === "name") {
+      setVariant((prev) => ({ ...prev, name: value }));
+      setVariantErrors((prev) => ({ ...prev, name: undefined }));
+      return;
+    }
+
     if (name === "stock") {
       if (value !== "" && !/^\d+$/.test(value)) {
         setVariantErrors((prev) => ({
@@ -220,7 +229,7 @@ const CreateProductPage: React.FC = () => {
       if (value !== "" && !/^\d*\.?\d*$/.test(value)) {
         setVariantErrors((prev) => ({
           ...prev,
-          price: "Precio: solo números no negativos",
+          price: "Precio: solo numeros no negativos",
         }));
         return;
       }
@@ -244,11 +253,23 @@ const CreateProductPage: React.FC = () => {
     }));
   };
 
-  // Agregar variante a la lista
+  const selectedCategoryOption =
+    resolveCategoryOption(form.categoryId, categoryOptions) ||
+    resolveCategoryOption(form.category, categoryOptions);
+  const isClothingProduct = isClothingCategory(
+    form.categoryId || form.category,
+    categoryOptions,
+  );
+  const shouldUseVariants = isClothingProduct || useVariants;
+
   const handleAddVariant = (e: React.FormEvent) => {
     e.preventDefault();
+    const variantName = isClothingProduct
+      ? String(variant.size || "").trim()
+      : String(variant.name || "").trim();
+
     if (
-      !variant.size ||
+      !variantName ||
       variant.stock === "" ||
       variant.stock < 0 ||
       !Number.isInteger(variant.stock) ||
@@ -256,6 +277,7 @@ const CreateProductPage: React.FC = () => {
       variant.price < 0
     ) {
       setVariantErrors({
+        name: !variantName ? "Nombre de variante requerido" : undefined,
         stock:
           variant.stock === "" ||
           variant.stock < 0 ||
@@ -264,35 +286,51 @@ const CreateProductPage: React.FC = () => {
             : undefined,
         price:
           variant.price === "" || variant.price < 0
-            ? "Precio: solo números no negativos"
+            ? "Precio: solo numeros no negativos"
             : undefined,
       });
       return;
     }
+
+    const normalizedVariantName = variantName.toLowerCase();
+    const hasDuplicate = (form.variants || []).some(
+      (existingVariant) =>
+        getVariantName(existingVariant).trim().toLowerCase() ===
+        normalizedVariantName,
+    );
+
+    if (hasDuplicate) {
+      setVariantErrors((prev) => ({
+        ...prev,
+        name: "No repitas el nombre de la variante",
+      }));
+      return;
+    }
+
     setForm((prev) => ({
       ...prev,
       variants: [
         ...(prev.variants || []),
         {
-          name: String(variant.size),
+          name: variantName,
           ...variant,
-          size: variant.size as Size,
+          size: isClothingProduct ? (variant.size as Size) : undefined,
           stock: Number(variant.stock),
           price: Number(variant.price),
         },
       ],
     }));
-    setVariant({ size: Size.RN, stock: 1, price: 1 });
+    setVariant({ name: "", size: Size.RN, stock: 1, price: 1 });
     setVariantErrors({});
   };
 
-  // Eliminar variante
   const handleRemoveVariant = (idx: number) => {
     setForm((prev) => ({
       ...prev,
       variants: (prev.variants || []).filter((_, i) => i !== idx),
     }));
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -300,25 +338,21 @@ const CreateProductPage: React.FC = () => {
     try {
       if (images.length === 0) {
         throw new Error(
-          "Selecciona al menos una imagen desde galería o cámara",
+          "Selecciona al menos una imagen desde galeria o camara",
         );
       }
 
       if (images.length > PRODUCT_FORM_MAX_IMAGES) {
         throw new Error(
-          `Máximo ${PRODUCT_FORM_MAX_IMAGES} imágenes permitidas`,
+          `Maximo ${PRODUCT_FORM_MAX_IMAGES} imagenes permitidas`,
         );
       }
 
       if (!String(form.categoryId || "").trim()) {
-        throw new Error("Ingresa un categoryId válido");
+        throw new Error("Ingresa un categoryId valido");
       }
 
-      // Validación: al menos una variante
-      if (
-        isClothingCategory(form.categoryId || form.category, categoryOptions) &&
-        (!form.variants || form.variants.length === 0)
-      ) {
+      if (shouldUseVariants && (!form.variants || form.variants.length === 0)) {
         throw new Error("Agrega al menos una variante (talla, stock y precio)");
       }
 
@@ -326,19 +360,17 @@ const CreateProductPage: React.FC = () => {
         isClothingCategory(form.categoryId || form.category, categoryOptions) &&
         !form.genre
       ) {
-        throw new Error("Selecciona un género para productos de ropa");
+        throw new Error("Selecciona un genero para productos de ropa");
       }
 
-      if (
-        !isClothingCategory(form.categoryId || form.category, categoryOptions)
-      ) {
+      if (!shouldUseVariants) {
         const stock = Number(form.stock);
         const price = Number(form.price);
         if (!Number.isFinite(stock) || stock < 0 || !Number.isInteger(stock)) {
-          throw new Error("Stock inválido: usa enteros no negativos");
+          throw new Error("Stock invalido: usa enteros no negativos");
         }
         if (!Number.isFinite(price) || price < 0) {
-          throw new Error("Precio inválido: usa números no negativos");
+          throw new Error("Precio invalido: usa numeros no negativos");
         }
       }
 
@@ -355,14 +387,17 @@ const CreateProductPage: React.FC = () => {
       };
 
       if (
-        isClothingCategory(
-          payload.categoryId || payload.category,
-          categoryOptions,
-        )
+        isClothingCategory(payload.categoryId || payload.category, categoryOptions)
       ) {
         payload.genre = form.genre as Genre;
         payload.variants = (form.variants || []).map((v) => ({
           name: getVariantName(v),
+          stock: Number(v.stock),
+          price: Number(v.price),
+        }));
+      } else if (useVariants) {
+        payload.variants = (form.variants || []).map((v) => ({
+          name: String(getVariantName(v)).trim(),
           stock: Number(v.stock),
           price: Number(v.price),
         }));
@@ -381,7 +416,6 @@ const CreateProductPage: React.FC = () => {
     setLoading(false);
   };
 
-  // Limpiar URLs de previsualización para evitar fugas de memoria
   useEffect(() => {
     return () => {
       imagePreviews.forEach((url) => URL.revokeObjectURL(url));
@@ -397,13 +431,6 @@ const CreateProductPage: React.FC = () => {
     });
     setImages((prev) => prev.filter((_, i) => i !== index));
   };
-  const selectedCategoryOption =
-    resolveCategoryOption(form.categoryId, categoryOptions) ||
-    resolveCategoryOption(form.category, categoryOptions);
-  const isClothingProduct = isClothingCategory(
-    form.categoryId || form.category,
-    categoryOptions,
-  );
 
   return (
     <div className="max-w-xl mx-auto py-8">
@@ -412,7 +439,7 @@ const CreateProductPage: React.FC = () => {
         onClick={() => router.push("/dashboard/products")}
         className="flex items-center gap-2 text-gray-600 hover:text-pink-500 transition-colors mb-4"
       >
-        <span aria-hidden="true">←</span>
+        <span aria-hidden="true">&lt;</span>
         <span className="text-sm font-medium">Volver</span>
       </button>
       <div className="mb-6">
@@ -435,14 +462,13 @@ const CreateProductPage: React.FC = () => {
           ref={cameraInputRef}
           onChange={handleImageChange}
         />
-        {/* Previsualización de imagen o esqueleto */}
         <div className="flex flex-col items-center gap-2">
           <div className="relative w-40 h-40">
             <div className="w-40 h-40 bg-gray-100 border border-gray-300 rounded flex items-center justify-center overflow-hidden">
               {imagePreviews[0] ? (
                 <Image
                   src={imagePreviews[0]}
-                  alt="Previsualización"
+                  alt="Previsualizacion"
                   width={160}
                   height={160}
                   className="object-cover w-full h-full"
@@ -467,8 +493,8 @@ const CreateProductPage: React.FC = () => {
             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-3">
               <button
                 type="button"
-                aria-label="Subir desde galería"
-                title="Subir desde galería"
+                aria-label="Subir desde galeria"
+                title="Subir desde galeria"
                 className="group relative bg-white/90 hover:bg-white text-emerald-600 hover:text-emerald-700 rounded-full p-2 shadow backdrop-blur"
                 onClick={() => galleryInputRef.current?.click()}
                 onKeyDown={(e) => {
@@ -479,7 +505,7 @@ const CreateProductPage: React.FC = () => {
                 }}
               >
                 <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs bg-black text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity">
-                  Galería
+                  Galeria
                 </span>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -504,7 +530,7 @@ const CreateProductPage: React.FC = () => {
                 }}
               >
                 <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-xs bg-black text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity">
-                  Cámara
+                  Camara
                 </span>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -543,7 +569,7 @@ const CreateProductPage: React.FC = () => {
                       onClick={() => removeImageAt(idx)}
                       aria-label={`Quitar imagen ${idx + 1}`}
                     >
-                      ×
+                      x
                     </button>
                   </div>
                 ))}
@@ -564,7 +590,7 @@ const CreateProductPage: React.FC = () => {
           name="description"
           value={form.description || ""}
           onChange={handleChange}
-          placeholder="Descripción del producto"
+          placeholder="Descripcion del producto"
           className="w-full p-2 border border-gray-300 rounded"
         />
         <select
@@ -579,7 +605,7 @@ const CreateProductPage: React.FC = () => {
           required
         >
           <option value="" disabled>
-            Selecciona una categoría
+            Selecciona una categoria
           </option>
           {categoryOptions.map((option) => (
             <option
@@ -590,6 +616,26 @@ const CreateProductPage: React.FC = () => {
             </option>
           ))}
         </select>
+        {!isClothingProduct && (
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={useVariants}
+              onChange={(e) => {
+                const nextChecked = e.target.checked;
+                setUseVariants(nextChecked);
+                setForm((prev) => ({
+                  ...prev,
+                  variants: nextChecked ? prev.variants || [] : [],
+                  stock: nextChecked ? undefined : (prev.stock ?? 1),
+                  price: nextChecked ? undefined : (prev.price ?? 1),
+                }));
+                setVariantErrors({});
+              }}
+            />
+            Este producto usa variantes
+          </label>
+        )}
         {isClothingProduct ? (
           <>
             <select
@@ -600,14 +646,13 @@ const CreateProductPage: React.FC = () => {
               required
             >
               <option value="" disabled>
-                Selecciona un género
+                Selecciona un genero
               </option>
-              <option value={Genre.NINO}>Niño</option>
-              <option value={Genre.NINA}>Niña</option>
+              <option value={Genre.NINO}>Nino</option>
+              <option value={Genre.NINA}>Nina</option>
               <option value={Genre.UNISEX}>Unisex</option>
             </select>
 
-            {/* Variantes (tallas, stock, precio) */}
             <div className="border p-4 rounded bg-gray-50">
               <h2 className="font-semibold mb-1">Detalle por talla</h2>
               <p className="text-xs text-gray-600 mb-2">
@@ -617,7 +662,7 @@ const CreateProductPage: React.FC = () => {
                 <span className="w-1/3">Talla</span>
                 <span className="w-1/3">Stock</span>
                 <span className="w-1/3">Precio</span>
-                <span className="sr-only">Acción</span>
+                <span className="sr-only">Accion</span>
               </div>
               <div className="flex gap-2 mb-2 items-end">
                 <select
@@ -670,6 +715,13 @@ const CreateProductPage: React.FC = () => {
               <div className="mb-2 space-y-1">
                 <p
                   className={`text-xs ${
+                    variantErrors.name ? "text-red-600" : "text-gray-500"
+                  }`}
+                >
+                  {variantErrors.name || "Cada talla solo puede aparecer una vez"}
+                </p>
+                <p
+                  className={`text-xs ${
                     variantErrors.stock ? "text-red-600" : "text-gray-500"
                   }`}
                 >
@@ -681,10 +733,9 @@ const CreateProductPage: React.FC = () => {
                   }`}
                 >
                   {variantErrors.price ||
-                    "Precio: números enteros o decimales no negativos"}
+                    "Precio: numeros enteros o decimales no negativos"}
                 </p>
               </div>
-              {/* Lista de variantes agregadas */}
               <ul className="space-y-1">
                 {(form.variants || []).map((v, idx) => (
                   <li key={idx} className="flex items-center gap-2 text-sm">
@@ -704,6 +755,95 @@ const CreateProductPage: React.FC = () => {
               </ul>
             </div>
           </>
+        ) : shouldUseVariants ? (
+          <div className="border p-4 rounded bg-gray-50">
+            <h2 className="font-semibold mb-1">Variantes del producto</h2>
+            <p className="text-xs text-gray-600 mb-2">
+              Usa nombres como color, volumen o presentacion.
+            </p>
+            <div className="grid grid-cols-[minmax(0,1.3fr)_90px_110px_auto] gap-2 mb-2 items-end">
+              <input
+                type="text"
+                name="name"
+                value={variant.name}
+                onChange={handleVariantChange}
+                placeholder="Nombre de variante"
+                className="p-2 border border-gray-300 rounded"
+              />
+              <input
+                type="number"
+                name="stock"
+                value={variant.stock}
+                onChange={handleVariantChange}
+                onKeyDown={preventStockInvalidKeys}
+                placeholder="Stock"
+                min={0}
+                step={1}
+                inputMode="numeric"
+                className="p-2 border border-gray-300 rounded"
+              />
+              <input
+                type="number"
+                name="price"
+                value={variant.price}
+                onChange={handleVariantChange}
+                onKeyDown={preventPriceInvalidKeys}
+                placeholder="Precio"
+                min={0}
+                step="any"
+                inputMode="decimal"
+                className="p-2 border border-gray-300 rounded"
+              />
+              <button
+                onClick={handleAddVariant}
+                className="bg-green-600 text-white px-2 py-2 rounded hover:bg-green-700"
+                type="button"
+              >
+                Agregar
+              </button>
+            </div>
+            <div className="mb-2 space-y-1">
+              <p
+                className={`text-xs ${
+                  variantErrors.name ? "text-red-600" : "text-gray-500"
+                }`}
+              >
+                {variantErrors.name || "Nombre de variante obligatorio y unico"}
+              </p>
+              <p
+                className={`text-xs ${
+                  variantErrors.stock ? "text-red-600" : "text-gray-500"
+                }`}
+              >
+                {variantErrors.stock || "Stock: solo enteros no negativos"}
+              </p>
+              <p
+                className={`text-xs ${
+                  variantErrors.price ? "text-red-600" : "text-gray-500"
+                }`}
+              >
+                {variantErrors.price ||
+                  "Precio: numeros enteros o decimales no negativos"}
+              </p>
+            </div>
+            <ul className="space-y-1">
+              {(form.variants || []).map((v, idx) => (
+                <li key={idx} className="flex items-center gap-2 text-sm">
+                  <span className="font-mono">
+                    Variante: {getVariantName(v)}, Stock: {v.stock}, Precio: $
+                    {v.price}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveVariant(idx)}
+                    className="text-red-600 hover:underline"
+                  >
+                    Eliminar
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <input

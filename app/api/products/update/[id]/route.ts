@@ -17,7 +17,11 @@ export async function PATCH(
 
     const body = await req.json();
     const input = buildUpdateProductInput(body);
-    const product = await updateProductInBackend(id, input);
+    const product = await updateProductInBackend(
+      id,
+      input,
+      req.headers.get("authorization"),
+    );
 
     return NextResponse.json(product);
   } catch (error: unknown) {
