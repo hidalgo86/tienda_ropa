@@ -312,8 +312,8 @@ const CreateProductPage: React.FC = () => {
       variants: [
         ...(prev.variants || []),
         {
-          name: variantName,
           ...variant,
+          name: variantName,
           size: isClothingProduct ? (variant.size as Size) : undefined,
           stock: Number(variant.stock),
           price: Number(variant.price),
