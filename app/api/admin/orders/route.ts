@@ -1,0 +1,124 @@
+import { NextRequest, NextResponse } from "next/server";
+import { executeUsersGraphql } from "../../users/graphqlClient";
+import { UserApiRouteError } from "../../users/userApi.error";
+
+const adminOrdersQuery = `
+  query AdminOrders($input: OrdersQueryInput) {
+    adminOrders(input: $input) {
+      items {
+        id
+        userId
+        user {
+          id
+          username
+          email
+          status
+          role
+          name
+          phone
+          address
+          isEmailVerified
+          createdAt
+          updatedAt
+        }
+        items {
+          productId
+          variantName
+          quantity
+          productName
+          thumbnail
+          unitPrice
+          lineTotal
+        }
+        totalAmount
+        shippingAddress {
+          address
+          name
+          phone
+        }
+        status
+        paymentMethod
+        paymentReference
+        paidAt
+        cancelledAt
+        createdAt
+        updatedAt
+      }
+      total
+      page
+      totalPages
+    }
+  }
+`;
+
+const toGraphqlOrderStatus = (value?: string): string | undefined => {
+  switch (value?.trim().toLowerCase()) {
+    case "pending":
+      return "PENDING";
+    case "paid":
+      return "PAID";
+    case "cancelled":
+      return "CANCELLED";
+    default:
+      return undefined;
+  }
+};
+
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const page = Math.max(1, Number(searchParams.get("page")) || 1);
+    const limit = Math.max(1, Number(searchParams.get("limit")) || 20);
+    const userId = searchParams.get("userId")?.trim() || undefined;
+    const status = toGraphqlOrderStatus(searchParams.get("status") ?? undefined);
+
+    const data = await executeUsersGraphql<
+      {
+        adminOrders: {
+          items: Record<string, unknown>[];
+          total: number;
+          page: number;
+          totalPages: number;
+        };
+      },
+      {
+        input: {
+          filters: {
+            userId?: string;
+            status?: string;
+          };
+          pagination: {
+            page: number;
+            limit: number;
+          };
+        };
+      }
+    >({
+      query: adminOrdersQuery,
+      variables: {
+        input: {
+          filters: {
+            userId,
+            status,
+          },
+          pagination: {
+            page,
+            limit,
+          },
+        },
+      },
+      request: req,
+    });
+
+    return NextResponse.json(data.adminOrders);
+  } catch (error) {
+    if (error instanceof UserApiRouteError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
+
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Error interno" },
+      { status: 500 },
+    );
+  }
+}

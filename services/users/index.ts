@@ -32,6 +32,13 @@ interface ApiOptions {
   token?: string | null;
 }
 
+export interface PaginatedResult<T> {
+  items: T[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
 const AUTH_TOKEN_KEY = "authToken";
 const REFRESH_TOKEN_KEY = "refreshToken";
 const USER_DATA_KEY = "userData";
@@ -432,6 +439,71 @@ export const changePassword = async (
       "Error al cambiar la contrasena",
     );
   }, "Error al cambiar la contrasena", options);
+};
+
+interface ListAdminUsersParams {
+  page?: number;
+  limit?: number;
+  username?: string;
+  email?: string;
+  role?: string;
+  status?: string;
+  isEmailVerified?: boolean;
+}
+
+export const listAdminUsers = async (
+  params: ListAdminUsersParams = {},
+  options: ApiOptions = {},
+): Promise<PaginatedResult<User>> => {
+  return fetchWithAuthRetry(async (token) => {
+    const query = new URLSearchParams();
+    query.set("page", String(params.page ?? 1));
+    query.set("limit", String(params.limit ?? 20));
+    if (params.username?.trim()) query.set("username", params.username.trim());
+    if (params.email?.trim()) query.set("email", params.email.trim());
+    if (params.role?.trim()) query.set("role", params.role.trim());
+    if (params.status?.trim()) query.set("status", params.status.trim());
+    if (typeof params.isEmailVerified === "boolean") {
+      query.set("isEmailVerified", String(params.isEmailVerified));
+    }
+
+    const response = await fetch(
+      buildApiUrl(`/api/admin/users?${query.toString()}`, options.baseUrl),
+      {
+        headers: buildHeaders({ ...options, token }),
+        cache: options.cache ?? "no-store",
+        signal: options.signal,
+      },
+    );
+
+    return parseResponseOrThrow<PaginatedResult<User>>(
+      response,
+      "Error al obtener usuarios del dashboard",
+    );
+  }, "Error al obtener usuarios del dashboard", options);
+};
+
+export const updateAdminUserStatus = async (
+  userId: string,
+  status: string,
+  options: ApiOptions = {},
+): Promise<User> => {
+  return fetchWithAuthRetry(async (token) => {
+    const response = await fetch(
+      buildApiUrl("/api/admin/users", options.baseUrl),
+      {
+        method: "PATCH",
+        headers: buildHeaders({ ...options, token }, true),
+        body: JSON.stringify({ userId, status }),
+        signal: options.signal,
+      },
+    );
+
+    return parseResponseOrThrow<User>(
+      response,
+      "Error al actualizar el estado del usuario",
+    );
+  }, "Error al actualizar el estado del usuario", options);
 };
 
 export const refreshSession = async (

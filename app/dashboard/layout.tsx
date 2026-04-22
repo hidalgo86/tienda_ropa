@@ -1,7 +1,7 @@
 "use client";
 
 import React, { Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import SidebarDesktop, {
   SidebarItem,
 } from "../../components/products/SidebarDesktop";
@@ -29,7 +29,7 @@ function DashboardLayoutContent({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const pathname = usePathname();
   const [isAllowed, setIsAllowed] = React.useState<boolean | null>(null);
 
   const sidebarItems: SidebarItem[] = [
@@ -37,25 +37,19 @@ function DashboardLayoutContent({
       src: "/dashboard/productos.png",
       alt: "products",
       label: "Productos",
-      href: "/dashboard?option=products",
+      href: "/dashboard/products",
     },
     {
       src: "/dashboard/clientes.png",
       alt: "clients",
       label: "Clientes",
-      href: "/dashboard?option=clients",
-    },
-    {
-      src: "/dashboard/proveedores.png",
-      alt: "providers",
-      label: "Proveedores",
-      href: "/dashboard?option=providers",
+      href: "/dashboard/clients",
     },
     {
       src: "/dashboard/finanzas.png",
-      alt: "finance",
-      label: "Finanzas",
-      href: "/dashboard?option=finance",
+      alt: "orders",
+      label: "Ordenes",
+      href: "/dashboard/orders",
     },
     {
       src: "/dashboard/salir.png",
@@ -65,7 +59,11 @@ function DashboardLayoutContent({
     },
   ];
 
-  const activeOption = searchParams.get("option") || "products";
+  const activeOption = React.useMemo(() => {
+    if (pathname.includes("/dashboard/clients")) return "clients";
+    if (pathname.includes("/dashboard/orders")) return "orders";
+    return "products";
+  }, [pathname]);
 
   React.useEffect(() => {
     const token = getStoredAuthToken();
