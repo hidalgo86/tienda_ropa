@@ -5,14 +5,9 @@ import { useState, useEffect } from "react";
 import { listPublicBanners } from "@/services/banners";
 import type { Banner } from "@/types/domain/banners";
 
-const imagenesFallback = [
-  { src: "/bebe2.png", alt: "Pago Movil" },
-  { src: "/bebe3.png", alt: "Banner 2" },
-  { src: "/bebe.png", alt: "Banner 3" },
-];
-
 export default function Carrusel() {
   const [banners, setBanners] = useState<Banner[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
   const [actual, setActual] = useState(0);
 
   useEffect(() => {
@@ -20,44 +15,69 @@ export default function Carrusel() {
 
     void listPublicBanners()
       .then((items) => {
-        if (!isMounted || !items.length) return;
+        if (!isMounted) return;
         setBanners(items);
         setActual(0);
       })
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .finally(() => {
+        if (isMounted) {
+          setIsLoaded(true);
+        }
+      });
 
     return () => {
       isMounted = false;
     };
   }, []);
 
-  const imagenes =
-    banners.length > 0
-      ? banners.map((banner) => ({
-          src: banner.imageUrl,
-          alt: banner.altText || banner.title,
-          title: banner.title,
-          subtitle: banner.subtitle,
-          href: banner.linkUrl || undefined,
-          ctaLabel: banner.ctaLabel,
-        }))
-      : imagenesFallback.map((image) => ({
-          ...image,
-          href: undefined,
-          title: "",
-          subtitle: "",
-          ctaLabel: "",
-        }));
+  const imagenes = banners.map((banner) => ({
+    src: banner.imageUrl,
+    alt: banner.altText || banner.title,
+    title: banner.title,
+    subtitle: banner.subtitle,
+    href: banner.linkUrl || undefined,
+    ctaLabel: banner.ctaLabel,
+  }));
   const totalImagenes = imagenes.length;
-  const currentImage = imagenes[actual];
+  const hasMultipleImages = totalImagenes > 1;
 
   useEffect(() => {
+    if (!hasMultipleImages) {
+      return undefined;
+    }
+
     const timer = setInterval(() => {
       setActual((prev) => (prev + 1) % totalImagenes);
     }, 3000);
 
     return () => clearInterval(timer);
-  }, [totalImagenes]);
+  }, [hasMultipleImages, totalImagenes]);
+
+  if (!isLoaded) {
+    return (
+      <div
+        className="relative w-full 
+                    max-w-full sm:max-w-2xl lg:max-w-5xl xl:max-w-6xl
+                    mx-auto
+                    rounded-lg sm:rounded-xl lg:rounded-2xl
+                    overflow-hidden
+                    shadow-md sm:shadow-lg lg:shadow-xl"
+      >
+        <div
+          className="w-full
+                      h-[200px] min-[420px]:h-[240px] sm:h-[280px] lg:h-[400px] xl:h-[480px]
+                      bg-pink-50"
+        />
+      </div>
+    );
+  }
+
+  if (imagenes.length === 0) {
+    return null;
+  }
+
+  const currentImage = imagenes[actual];
 
   const siguiente = () => setActual((prev) => (prev + 1) % totalImagenes);
   const anterior = () =>
@@ -131,67 +151,71 @@ export default function Carrusel() {
         )}
       </div>
 
-      <button
-        onClick={anterior}
-        className="absolute top-1/2 
-                   left-2 sm:left-4 lg:left-6 
-                   -translate-y-1/2 
-                   hidden min-[420px]:inline-flex
-                   bg-pink-200 hover:bg-pink-300 active:bg-pink-400
-                   text-gray-700 
-                   rounded-full 
-                   p-1.5 sm:p-2 lg:p-3
-                   shadow-md hover:shadow-lg 
-                   transition-all duration-200
-                   text-sm sm:text-base lg:text-lg
-                   z-10"
-        aria-label="Imagen anterior"
-      >
-        &#8592;
-      </button>
-
-      <button
-        onClick={siguiente}
-        className="absolute top-1/2 
-                   right-2 sm:right-4 lg:right-6 
-                   -translate-y-1/2 
-                   hidden min-[420px]:inline-flex
-                   bg-pink-200 hover:bg-pink-300 active:bg-pink-400
-                   text-gray-700 
-                   rounded-full 
-                   p-1.5 sm:p-2 lg:p-3
-                   shadow-md hover:shadow-lg 
-                   transition-all duration-200
-                   text-sm sm:text-base lg:text-lg
-                   z-10"
-        aria-label="Siguiente imagen"
-      >
-        &#8594;
-      </button>
-
-      <div
-        className="absolute 
-                      bottom-2 sm:bottom-4 lg:bottom-6 
-                      w-full flex justify-center 
-                      gap-1.5 sm:gap-2 lg:gap-3"
-      >
-        {imagenes.map((_, idx) => (
+      {hasMultipleImages && (
+        <>
           <button
-            key={idx}
-            onClick={() => setActual(idx)}
-            className={`
-              w-2 h-2 sm:w-3 sm:h-3 lg:w-4 lg:h-4 
-              rounded-full transition-all duration-300
-              ${
-                idx === actual
-                  ? "bg-pink-500 scale-110"
-                  : "bg-pink-200 hover:bg-pink-300"
-              }
-            `}
-            aria-label={`Ir a imagen ${idx + 1}`}
-          />
-        ))}
-      </div>
+            onClick={anterior}
+            className="absolute top-1/2 
+                     left-2 sm:left-4 lg:left-6 
+                     -translate-y-1/2 
+                     hidden min-[420px]:inline-flex
+                     bg-pink-200 hover:bg-pink-300 active:bg-pink-400
+                     text-gray-700 
+                     rounded-full 
+                     p-1.5 sm:p-2 lg:p-3
+                     shadow-md hover:shadow-lg 
+                     transition-all duration-200
+                     text-sm sm:text-base lg:text-lg
+                     z-10"
+            aria-label="Imagen anterior"
+          >
+            &#8592;
+          </button>
+
+          <button
+            onClick={siguiente}
+            className="absolute top-1/2 
+                     right-2 sm:right-4 lg:right-6 
+                     -translate-y-1/2 
+                     hidden min-[420px]:inline-flex
+                     bg-pink-200 hover:bg-pink-300 active:bg-pink-400
+                     text-gray-700 
+                     rounded-full 
+                     p-1.5 sm:p-2 lg:p-3
+                     shadow-md hover:shadow-lg 
+                     transition-all duration-200
+                     text-sm sm:text-base lg:text-lg
+                     z-10"
+            aria-label="Siguiente imagen"
+          >
+            &#8594;
+          </button>
+
+          <div
+            className="absolute 
+                        bottom-2 sm:bottom-4 lg:bottom-6 
+                        w-full flex justify-center 
+                        gap-1.5 sm:gap-2 lg:gap-3"
+          >
+            {imagenes.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setActual(idx)}
+                className={`
+                  w-2 h-2 sm:w-3 sm:h-3 lg:w-4 lg:h-4 
+                  rounded-full transition-all duration-300
+                  ${
+                    idx === actual
+                      ? "bg-pink-500 scale-110"
+                      : "bg-pink-200 hover:bg-pink-300"
+                  }
+                `}
+                aria-label={`Ir a imagen ${idx + 1}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

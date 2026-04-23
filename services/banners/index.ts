@@ -12,6 +12,23 @@ interface ApiOptions {
   token?: string | null;
 }
 
+type RawBanner = Partial<Banner> & { _id?: string | null };
+
+const normalizeIdentifier = (value: unknown): string => {
+  if (typeof value !== "string") return "";
+
+  const normalizedValue = value.trim();
+  if (
+    !normalizedValue ||
+    normalizedValue === "undefined" ||
+    normalizedValue === "null"
+  ) {
+    return "";
+  }
+
+  return normalizedValue;
+};
+
 const buildApiUrl = (path: string, baseUrl?: string): string => {
   if (!baseUrl) return path;
   const normalizedBaseUrl = baseUrl.endsWith("/")
@@ -37,6 +54,29 @@ const parseResponseOrThrow = async <T>(
 
   return data as T;
 };
+
+const normalizeBanner = (raw: RawBanner): Banner => ({
+  id: normalizeIdentifier(raw.id) || normalizeIdentifier(raw._id),
+  title: String(raw.title ?? ""),
+  imageUrl: String(raw.imageUrl ?? ""),
+  imagePublicId:
+    typeof raw.imagePublicId === "string" ? raw.imagePublicId : null,
+  altText: String(raw.altText ?? ""),
+  subtitle: String(raw.subtitle ?? ""),
+  linkUrl: typeof raw.linkUrl === "string" ? raw.linkUrl : null,
+  ctaLabel: String(raw.ctaLabel ?? ""),
+  order: Number(raw.order ?? 0),
+  isActive: Boolean(raw.isActive),
+  startsAt: typeof raw.startsAt === "string" ? raw.startsAt : null,
+  endsAt: typeof raw.endsAt === "string" ? raw.endsAt : null,
+  createdAt: typeof raw.createdAt === "string" ? raw.createdAt : undefined,
+  updatedAt: typeof raw.updatedAt === "string" ? raw.updatedAt : undefined,
+});
+
+const normalizeBannerList = (value: unknown): Banner[] =>
+  Array.isArray(value)
+    ? value.map((item) => normalizeBanner((item ?? {}) as RawBanner))
+    : [];
 
 const buildHeaders = (
   includeJson: boolean = false,
@@ -102,10 +142,12 @@ export const listPublicBanners = async (
     signal: options.signal,
   });
 
-  return parseResponseOrThrow<Banner[]>(
+  const data = await parseResponseOrThrow<unknown[]>(
     response,
     "Error al cargar banners",
   );
+
+  return normalizeBannerList(data);
 };
 
 export const listAdminBanners = async (
@@ -121,10 +163,12 @@ export const listAdminBanners = async (
       },
     );
 
-    return parseResponseOrThrow<Banner[]>(
+    const data = await parseResponseOrThrow<unknown[]>(
       response,
       "Error al cargar banners",
     );
+
+    return normalizeBannerList(data);
   }, "Error al cargar banners", options);
 
 export const createBanner = async (
@@ -142,7 +186,12 @@ export const createBanner = async (
       },
     );
 
-    return parseResponseOrThrow<Banner>(response, "Error al crear banner");
+    const data = await parseResponseOrThrow<RawBanner>(
+      response,
+      "Error al crear banner",
+    );
+
+    return normalizeBanner(data);
   }, "Error al crear banner", options);
 
 export const updateBanner = async (
@@ -151,8 +200,14 @@ export const updateBanner = async (
   options: ApiOptions = {},
 ): Promise<Banner> =>
   fetchWithAuthRetry(async (token) => {
+    const normalizedId = normalizeIdentifier(id);
+
+    if (!normalizedId) {
+      throw new Error("El banner no tiene un identificador valido");
+    }
+
     const response = await fetch(
-      buildApiUrl(`/api/admin/banners/${id}`, options.baseUrl),
+      buildApiUrl(`/api/admin/banners/${normalizedId}`, options.baseUrl),
       {
         method: "PATCH",
         headers: buildHeaders(true, options.token ?? token),
@@ -161,10 +216,12 @@ export const updateBanner = async (
       },
     );
 
-    return parseResponseOrThrow<Banner>(
+    const data = await parseResponseOrThrow<RawBanner>(
       response,
       "Error al actualizar banner",
     );
+
+    return normalizeBanner(data);
   }, "Error al actualizar banner", options);
 
 export const deleteBanner = async (
@@ -172,8 +229,14 @@ export const deleteBanner = async (
   options: ApiOptions = {},
 ): Promise<Banner> =>
   fetchWithAuthRetry(async (token) => {
+    const normalizedId = normalizeIdentifier(id);
+
+    if (!normalizedId) {
+      throw new Error("El banner no tiene un identificador valido");
+    }
+
     const response = await fetch(
-      buildApiUrl(`/api/admin/banners/${id}`, options.baseUrl),
+      buildApiUrl(`/api/admin/banners/${normalizedId}`, options.baseUrl),
       {
         method: "DELETE",
         headers: buildHeaders(false, options.token ?? token),
@@ -181,7 +244,12 @@ export const deleteBanner = async (
       },
     );
 
-    return parseResponseOrThrow<Banner>(response, "Error al eliminar banner");
+    const data = await parseResponseOrThrow<RawBanner>(
+      response,
+      "Error al eliminar banner",
+    );
+
+    return normalizeBanner(data);
   }, "Error al eliminar banner", options);
 
 export const uploadBannerImage = async (

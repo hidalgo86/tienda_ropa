@@ -1,133 +1,185 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { getProductStatusLabel } from "@/types/domain/products";
+import {
+  formatSizeLabel,
+  getProductStock,
+  getProductStatusLabel,
+} from "@/types/domain/products";
 import type { ProductCardPublicProps } from "@/types/ui/products";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
+import { MdFavorite, MdFavoriteBorder, MdShoppingCart } from "react-icons/md";
 
 const PLACEHOLDER = "/placeholder.webp";
+
+const statusBadgeClass = (status: string): string => {
+  switch (status) {
+    case "disponible":
+      return "bg-emerald-50 text-emerald-700";
+    case "agotado":
+      return "bg-amber-50 text-amber-700";
+    case "eliminado":
+      return "bg-red-50 text-red-700";
+    default:
+      return "bg-slate-100 text-slate-700";
+  }
+};
+
+const resolveVariantSummary = (product: ProductCardPublicProps["product"]) => {
+  const variants = product.variants ?? [];
+
+  if (variants.length === 0) {
+    return "Producto simple";
+  }
+
+  const labels = variants
+    .slice(0, 3)
+    .map((variant) => formatSizeLabel(variant.name || variant.size))
+    .join(" - ");
+
+  return variants.length > 3 ? `${labels} - ...` : labels;
+};
+
+const resolvePrice = (product: ProductCardPublicProps["product"]) => {
+  const variants = product.variants ?? [];
+  const minPrice =
+    variants.length > 0
+      ? Math.min(...variants.map((variant) => Number(variant.price) || 0))
+      : null;
+  const directPrice = Number(product.price ?? 0);
+
+  if (minPrice !== null) {
+    return `$${minPrice.toFixed(2)}`;
+  }
+
+  if (Number.isFinite(directPrice)) {
+    return `$${directPrice.toFixed(2)}`;
+  }
+
+  return "Sin precio";
+};
 
 const ProductCardPublic: React.FC<ProductCardPublicProps> = ({
   product,
   onAddToCart,
   onFavorite,
 }) => {
-  const variants = product.variants ?? [];
-  const minPrice =
-    variants.length > 0
-      ? Math.min(...variants.map((v) => Number(v.price) || 0))
-      : null;
-  const directPrice = Number(product.price ?? 0);
-  const finalPrice =
-    minPrice !== null
-      ? minPrice
-      : Number.isFinite(directPrice)
-        ? directPrice
-        : null;
-  const coverImage = product.images?.[0]?.url || PLACEHOLDER;
+  const imageSrc = product.images?.[0]?.url || PLACEHOLDER;
   const status = getProductStatusLabel(product);
-  const isEliminado = status === "eliminado";
+  const isDeleted = status === "eliminado";
   const isFavorite = useSelector((state: RootState) =>
     state.favorites?.items?.some((item) => item.id === product.id),
   );
 
   return (
-    <div
-      className="relative bg-white rounded-xl shadow-sm hover:shadow-lg transition-shadow duration-200 border flex flex-col overflow-hidden group"
-      tabIndex={0}
-      aria-label={`Tarjeta producto ${product.name}`}
-    >
-      {/* Imagen */}
-      <Link
-        href={`/products/${product.id}`}
-        className="w-full h-40 sm:h-48 bg-gray-100 flex items-center justify-center overflow-hidden relative"
-        aria-label={`Ver detalle de ${product.name}`}
-      >
-        <Image
-          src={coverImage}
-          alt={product.name}
-          fill
-          className="object-cover"
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-        />
-      </Link>
-      {/* Botón de favorito arriba a la derecha: sin círculo */}
-      {!isEliminado && onFavorite && (
-        <div className="absolute top-2 right-2 z-10">
-          <button
-            onClick={() => onFavorite(product.id)}
-            className="p-0 bg-transparent shadow-none focus:outline-none hover:opacity-80"
-            title={isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"}
-            aria-label={
-              isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"
-            }
-          >
-            {isFavorite ? (
-              // Corazón rojo sólido cuando está en favoritos
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="#EF4444">
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-              </svg>
-            ) : (
-              // Corazón blanco con borde rojo cuando NO está en favoritos
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="#FFFFFF">
-                <path
-                  d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41 0.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                  stroke="#EF4444"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            )}
-          </button>
-        </div>
-      )}
-      {/* Info principal: solo nombre y precio con carrito a la derecha */}
-      <div className="p-4 flex-1 flex flex-col gap-2">
-        <div className="font-bold text-base text-gray-900">{product.name}</div>
-        <div className="flex items-center justify-between">
-          <div className="font-bold text-lg text-gray-900">
-            ${Number(finalPrice ?? 0).toFixed(2)}
+    <article className="space-y-4 p-4">
+      <div className="flex items-start gap-3">
+        <Link
+          href={`/products/${product.id}`}
+          className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-xl bg-slate-100"
+          aria-label={`Ver detalle de ${product.name}`}
+        >
+          <Image
+            src={imageSrc}
+            alt={product.name}
+            fill
+            className="object-cover"
+            sizes="64px"
+          />
+        </Link>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-3">
+            <Link
+              href={`/products/${product.id}`}
+              className="line-clamp-2 font-semibold text-slate-900 transition hover:text-pink-600"
+            >
+              {product.name}
+            </Link>
+            <span
+              className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold ${statusBadgeClass(status)}`}
+            >
+              {status}
+            </span>
           </div>
-          {!isEliminado &&
-            (onAddToCart ? (
-              <button
-                onClick={() => onAddToCart(product.id)}
-                className="text-blue-600 hover:text-blue-700 p-2 focus:outline-none"
-                title="Agregar al carrito"
-                aria-label="Agregar al carrito"
-              >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M3 3h2l3.4 12h9.6l2-7H6.5"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <circle cx="10.5" cy="19" r="1.5" fill="currentColor" />
-                  <circle cx="17.5" cy="19" r="1.5" fill="currentColor" />
-                </svg>
-              </button>
-            ) : (
-              <div className="text-blue-600 p-2" aria-hidden="true">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M3 3h2l3.4 12h9.6l2-7H6.5"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <circle cx="10.5" cy="19" r="1.5" fill="currentColor" />
-                  <circle cx="17.5" cy="19" r="1.5" fill="currentColor" />
-                </svg>
-              </div>
-            ))}
+
+          <p className="mt-1 line-clamp-2 text-xs text-slate-500">
+            {product.description?.trim() || "Sin descripcion"}
+          </p>
         </div>
       </div>
-    </div>
+
+      <div className="space-y-3 text-sm text-slate-600">
+        <div>
+          <p>{resolveVariantSummary(product)}</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+              Existencia
+            </p>
+            <p className="mt-1">{getProductStock(product)}</p>
+          </div>
+        <div>
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            Precio
+          </p>
+          <p className="mt-1 font-semibold text-slate-900">
+            {resolvePrice(product)}
+          </p>
+        </div>
+        </div>
+      </div>
+
+      {!isDeleted && (
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href={`/products/${product.id}`}
+            className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+          >
+            Ver detalle
+          </Link>
+
+          {onAddToCart && (
+            <button
+              type="button"
+              onClick={() => onAddToCart(product.id)}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+              title="Agregar al carrito"
+              aria-label="Agregar al carrito"
+            >
+              <MdShoppingCart size={16} />
+              Agregar
+            </button>
+          )}
+
+          {onFavorite && (
+            <button
+              type="button"
+              onClick={() => onFavorite(product.id)}
+              className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium transition ${
+                isFavorite
+                  ? "border border-pink-200 bg-pink-50 text-pink-700 hover:bg-pink-100"
+                  : "border border-slate-300 text-slate-700 hover:bg-slate-50"
+              }`}
+              title={isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"}
+              aria-label={
+                isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"
+              }
+            >
+              {isFavorite ? (
+                <MdFavorite size={16} />
+              ) : (
+                <MdFavoriteBorder size={16} />
+              )}
+              Favorito
+            </button>
+          )}
+        </div>
+      )}
+    </article>
   );
 };
 

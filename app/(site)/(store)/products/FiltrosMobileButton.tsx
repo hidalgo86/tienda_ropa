@@ -1,50 +1,48 @@
 "use client";
 
 import { useState } from "react";
+import { MdKeyboardArrowRight, MdTune } from "react-icons/md";
 import FiltrosModal from "../../../../components/FiltrosModal";
 
-export default function FiltrosMobileButton() {
+export default function FiltrosMobileButton({
+  activeCount = 0,
+}: {
+  activeCount?: number;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
     <>
-      {/* Botón solo visible en móvil */}
-      <div className="lg:hidden w-full flex justify-start mt-2 mb-4 px-2 sticky top-[64px] z-30">
+      <div className="sticky top-20 z-30 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
         <button
-          className="flex items-center gap-2 px-4 py-2 rounded-md bg-pink-500 text-white font-medium shadow hover:bg-pink-600 transition-colors"
+          className="flex w-full items-center justify-between rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm transition-colors hover:border-slate-300"
           onClick={() => setOpen(true)}
           aria-label="Abrir filtros"
         >
-          <svg width="22" height="22" fill="none" viewBox="0 0 24 24">
-            <circle cx="5" cy="6" r="1.5" fill="currentColor" />
-            <rect
-              x="3"
-              y="5"
-              width="14"
-              height="2"
-              rx="1"
-              fill="currentColor"
-            />
-            <circle cx="19" cy="12" r="1.5" fill="currentColor" />
-            <rect
-              x="3"
-              y="11"
-              width="14"
-              height="2"
-              rx="1"
-              fill="currentColor"
-            />
-            <circle cx="9" cy="18" r="1.5" fill="currentColor" />
-            <rect
-              x="11"
-              y="17"
-              width="10"
-              height="2"
-              rx="1"
-              fill="currentColor"
-            />
-          </svg>
-          Filtros
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-slate-100 p-2 text-slate-600">
+              <MdTune size={20} />
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-gray-900">
+                Filtrar productos
+              </div>
+              <div className="text-xs text-gray-500">
+                {activeCount > 0
+                  ? `${activeCount} filtros activos`
+                  : "Categoria, talla, genero y precio"}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {activeCount > 0 ? (
+              <span className="rounded-full bg-slate-900 px-2 py-1 text-xs font-semibold text-white">
+                {activeCount}
+              </span>
+            ) : null}
+            <MdKeyboardArrowRight size={22} className="text-gray-400" />
+          </div>
         </button>
       </div>
       <FiltrosModal isOpen={open} onClose={() => setOpen(false)} />

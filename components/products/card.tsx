@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { getProductStatusLabel } from "@/types/domain/products";
 import type { ProductCardProps } from "@/types/ui/products";
+import { MdShoppingCart } from "react-icons/md";
 
 const statusColors: Record<string, string> = {
   disponible: "bg-green-100 text-green-700 border-green-300",
@@ -113,15 +114,7 @@ function Card({
               title="Agregar al carrito"
               aria-label="Agregar al carrito"
             >
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
-                <path
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 6h15l-1.5 9h-13zM6 6V4a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v2"
-                />
-              </svg>
+              <MdShoppingCart size={16} />
             </button>
           )}
           {onFavorite && (

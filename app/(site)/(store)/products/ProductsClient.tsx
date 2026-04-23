@@ -3,6 +3,7 @@ import Pagination from "./Pagination";
 import Filtros from "../../../../components/Filtros";
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
+import { MdTune } from "react-icons/md";
 import {
   ProductAvailability,
   Product,
@@ -90,37 +91,72 @@ export default async function ProductsClient({
   const { items, totalPages } = data;
   const safeTotalPages = Math.max(1, totalPages || 1);
   const noProducts = !items || items.length === 0;
+  const activeFiltersCount = [
+    search,
+    minPrice !== undefined ? String(minPrice) : "",
+    maxPrice !== undefined ? String(maxPrice) : "",
+    parsedGenre ?? "",
+    categoryId || category,
+    sizeParam,
+  ].filter(Boolean).length;
 
   if (page < 1 || (!noProducts && page > safeTotalPages)) return notFound();
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
-      {/* Botón de filtros solo móvil */}
-      <FiltrosMobileButton />
-      <div className="flex flex-1 w-full min-w-0">
-        {/* Sidebar de filtros - Solo desktop */}
+    <div className="min-h-screen bg-slate-50">
+      <FiltrosMobileButton activeCount={activeFiltersCount} />
+
+      <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-1">
         <aside
-          className="hidden w-full max-w-xs min-w-[240px] border-r border-gray-200 bg-gray-50 p-4 lg:block xl:p-6"
+          className="hidden w-full max-w-[320px] min-w-[280px] border-r border-slate-200 bg-white lg:block"
           aria-label="Filtros de productos"
         >
-          <Filtros />
+          <div className="sticky top-24 p-5 xl:p-6">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <Filtros />
+            </div>
+          </div>
         </aside>
-        {/* Contenido principal responsivo */}
-        <main className="min-w-0 flex-1 px-3 py-4 pb-24 sm:px-6 sm:py-6 sm:pb-24 lg:px-8 lg:py-8 lg:pb-8">
+
+        <main className="min-w-0 flex-1 px-4 py-4 pb-24 sm:px-6 sm:py-6 sm:pb-24 lg:px-8 lg:py-8 lg:pb-8">
+          <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="min-w-0">
+                <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">
+                  Productos
+                </h1>
+                <p className="mt-1 text-sm text-slate-500">
+                  Explora el catalogo disponible y filtra por lo que necesitas.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
+                <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
+                  {data.total || 0} resultados
+                </span>
+                {activeFiltersCount > 0 ? (
+                  <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
+                    <MdTune size={16} />
+                    {activeFiltersCount} filtros activos
+                  </span>
+                ) : null}
+              </div>
+            </div>
+          </div>
+
           {noProducts ? (
-            <div className="w-full text-center text-gray-500 py-8 sm:py-12 lg:py-16 px-4 sm:px-8">
-              <div className="max-w-md mx-auto">
-                <div className="text-4xl sm:text-5xl lg:text-6xl mb-4">📦</div>
-                <p className="text-base sm:text-lg lg:text-xl font-medium mb-2">
+            <div className="flex min-h-[320px] w-full items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center sm:px-8 sm:py-12 lg:py-16">
+              <div className="max-w-md">
+                <p className="text-base font-medium text-slate-900 sm:text-lg lg:text-xl">
                   No hay productos disponibles
                 </p>
-                <div className="space-y-2 text-xs sm:text-sm text-gray-400">
+                <div className="mt-3 space-y-2 text-xs text-slate-500 sm:text-sm">
                   <p>
-                    📊 Total productos: {data?.total || 0} • Página: {page}
+                    Total productos: {data?.total || 0} • Pagina: {page}
                   </p>
-                  <p className="text-blue-600">
-                    💡 Los productos necesitan variants con stock para aparecer
-                    aquí
+                  <p className="text-slate-600">
+                    Ajusta los filtros o revisa el stock disponible para ver
+                    resultados aqui.
                   </p>
                 </div>
               </div>
@@ -130,8 +166,8 @@ export default async function ProductsClient({
           )}
         </main>
       </div>
-      {/* Footer con paginación responsiva */}
-      <footer className="sticky bottom-0 left-0 z-20 w-full border-t border-gray-200 bg-white/95 pt-2 pb-20 backdrop-blur-sm sm:pt-3 sm:pb-24 lg:pt-4 lg:pb-5">
+
+      <footer className="sticky bottom-0 left-0 z-20 w-full border-t border-slate-200 bg-white/95 pt-2 pb-20 backdrop-blur-sm sm:pt-3 sm:pb-24 lg:pt-4 lg:pb-5">
         <div className="flex justify-center px-3 sm:px-6 lg:px-8">
           <Pagination currentPage={page} totalPages={safeTotalPages} />
         </div>

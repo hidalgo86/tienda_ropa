@@ -9,13 +9,13 @@ const ProductListPublic: React.FC<ProductListPublicProps> = ({
 }) => {
   if (!products || products.length === 0) {
     return (
-      <div className="text-center py-10 text-gray-500">
+      <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-slate-500">
         No hay productos para mostrar.
       </div>
     );
   }
   return (
-    <div className="grid grid-cols-1 gap-4 min-[420px]:grid-cols-2 sm:gap-5 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+    <div className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       {products.map((product) => (
         <ProductCardPublic
           key={product.id}

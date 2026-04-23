@@ -1,4 +1,5 @@
 "use client";
+
 import React, { Suspense, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -13,6 +14,14 @@ import ProductListAdmin from "@/components/products/ProductListAdmin";
 import Pagination from "@/components/Pagination";
 import { useAdminProducts } from "./useAdminProducts";
 import { updateProduct } from "@/services/products";
+import { MdAdd, MdInventory2, MdSearch } from "react-icons/md";
+
+const FILTER_LABELS: Record<string, string> = {
+  [ADMIN_PRODUCT_FILTER_ALL]: "Todos",
+  [ProductAvailability.DISPONIBLE]: "Disponibles",
+  [ProductAvailability.AGOTADO]: "Agotados",
+  [ProductState.ELIMINADO]: "Eliminados",
+};
 
 const ProductsContent: React.FC = () => {
   const router = useRouter();
@@ -44,7 +53,7 @@ const ProductsContent: React.FC = () => {
   useEffect(() => {
     const timeout = setTimeout(() => {
       setDebouncedSearch(search);
-    }, 500);
+    }, 400);
     return () => clearTimeout(timeout);
   }, [search]);
 
@@ -81,10 +90,6 @@ const ProductsContent: React.FC = () => {
     setSearch((prev) => (prev === nextSearch ? prev : nextSearch));
     setDebouncedSearch((prev) => (prev === nextSearch ? prev : nextSearch));
   }, [searchParams]);
-
-  if (error) {
-    return <div className="text-center py-10 text-red-600">{error}</div>;
-  }
 
   const handleDelete = async (id: string) => {
     if (actionLoadingId === id) return;
@@ -157,80 +162,103 @@ const ProductsContent: React.FC = () => {
     setSearch(value);
   };
 
+  if (error) {
+    return (
+      <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+        {error}
+      </div>
+    );
+  }
+
   return (
-    <>
-      <div className="flex gap-2 items-center">
-        <button
-          type="button"
-          onClick={() => router.push("/dashboard/products/create")}
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold text-sm shadow flex items-center gap-2"
-        >
-          <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
-            <path
-              d="M12 5v14M5 12h14"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          Anadir
-        </button>
-        <select
-          value={filter}
-          onChange={(e) =>
-            handleStatusChange(e.target.value as AdminProductFilter)
-          }
-          className="border rounded px-3 py-2 text-sm"
-        >
-          <option value={ADMIN_PRODUCT_FILTER_ALL}>Todos</option>
-          <option value={ProductAvailability.DISPONIBLE}>Disponibles</option>
-          <option value={ProductAvailability.AGOTADO}>Agotados</option>
-          <option value={ProductState.ELIMINADO}>Eliminados</option>
-        </select>
-        <input
-          type="text"
-          placeholder="Buscar por nombre..."
-          value={search}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          className="border rounded px-3 py-2 text-sm w-full sm:w-64 md:w-80 lg:w-96 min-w-0"
-        />
+    <div className="space-y-6">
+      <div className="space-y-4">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
+              <MdInventory2 size={16} />
+              Catalogo
+            </div>
+            <h1 className="mt-3 text-2xl font-bold text-slate-900">Productos</h1>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => router.push("/dashboard/products/create")}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
+          >
+            <MdAdd size={18} />
+            Nuevo producto
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
+            <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
+              Filtro: {FILTER_LABELS[filter] ?? "Todos"}
+            </span>
+            {debouncedSearch.trim() ? (
+              <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
+                Busqueda: {debouncedSearch.trim()}
+              </span>
+            ) : null}
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="relative">
+              <MdSearch
+                size={18}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+              <input
+                type="text"
+                placeholder="Buscar por nombre..."
+                value={search}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="w-full rounded-xl border border-slate-300 py-2 pl-10 pr-3 text-sm outline-none transition focus:border-slate-400 sm:w-72"
+              />
+            </div>
+            <select
+              value={filter}
+              onChange={(e) =>
+                handleStatusChange(e.target.value as AdminProductFilter)
+              }
+              className="rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-slate-400"
+            >
+              <option value={ADMIN_PRODUCT_FILTER_ALL}>Todos</option>
+              <option value={ProductAvailability.DISPONIBLE}>Disponibles</option>
+              <option value={ProductAvailability.AGOTADO}>Agotados</option>
+              <option value={ProductState.ELIMINADO}>Eliminados</option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      {loading && (
-        <div className="flex justify-center items-center py-6">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 mr-2"></div>
-          <span className="text-gray-500">Cargando...</span>
+      {loading ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-slate-500">
+          Cargando productos...
         </div>
-      )}
-
-      {!loading && products.length === 0 && (
-        <div className="text-center py-10 text-gray-500">
+      ) : products.length === 0 ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-slate-500">
           No hay productos para mostrar.
         </div>
-      )}
-
-      {!loading && products.length > 0 && (
+      ) : (
         <>
-          <div className="mt-4 sm:mt-6">
-            <ProductListAdmin
-              products={products}
-              onDelete={handleDelete}
-              onEdit={handleEdit}
-              onRestore={handleRestore}
-              actionLoadingId={actionLoadingId}
-            />
-          </div>
-          <div className="mt-6">
-            <Pagination
-              currentPage={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-            />
-          </div>
+          <ProductListAdmin
+            products={products}
+            onDelete={handleDelete}
+            onEdit={handleEdit}
+            onRestore={handleRestore}
+            actionLoadingId={actionLoadingId}
+          />
+          <Pagination
+            currentPage={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
         </>
       )}
-    </>
+    </div>
   );
 };
 
@@ -238,9 +266,8 @@ const ProductsPage: React.FC = () => {
   return (
     <Suspense
       fallback={
-        <div className="flex justify-center items-center py-6">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900 mr-2"></div>
-          <span className="text-gray-500">Cargando...</span>
+        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-slate-500">
+          Cargando productos...
         </div>
       }
     >

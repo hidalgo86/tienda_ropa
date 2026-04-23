@@ -1,71 +1,55 @@
 import Link from "next/link";
 import Image from "next/image";
-import { FaFacebook, FaInstagram, FaTiktok } from "react-icons/fa";
+import { FaInstagram } from "react-icons/fa";
 
 const socialLinks = [
   {
-    href: "https://facebook.com",
-    label: "Síguenos en Facebook",
-    Icon: FaFacebook,
-  },
-  {
-    href: "https://instagram.com",
-    label: "Síguenos en Instagram",
+    href: "https://instagram.com/chikitoslandia",
+    label: "Siguenos en Instagram",
     Icon: FaInstagram,
-  },
-  {
-    href: "https://tiktok.com",
-    label: "Síguenos en TikTok",
-    Icon: FaTiktok,
   },
 ];
 
 export default function Footer() {
   return (
     <footer
-      className="bg-pink-50 border-t border-pink-200 
+      className="border-t border-pink-200 bg-pink-50 
                        mt-6 sm:mt-10 lg:mt-16 
                        mb-20 sm:mb-24 lg:mb-0"
     >
       <div
         className="max-w-7xl mx-auto 
-                      px-3 sm:px-6 lg:px-8 
-                      py-6 sm:py-10 lg:py-12 
-                      grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 
-                      gap-6 sm:gap-8 lg:gap-12"
+                      grid grid-cols-1 gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3 lg:gap-12
+                      px-3 py-6 sm:px-6 sm:py-10 lg:px-8 lg:py-12"
       >
         <div
-          className="flex flex-col items-center sm:items-start 
-                        col-span-1 sm:col-span-2 lg:col-span-1"
+          className="col-span-1 flex flex-col items-center 
+                        sm:col-span-2 sm:items-start lg:col-span-1"
         >
           <Image
             src="/chikitoslandia.png"
             alt="Logo ChikitosLandia"
             width={160}
             height={48}
-            className="sm:w-[180px] sm:h-[54px] lg:w-[200px] lg:h-[60px] 
-                       object-contain mb-3 sm:mb-4"
+            className="mb-3 object-contain sm:mb-4 sm:h-[54px] sm:w-[180px] lg:h-[60px] lg:w-[200px]"
           />
           <p
-            className="text-gray-600 
-                        text-xs sm:text-sm lg:text-base 
-                        text-center sm:text-left 
-                        max-w-xs sm:max-w-none"
+            className="max-w-xs text-center text-xs text-gray-600 
+                        sm:max-w-none sm:text-left sm:text-sm lg:text-base"
           >
-            ChikitosLandia 👶💕 Ropa tierna y cómoda para los más pequeños de la
+            ChikitosLandia. Ropa tierna y comoda para los mas pequenos de la
             casa.
           </p>
         </div>
 
         <div className="flex flex-col items-center sm:items-start">
           <h3
-            className="text-gray-800 font-semibold 
-                         text-sm sm:text-base lg:text-lg 
-                         mb-2 sm:mb-3 lg:mb-4"
+            className="mb-2 text-sm font-semibold text-gray-800 
+                         sm:mb-3 sm:text-base lg:mb-4 lg:text-lg"
           >
-            Síguenos
+            Siguenos
           </h3>
-          <div className="flex gap-3 sm:gap-4 lg:gap-6 text-pink-500">
+          <div className="flex gap-3 text-pink-500 sm:gap-4 lg:gap-6">
             {socialLinks.map(({ href, label, Icon }) => (
               <Link
                 key={href}
@@ -73,9 +57,9 @@ export default function Footer() {
                 target="_blank"
                 rel="noreferrer"
                 aria-label={label}
-                className="p-2 sm:p-1 hover:bg-pink-100 rounded-full transition-all duration-200"
+                className="rounded-full p-2 transition-all duration-200 hover:bg-pink-100 sm:p-1"
               >
-                <Icon className="size-5 lg:size-6 hover:text-pink-700 transition-colors" />
+                <Icon className="size-5 transition-colors hover:text-pink-700 lg:size-6" />
               </Link>
             ))}
           </div>
@@ -83,39 +67,31 @@ export default function Footer() {
 
         <div className="flex flex-col items-center sm:items-start">
           <h3
-            className="text-gray-800 font-semibold 
-                         text-sm sm:text-base lg:text-lg 
-                         mb-2 sm:mb-3 lg:mb-4"
+            className="mb-2 text-sm font-semibold text-gray-800 
+                         sm:mb-3 sm:text-base lg:mb-4 lg:text-lg"
           >
-            Suscríbete
+            Suscribete
           </h3>
           <p
-            className="text-gray-600 
-                        text-xs sm:text-sm lg:text-base 
-                        text-center sm:text-left 
-                        mb-3 sm:mb-4 
-                        max-w-xs sm:max-w-none"
+            className="mb-3 max-w-xs text-center text-xs text-gray-600 
+                        sm:mb-4 sm:max-w-none sm:text-left sm:text-sm lg:text-base"
           >
             Recibe ofertas y novedades exclusivas en tu correo.
           </p>
-          <form className="flex flex-col w-full max-w-xs sm:max-w-none gap-2 sm:gap-3">
+          <form className="flex w-full max-w-xs flex-col gap-2 sm:max-w-none sm:gap-3">
             <input
               type="email"
-              placeholder="Tu correo electrónico"
-              className="px-3 sm:px-4 py-2 sm:py-2.5 
-                         rounded-lg border border-gray-300 
-                         focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-300
-                         text-xs sm:text-sm lg:text-base 
-                         w-full transition-all duration-200"
+              placeholder="Tu correo electronico"
+              className="w-full rounded-lg border border-gray-300 
+                         px-3 py-2 text-xs transition-all duration-200
+                         focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-300
+                         sm:px-4 sm:py-2.5 sm:text-sm lg:text-base"
             />
             <button
               type="submit"
-              className="bg-pink-500 text-white 
-                         px-4 sm:px-6 py-2 sm:py-2.5 
-                         rounded-lg hover:bg-pink-600 active:bg-pink-700
-                         transition-all duration-200 
-                         text-xs sm:text-sm lg:text-base 
-                         font-medium w-full sm:w-auto"
+              className="w-full rounded-lg bg-pink-500 px-4 py-2 text-xs font-medium text-white
+                         transition-all duration-200 hover:bg-pink-600 active:bg-pink-700
+                         sm:w-auto sm:px-6 sm:py-2.5 sm:text-sm lg:text-base"
             >
               Suscribirme
             </button>
@@ -124,10 +100,8 @@ export default function Footer() {
       </div>
 
       <div
-        className="bg-pink-100 text-gray-600 text-center 
-                      py-3 sm:py-4 lg:py-5 
-                      text-xs sm:text-sm lg:text-base
-                      border-t border-pink-200"
+        className="border-t border-pink-200 bg-pink-100 py-3 text-center text-xs text-gray-600
+                      sm:py-4 sm:text-sm lg:py-5 lg:text-base"
       >
         <p>
           © {new Date().getFullYear()} ChikitosLandia. Todos los derechos

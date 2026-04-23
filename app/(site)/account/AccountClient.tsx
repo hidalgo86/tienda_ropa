@@ -23,6 +23,9 @@ import type {
   ChangePasswordFormState,
 } from "@/types/ui/users";
 
+const isAdminRole = (role?: string | null): boolean =>
+  role?.trim().toLowerCase() === "administrador";
+
 const initialProfileForm: AccountProfileFormState = {
   name: "",
   phone: "",
@@ -38,6 +41,7 @@ const initialPasswordForm: ChangePasswordFormState = {
 export default function AccountClient() {
   const router = useRouter();
   const storedUser = getStoredUser();
+  const isAdminUser = isAdminRole(storedUser?.role);
   const [isLoading, setIsLoading] = useState(true);
   const [ordersLoading, setOrdersLoading] = useState(true);
   const [userInfo, setUserInfo] = useState<User | null>(null);
@@ -68,10 +72,10 @@ export default function AccountClient() {
 
     const loadUserAndOrders = async () => {
       try {
-        const [user, orderList] = await Promise.all([
-          getCurrentUser({ token }),
-          listMyOrders({ token }),
-        ]);
+        const user = await getCurrentUser({ token });
+        const adminUser = isAdminRole(user.role);
+
+        const orderList = adminUser ? [] : await listMyOrders({ token });
 
         setUserInfo(user);
         setOrdersCount(orderList.length);
@@ -244,7 +248,7 @@ export default function AccountClient() {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Mi Cuenta</h1>
               <p className="mt-1 text-sm text-gray-600">
-                Gestiona tu informacion personal, tus pedidos y tu acceso.
+                Gestiona tu informacion personal y tu acceso.
               </p>
             </div>
           </div>
@@ -307,155 +311,139 @@ export default function AccountClient() {
                   <span className="font-medium text-gray-900">Email:</span>{" "}
                   {userInfo.email}
                 </div>
-                <div>
-                  <span className="font-medium text-gray-900">Verificado:</span>{" "}
-                  {userInfo.isEmailVerified ? "Si" : "No"}
-                </div>
               </div>
             </div>
 
-            <div className="bg-white shadow rounded-lg">
-              <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-2">
-                <MdReceiptLong className="text-pink-600" size={20} />
-                <h3 className="text-lg font-medium text-gray-900">
-                  Mis pedidos
-                </h3>
-              </div>
-              <div className="px-6 py-4">
-                <p className="text-sm text-gray-600">
-                  {ordersLoading
-                    ? "Cargando pedidos..."
-                    : ordersCount === 0
-                      ? "Aun no tienes pedidos registrados."
-                      : `${ordersCount} pedido${ordersCount === 1 ? "" : "s"} registrado${ordersCount === 1 ? "" : "s"}.`}
-                </p>
-                {!ordersLoading && pendingOrdersCount > 0 && (
-                  <p className="mt-2 text-sm text-amber-700">
-                    Tienes {pendingOrdersCount} pedido
-                    {pendingOrdersCount === 1 ? "" : "s"} pendiente
-                    {pendingOrdersCount === 1 ? "" : "s"}.
+            {!isAdminUser && (
+              <div className="bg-white shadow rounded-lg">
+                <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-2">
+                  <MdReceiptLong className="text-pink-600" size={20} />
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Mis pedidos
+                  </h3>
+                </div>
+                <div className="px-6 py-4">
+                  <p className="text-sm text-gray-600">
+                    {ordersLoading
+                      ? "Cargando pedidos..."
+                      : ordersCount === 0
+                        ? "Aun no tienes pedidos registrados."
+                        : `${ordersCount} pedido${ordersCount === 1 ? "" : "s"} registrado${ordersCount === 1 ? "" : "s"}.`}
                   </p>
-                )}
-                <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => void refreshOrders()}
-                    className="inline-flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 sm:w-auto"
-                  >
-                    Actualizar pedidos
-                  </button>
-                  <Link
-                    href="/orders"
-                    className="inline-flex w-full items-center justify-center rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-black sm:w-auto"
-                  >
-                    Ver mis pedidos
-                  </Link>
+                  {!ordersLoading && pendingOrdersCount > 0 && (
+                    <p className="mt-2 text-sm text-amber-700">
+                      Tienes {pendingOrdersCount} pedido
+                      {pendingOrdersCount === 1 ? "" : "s"} pendiente
+                      {pendingOrdersCount === 1 ? "" : "s"}.
+                    </p>
+                  )}
+                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => void refreshOrders()}
+                      className="inline-flex w-full items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 sm:w-auto"
+                    >
+                      Actualizar pedidos
+                    </button>
+                    <Link
+                      href="/orders"
+                      className="inline-flex w-full items-center justify-center rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-black sm:w-auto"
+                    >
+                      Ver mis pedidos
+                    </Link>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="space-y-6 lg:col-span-2 lg:space-y-8">
-            <div className="bg-white shadow rounded-lg">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900">
-                  Informacion personal
-                </h3>
-              </div>
-              <form
-                onSubmit={handleProfileSubmit}
-                className="px-6 py-4 space-y-6"
-              >
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Nombre
-                    </label>
-                    <input
-                      className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
-                      value={profileForm.name}
-                      onChange={(e) =>
-                        setProfileForm((current) => ({
-                          ...current,
-                          name: e.target.value,
-                        }))
-                      }
-                      placeholder="Tu nombre"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Telefono
-                    </label>
-                    <input
-                      className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
-                      value={profileForm.phone}
-                      onChange={(e) =>
-                        setProfileForm((current) => ({
-                          ...current,
-                          phone: e.target.value,
-                        }))
-                      }
-                      placeholder="Tu telefono"
-                    />
-                  </div>
+            {!isAdminUser && (
+              <div className="bg-white shadow rounded-lg">
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Datos de envio
+                  </h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Usa estos datos para preparar y entregar tus compras.
+                  </p>
                 </div>
-
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Usuario
-                    </label>
-                    <input
-                      className="mt-1 w-full rounded border border-gray-300 bg-gray-50 px-3 py-2"
-                      value={userInfo.username}
-                      readOnly
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700">
-                      Email
-                    </label>
-                    <input
-                      className="mt-1 w-full rounded border border-gray-300 bg-gray-50 px-3 py-2"
-                      value={userInfo.email}
-                      readOnly
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">
-                    Direccion
-                  </label>
-                  <textarea
-                    className="mt-1 min-h-24 w-full rounded border border-gray-300 px-3 py-2"
-                    value={profileForm.address}
-                    onChange={(e) =>
-                      setProfileForm((current) => ({
-                        ...current,
-                        address: e.target.value,
-                      }))
-                    }
-                    placeholder="Tu direccion"
-                  />
-                </div>
-
-                {profileError && (
-                  <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                    {profileError}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  className="inline-flex w-full items-center justify-center rounded-md bg-pink-600 px-4 py-2 text-white hover:bg-pink-700 disabled:opacity-60 sm:w-auto"
-                  disabled={isSavingProfile}
+                <form
+                  onSubmit={handleProfileSubmit}
+                  className="px-6 py-4 space-y-6"
                 >
-                  {isSavingProfile ? "Guardando..." : "Guardar perfil"}
-                </button>
-              </form>
-            </div>
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Nombre de quien recibe
+                      </label>
+                      <input
+                        className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
+                        value={profileForm.name}
+                        onChange={(e) =>
+                          setProfileForm((current) => ({
+                            ...current,
+                            name: e.target.value,
+                          }))
+                        }
+                        placeholder="Tu nombre"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">
+                        Telefono de contacto
+                      </label>
+                      <input
+                        className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
+                        value={profileForm.phone}
+                        onChange={(e) =>
+                          setProfileForm((current) => ({
+                            ...current,
+                            phone: e.target.value,
+                          }))
+                        }
+                        placeholder="Tu telefono"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">
+                      Direccion de entrega
+                    </label>
+                    <textarea
+                      className="mt-1 min-h-24 w-full rounded border border-gray-300 px-3 py-2"
+                      value={profileForm.address}
+                      onChange={(e) =>
+                        setProfileForm((current) => ({
+                          ...current,
+                          address: e.target.value,
+                        }))
+                      }
+                      placeholder="Calle, numero, colonia, referencia..."
+                    />
+                    <p className="mt-2 text-xs text-gray-500">
+                      Esta direccion se usara para preparar el envio de tus
+                      pedidos.
+                    </p>
+                  </div>
+
+                  {profileError && (
+                    <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                      {profileError}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="inline-flex w-full items-center justify-center rounded-md bg-pink-600 px-4 py-2 text-white hover:bg-pink-700 disabled:opacity-60 sm:w-auto"
+                    disabled={isSavingProfile}
+                  >
+                    {isSavingProfile ? "Guardando..." : "Guardar perfil"}
+                  </button>
+                </form>
+              </div>
+            )}
 
             <div className="bg-white shadow rounded-lg">
               <div className="px-6 py-4 border-b border-gray-200">

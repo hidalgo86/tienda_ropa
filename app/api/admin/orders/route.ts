@@ -69,6 +69,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const page = Math.max(1, Number(searchParams.get("page")) || 1);
     const limit = Math.max(1, Number(searchParams.get("limit")) || 20);
+    const orderId = searchParams.get("orderId")?.trim() || undefined;
     const userId = searchParams.get("userId")?.trim() || undefined;
     const status = toGraphqlOrderStatus(searchParams.get("status") ?? undefined);
 
@@ -84,6 +85,7 @@ export async function GET(req: NextRequest) {
       {
         input: {
           filters: {
+            orderId?: string;
             userId?: string;
             status?: string;
           };
@@ -98,6 +100,7 @@ export async function GET(req: NextRequest) {
       variables: {
         input: {
           filters: {
+            orderId,
             userId,
             status,
           },

@@ -166,6 +166,7 @@ export interface AdminOrder extends Order {
 }
 
 interface ListAdminOrdersParams {
+  orderId?: string;
   page?: number;
   limit?: number;
   userId?: string;
@@ -180,6 +181,7 @@ export const listAdminOrders = async (
     const query = new URLSearchParams();
     query.set("page", String(params.page ?? 1));
     query.set("limit", String(params.limit ?? 20));
+    if (params.orderId?.trim()) query.set("orderId", params.orderId.trim());
     if (params.userId?.trim()) query.set("userId", params.userId.trim());
     if (params.status?.trim()) query.set("status", params.status.trim());
 

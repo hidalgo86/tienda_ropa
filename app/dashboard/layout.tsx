@@ -2,11 +2,17 @@
 
 import React, { Suspense } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { toast } from "sonner";
 import SidebarDesktop, {
   SidebarItem,
 } from "../../components/products/SidebarDesktop";
 import SidebarMobile from "../../components/products/SidebarMobile";
-import { getStoredAuthToken, getStoredUser } from "@/services/users";
+import {
+  clearStoredSession,
+  getCurrentUser,
+  getStoredAuthToken,
+  getStoredUser,
+} from "@/services/users";
 
 const isAdminRole = (role?: string | null): boolean =>
   role?.trim().toLowerCase() === "administrador";
@@ -31,6 +37,7 @@ function DashboardLayoutContent({
   const router = useRouter();
   const pathname = usePathname();
   const [isAllowed, setIsAllowed] = React.useState<boolean | null>(null);
+  const hasShownSessionExpiredRef = React.useRef(false);
 
   const sidebarItems: SidebarItem[] = [
     {
@@ -73,17 +80,65 @@ function DashboardLayoutContent({
   }, [pathname]);
 
   React.useEffect(() => {
-    const token = getStoredAuthToken();
-    const user = getStoredUser();
-    const isAdmin = Boolean(token) && isAdminRole(user?.role);
+    let isMounted = true;
 
-    if (!isAdmin) {
-      router.replace("/");
+    const redirectToHome = (showToast: boolean) => {
+      clearStoredSession();
+
+      if (showToast && !hasShownSessionExpiredRef.current) {
+        toast.error("Tu sesion ha expirado. Vuelve a iniciar sesion.");
+        hasShownSessionExpiredRef.current = true;
+      }
+
+      if (!isMounted) return;
       setIsAllowed(false);
-      return;
-    }
+      router.replace("/");
+    };
 
-    setIsAllowed(true);
+    const validateSession = async (showToastOnExpire: boolean) => {
+      const token = getStoredAuthToken();
+      const user = getStoredUser();
+      const isAdmin = Boolean(token) && isAdminRole(user?.role);
+
+      if (!isAdmin) {
+        redirectToHome(false);
+        return;
+      }
+
+      try {
+        const currentUser = await getCurrentUser();
+
+        if (!isMounted) return;
+
+        if (!isAdminRole(currentUser?.role)) {
+          redirectToHome(false);
+          return;
+        }
+
+        hasShownSessionExpiredRef.current = false;
+        setIsAllowed(true);
+      } catch {
+        redirectToHome(showToastOnExpire);
+      }
+    };
+
+    const handleSessionChanged = () => {
+      void validateSession(false);
+    };
+
+    const handleFocus = () => {
+      void validateSession(true);
+    };
+
+    void validateSession(false);
+    window.addEventListener("auth:session-changed", handleSessionChanged);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener("auth:session-changed", handleSessionChanged);
+      window.removeEventListener("focus", handleFocus);
+    };
   }, [router]);
 
   if (isAllowed !== true) {

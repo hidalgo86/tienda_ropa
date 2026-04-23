@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { MdSearch } from "react-icons/md";
+import { MdOutlineRestartAlt, MdSearch, MdTune } from "react-icons/md";
 import {
   formatSizeLabel,
   Genre,
@@ -36,6 +36,9 @@ const readParam = (searchParams: URLSearchParams | null, ...keys: string[]) => {
   }
   return "";
 };
+
+const fieldClassName =
+  "w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-pink-300 focus:ring-4 focus:ring-pink-100 disabled:bg-gray-50 disabled:text-gray-400";
 
 export default function Filtros({ onFilterApply }: ProductFiltersProps) {
   const router = useRouter();
@@ -87,249 +90,189 @@ export default function Filtros({ onFilterApply }: ProductFiltersProps) {
     });
 
     params.set("page", "1");
-    const newUrl = `${pathname}?${params.toString()}`;
+    const query = params.toString();
+    const newUrl = query ? `${pathname}?${query}` : pathname;
     router.push(newUrl);
-
     onFilterApply?.();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateURL({
-      search,
-      categoryId,
-      genre,
-      size,
-      minPrice,
-      maxPrice,
-    });
+  const applyCurrentFilters = async () => {
+    setIsSearching(true);
+    try {
+      updateURL({
+        search,
+        categoryId,
+        genre,
+        size,
+        minPrice,
+        maxPrice,
+      });
+    } finally {
+      setTimeout(() => setIsSearching(false), 500);
+    }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await applyCurrentFilters();
+  };
+
+  const resetFilters = () => {
+    setSearch("");
+    setCategoryId("");
+    setGenre("");
+    setSize("");
+    setMinPrice("");
+    setMaxPrice("");
+    updateURL({});
+  };
+
+  const activeCount = [
+    search,
+    categoryId,
+    genre,
+    size,
+    minPrice,
+    maxPrice,
+  ].filter(Boolean).length;
+
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <div className="border-b border-gray-200 pb-3 hidden sm:block">
-        <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
-          Filtros
-        </h2>
-        <p className="text-sm text-gray-600 mt-1">Refina tu búsqueda</p>
+    <div className="space-y-5">
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Filtros</h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Ajusta la busqueda segun categoria, talla y precio.
+            </p>
+          </div>
+          <div className="rounded-full border border-pink-100 bg-pink-50 px-3 py-1 text-xs font-medium text-pink-700">
+            {activeCount} activos
+          </div>
+        </div>
       </div>
 
-      <form className="space-y-4" onSubmit={handleSubmit}>
-        <div>
-          <label
-            htmlFor="search"
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
-            🔍 Buscar producto
-          </label>
-          <div className="flex gap-2">
+      <form className="space-y-5" onSubmit={handleSubmit}>
+        <section className="space-y-3 rounded-2xl border border-gray-100 bg-gray-50/80 p-4">
+          <div className="text-sm font-semibold text-gray-900">
+            Buscar producto
+          </div>
+          <div className="relative">
+            <MdSearch
+              size={20}
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+            />
             <input
               id="search"
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  if (
-                    search.trim() ||
-                    categoryId ||
-                    genre ||
-                    minPrice ||
-                    maxPrice ||
-                    size
-                  ) {
-                    updateURL({
-                      search,
-                      categoryId,
-                      genre,
-                      size,
-                      minPrice,
-                      maxPrice,
-                    });
-                  }
-                }
-              }}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg 
-                         focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-300
-                         text-sm placeholder-gray-400
-                         transition-colors"
-              placeholder="Buscar por nombre..."
+              className={`${fieldClassName} pl-11 pr-4`}
+              placeholder="Nombre del producto"
             />
-            <button
-              type="button"
-              className={`px-3 py-2 text-white rounded-lg 
-                         transition-colors flex items-center justify-center
-                         focus:outline-none focus:ring-2 focus:ring-pink-300
-                         min-w-[44px] ${
-                           isSearching
-                             ? "bg-pink-400 cursor-wait"
-                             : "bg-pink-500 hover:bg-pink-600"
-                         }`}
-              title="Buscar productos"
-              disabled={isSearching}
-              onClick={async (e) => {
-                e.preventDefault();
-                if (
-                  !search.trim() &&
-                  !categoryId &&
-                  !genre &&
-                  !minPrice &&
-                  !maxPrice &&
-                  !size
-                ) {
-                  alert("Por favor, ingresa algún criterio de búsqueda");
-                  return;
-                }
-
-                setIsSearching(true);
-                try {
-                  updateURL({
-                    search,
-                    categoryId,
-                    genre,
-                    size,
-                    minPrice,
-                    maxPrice,
-                  });
-                  setTimeout(() => setIsSearching(false), 800);
-                } catch (error) {
-                  setIsSearching(false);
-                  console.error("Error al aplicar filtros:", error);
-                }
-              }}
-            >
-              {isSearching ? (
-                <div className="w-[18px] h-[18px] border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <MdSearch size={18} />
-              )}
-            </button>
           </div>
-        </div>
+        </section>
 
-        <div>
-          <label
-            htmlFor="categoryId"
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
-            🧩 Categoría
-          </label>
-          <select
-            id="categoryId"
-            value={categoryId}
-            onChange={(e) => {
-              const nextCategoryId = e.target.value;
-              const nextOption = resolveCategoryOption(
-                nextCategoryId,
-                categoryOptions,
-              );
-              const nextGenre =
-                nextCategoryId && !nextOption?.supportsGenre ? "" : genre;
-              const nextSize =
-                nextCategoryId && !nextOption?.supportsGenre ? "" : size;
+        <section className="space-y-4 rounded-2xl border border-gray-100 bg-gray-50/80 p-4">
+          <div className="text-sm font-semibold text-gray-900">
+            Clasificacion
+          </div>
 
-              setCategoryId(nextCategoryId);
-              setGenre(nextGenre);
-              setSize(nextSize);
+          <div className="space-y-2">
+            <label
+              htmlFor="categoryId"
+              className="text-xs font-medium uppercase tracking-wide text-gray-500"
+            >
+              Categoria
+            </label>
+            <select
+              id="categoryId"
+              value={categoryId}
+              onChange={(e) => {
+                const nextCategoryId = e.target.value;
+                const nextOption = resolveCategoryOption(
+                  nextCategoryId,
+                  categoryOptions,
+                );
+                const nextGenre =
+                  nextCategoryId && !nextOption?.supportsGenre ? "" : genre;
+                const nextSize =
+                  nextCategoryId && !nextOption?.supportsGenre ? "" : size;
 
-              updateURL({
-                search,
-                categoryId: nextCategoryId,
-                genre: nextGenre,
-                size: nextSize,
-                minPrice,
-                maxPrice,
-              });
-            }}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg 
-                       focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-300
-                       text-sm bg-white
-                       transition-colors"
-          >
-            <option value="">Todas las categorías</option>
-            {categoryOptions.map((option) => (
-              <option
-                key={option.categoryId || option.value}
-                value={option.categoryId || option.value}
-              >
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label
-            htmlFor="genre"
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
-            👶 Género
-          </label>
-          <select
-            id="genre"
-            value={genre}
-            onChange={(e) => setGenre(e.target.value)}
-            disabled={!isClothingFilter}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg 
-                       focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-300
-                       text-sm bg-white disabled:bg-gray-100 disabled:text-gray-400
-                       transition-colors"
-          >
-            <option value="">Todos los géneros</option>
-            <option value={Genre.NINO}>Niño 👦</option>
-            <option value={Genre.NINA}>Niña 👧</option>
-            <option value={Genre.UNISEX}>Unisex 👶</option>
-          </select>
-        </div>
-
-        <div>
-          <label
-            htmlFor="size"
-            className="block text-sm font-medium text-gray-700 mb-2"
-          >
-            📏 Talla
-          </label>
-          <select
-            id="size"
-            value={size}
-            disabled={!isClothingFilter}
-            onChange={(e) => {
-              const nextSize = e.target.value;
-              if (nextSize !== size) {
+                setCategoryId(nextCategoryId);
+                setGenre(nextGenre);
                 setSize(nextSize);
-                updateURL({
-                  search,
-                  categoryId,
-                  genre,
-                  size: nextSize,
-                  minPrice,
-                  maxPrice,
-                });
-              }
-            }}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-300 text-sm bg-white disabled:bg-gray-100 disabled:text-gray-400 transition-colors"
-          >
-            <option value="">Todas las tallas</option>
-            {Object.values(Size).map((option) => (
-              <option key={option} value={option}>
-                {formatSizeLabel(option)}
-              </option>
-            ))}
-          </select>
-        </div>
+              }}
+              className={fieldClassName}
+            >
+              <option value="">Todas las categorias</option>
+              {categoryOptions.map((option) => (
+                <option
+                  key={option.categoryId || option.value}
+                  value={option.categoryId || option.value}
+                >
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
-            💰 Rango de precio
-          </label>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+            <div className="space-y-2">
+              <label
+                htmlFor="genre"
+                className="text-xs font-medium uppercase tracking-wide text-gray-500"
+              >
+                Genero
+              </label>
+              <select
+                id="genre"
+                value={genre}
+                onChange={(e) => setGenre(e.target.value)}
+                disabled={!isClothingFilter}
+                className={fieldClassName}
+              >
+                <option value="">Todos los generos</option>
+                <option value={Genre.NINO}>Nino</option>
+                <option value={Genre.NINA}>Nina</option>
+                <option value={Genre.UNISEX}>Unisex</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <label
+                htmlFor="size"
+                className="text-xs font-medium uppercase tracking-wide text-gray-500"
+              >
+                Talla
+              </label>
+              <select
+                id="size"
+                value={size}
+                disabled={!isClothingFilter}
+                onChange={(e) => setSize(e.target.value)}
+                className={fieldClassName}
+              >
+                <option value="">Todas las tallas</option>
+                {Object.values(Size).map((option) => (
+                  <option key={option} value={option}>
+                    {formatSizeLabel(option)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <section className="space-y-4 rounded-2xl border border-gray-100 bg-gray-50/80 p-4">
+          <div className="text-sm font-semibold text-gray-900">Precio</div>
           <div className="grid grid-cols-2 gap-3">
-            <div>
+            <div className="space-y-2">
               <label
                 htmlFor="minPrice"
-                className="block text-xs text-gray-600 mb-1"
+                className="text-xs font-medium uppercase tracking-wide text-gray-500"
               >
-                Mínimo
+                Minimo
               </label>
               <input
                 id="minPrice"
@@ -338,19 +281,16 @@ export default function Filtros({ onFilterApply }: ProductFiltersProps) {
                 step="0.01"
                 value={minPrice}
                 onChange={(e) => setMinPrice(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg 
-                           focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-300
-                           text-sm
-                           transition-colors"
-                placeholder="$0"
+                className={fieldClassName}
+                placeholder="0"
               />
             </div>
-            <div>
+            <div className="space-y-2">
               <label
                 htmlFor="maxPrice"
-                className="block text-xs text-gray-600 mb-1"
+                className="text-xs font-medium uppercase tracking-wide text-gray-500"
               >
-                Máximo
+                Maximo
               </label>
               <input
                 id="maxPrice"
@@ -359,44 +299,34 @@ export default function Filtros({ onFilterApply }: ProductFiltersProps) {
                 step="0.01"
                 value={maxPrice}
                 onChange={(e) => setMaxPrice(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg 
-                           focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-pink-300
-                           text-sm
-                           transition-colors"
-                placeholder="$999"
+                className={fieldClassName}
+                placeholder="999"
               />
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="space-y-2 pt-4 border-t border-gray-200">
+        <div className="space-y-3 border-t border-gray-100 pt-4">
           <button
             type="submit"
-            className="w-full px-4 py-3 bg-pink-500 text-white rounded-lg 
-                       hover:bg-pink-600 active:bg-pink-700
-                       transition-colors font-medium text-sm
-                       focus:outline-none focus:ring-2 focus:ring-pink-300"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-pink-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-pink-600 focus:outline-none focus:ring-4 focus:ring-pink-100"
+            disabled={isSearching}
           >
-            ✨ Aplicar filtros
+            {isSearching ? (
+              <div className="h-[18px] w-[18px] rounded-full border-2 border-white border-t-transparent animate-spin" />
+            ) : (
+              <MdTune size={18} />
+            )}
+            Aplicar filtros
           </button>
 
           <button
             type="button"
-            onClick={() => {
-              setSearch("");
-              setCategoryId("");
-              setGenre("");
-              setSize("");
-              setMinPrice("");
-              setMaxPrice("");
-              updateURL({});
-            }}
-            className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg 
-                       hover:bg-gray-200 active:bg-gray-300
-                       transition-colors text-sm
-                       focus:outline-none focus:ring-2 focus:ring-gray-300"
+            onClick={resetFilters}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 transition hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-4 focus:ring-gray-100"
           >
-            🔄 Limpiar filtros
+            <MdOutlineRestartAlt size={18} />
+            Limpiar filtros
           </button>
         </div>
       </form>

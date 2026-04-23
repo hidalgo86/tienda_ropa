@@ -2,7 +2,7 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import {
   clearStoredSession,
@@ -34,6 +34,7 @@ const isAdminRole = (role?: string | null): boolean =>
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const cartCount = useSelector((state: RootState) => state.cart.totalItems);
   const favoritesCount = useSelector((state: RootState) =>
     state.favorites && Array.isArray(state.favorites.items)
@@ -71,11 +72,15 @@ export default function Navbar() {
           icon: <MdPerson />,
           label: "Mi Cuenta",
         },
-        {
-          href: "/orders",
-          icon: <MdReceiptLong />,
-          label: "Pedidos",
-        },
+        ...(!isAdmin
+          ? [
+              {
+                href: "/orders",
+                icon: <MdReceiptLong />,
+                label: "Pedidos",
+              },
+            ]
+          : []),
         {
           href: "/acerca",
           icon: <MdInfo />,
@@ -89,11 +94,25 @@ export default function Navbar() {
     router.push("/");
   };
 
+  const isActivePath = React.useCallback(
+    (href: string) => {
+      if (href === "/") {
+        return pathname === "/";
+      }
+
+      return pathname === href || pathname.startsWith(`${href}/`);
+    },
+    [pathname],
+  );
+
   return (
     <>
       <nav className="sticky top-0 z-40 border-b border-pink-200 bg-pink-50/95 shadow-md backdrop-blur supports-[backdrop-filter]:bg-pink-50/90">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-3 sm:h-20 sm:px-5 lg:h-24 lg:px-8">
-          <Link href="/" className="flex min-w-0 flex-1 items-center">
+        <div className="relative mx-auto flex h-20 max-w-7xl items-center justify-center overflow-hidden px-4 sm:h-20 sm:justify-between sm:px-5 lg:h-24 lg:px-8">
+          <Link
+            href="/"
+            className="flex min-w-0 flex-1 items-center justify-start overflow-hidden pr-14 sm:pr-0"
+          >
             <Image
               src="/chikitoslandia.png"
               alt="Logo"
@@ -101,7 +120,7 @@ export default function Navbar() {
               height={260}
               priority
               unoptimized
-              className="h-12 w-auto max-w-[180px] object-contain object-left sm:h-14 sm:max-w-[220px] md:max-w-[260px] lg:h-16 lg:max-w-[320px] xl:max-w-[360px]"
+              className="h-36 w-auto max-w-[460px] object-cover object-left sm:h-14 sm:max-w-[220px] md:max-w-[260px] lg:h-16 lg:max-w-[320px] xl:max-w-[360px]"
             />
           </Link>
 
@@ -119,29 +138,33 @@ export default function Navbar() {
           </div>
 
           <div className="hidden items-center gap-3 lg:flex xl:gap-4">
-            <Link href="/favorites" title="Favoritos" className="relative group">
-              <MdFavorite
-                size={26}
-                className="text-pink-400 transition-colors hover:text-pink-600 xl:h-7 xl:w-7"
-              />
-              {displayFav > 0 && (
-                <span className="absolute -right-2 -top-2 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs text-white xl:h-6 xl:min-w-[24px]">
-                  {displayFav}
-                </span>
-              )}
-            </Link>
+            {!isAdmin && (
+              <>
+                <Link href="/favorites" title="Favoritos" className="relative group">
+                  <MdFavorite
+                    size={26}
+                    className="text-pink-400 transition-colors hover:text-pink-600 xl:h-7 xl:w-7"
+                  />
+                  {displayFav > 0 && (
+                    <span className="absolute -right-2 -top-2 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs text-white xl:h-6 xl:min-w-[24px]">
+                      {displayFav}
+                    </span>
+                  )}
+                </Link>
 
-            <Link href="/cart" title="Carrito" className="relative group">
-              <MdShoppingCart
-                size={26}
-                className="text-sky-400 transition-colors hover:text-sky-600 xl:h-7 xl:w-7"
-              />
-              {displayCart > 0 && (
-                <span className="absolute -right-2 -top-2 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-pink-500 px-1.5 text-xs text-white xl:h-6 xl:min-w-[24px]">
-                  {displayCart}
-                </span>
-              )}
-            </Link>
+                <Link href="/cart" title="Carrito" className="relative group">
+                  <MdShoppingCart
+                    size={26}
+                    className="text-sky-400 transition-colors hover:text-sky-600 xl:h-7 xl:w-7"
+                  />
+                  {displayCart > 0 && (
+                    <span className="absolute -right-2 -top-2 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-pink-500 px-1.5 text-xs text-white xl:h-6 xl:min-w-[24px]">
+                      {displayCart}
+                    </span>
+                  )}
+                </Link>
+              </>
+            )}
 
             {isAuthenticated ? (
               <button
@@ -162,36 +185,18 @@ export default function Navbar() {
             )}
           </div>
 
-          <div className="flex items-center gap-2 lg:hidden">
-            {isAuthenticated ? (
+          {isAuthenticated && (
+            <div className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-2 lg:hidden">
               <button
                 type="button"
                 onClick={handleLogout}
                 title="Logout"
-                className="text-gray-500 transition-colors hover:text-gray-700"
+                className="rounded-full bg-white/80 p-2 text-gray-500 shadow-sm transition-colors hover:text-gray-700"
               >
                 <MdLogout size={24} />
               </button>
-            ) : (
-              <Link href="/login" title="Login" className="relative">
-                <MdLogin
-                  size={24}
-                  className="text-gray-500 transition-colors hover:text-gray-700"
-                />
-              </Link>
-            )}
-            <Link href="/cart" title="Carrito" className="relative">
-              <MdShoppingCart
-                size={24}
-                className="text-sky-400 transition-colors hover:text-sky-600"
-              />
-              {displayCart > 0 && (
-                <span className="absolute -right-2 -top-2 flex h-5 min-w-[18px] items-center justify-center rounded-full bg-pink-500 px-1.5 text-xs text-white">
-                  {displayCart}
-                </span>
-              )}
-            </Link>
-          </div>
+            </div>
+          )}
         </div>
       </nav>
 
@@ -199,97 +204,201 @@ export default function Navbar() {
         <div className="flex justify-around items-center py-2 px-2">
           <Link
             href="/"
-            className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500"
+            className={`flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 transition-colors ${
+              isActivePath("/")
+                ? "text-pink-600"
+                : "text-gray-600 hover:text-pink-500"
+            }`}
           >
-            <div className="p-2 rounded-full hover:bg-pink-100 transition-colors">
+            <div
+              className={`rounded-full p-2 transition-colors ${
+                isActivePath("/")
+                  ? "bg-pink-100 text-pink-600"
+                  : "hover:bg-pink-100"
+              }`}
+            >
               <MdHome size={20} />
             </div>
-            <span className="text-xs mt-1 text-center truncate w-full font-normal">
+            <span
+              className={`mt-1 w-full truncate text-center text-xs ${
+                isActivePath("/") ? "font-semibold" : "font-normal"
+              }`}
+            >
               Inicio
             </span>
           </Link>
 
           <Link
             href="/products"
-            className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500"
+            className={`flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 transition-colors ${
+              isActivePath("/products")
+                ? "text-pink-600"
+                : "text-gray-600 hover:text-pink-500"
+            }`}
           >
-            <div className="p-2 rounded-full hover:bg-pink-100 transition-colors">
+            <div
+              className={`rounded-full p-2 transition-colors ${
+                isActivePath("/products")
+                  ? "bg-pink-100 text-pink-600"
+                  : "hover:bg-pink-100"
+              }`}
+            >
               <MdStore size={20} />
             </div>
-            <span className="text-xs mt-1 text-center truncate w-full font-normal">
+            <span
+              className={`mt-1 w-full truncate text-center text-xs ${
+                isActivePath("/products") ? "font-semibold" : "font-normal"
+              }`}
+            >
               Productos
             </span>
           </Link>
 
-          <Link
-            href="/favorites"
-            className="relative flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 text-gray-600 transition-colors hover:text-pink-500"
-          >
-            <div className="relative rounded-full p-2 transition-colors hover:bg-pink-100">
-              <MdFavorite size={20} />
-              {displayFav > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">
-                  {displayFav > 9 ? "9+" : displayFav}
+          {!isAdmin && (
+            <>
+              <Link
+                href="/favorites"
+                className={`relative flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 transition-colors ${
+                  isActivePath("/favorites")
+                    ? "text-pink-600"
+                    : "text-gray-600 hover:text-pink-500"
+                }`}
+              >
+                <div
+                  className={`relative rounded-full p-2 transition-colors ${
+                    isActivePath("/favorites")
+                      ? "bg-pink-100 text-pink-600"
+                      : "hover:bg-pink-100"
+                  }`}
+                >
+                  <MdFavorite size={20} />
+                  {displayFav > 0 && (
+                    <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">
+                      {displayFav > 9 ? "9+" : displayFav}
+                    </span>
+                  )}
+                </div>
+                <span
+                  className={`mt-1 w-full truncate text-center text-xs ${
+                    isActivePath("/favorites") ? "font-semibold" : "font-normal"
+                  }`}
+                >
+                  Favoritos
                 </span>
-              )}
-            </div>
-            <span className="text-xs mt-1 text-center truncate w-full font-normal">
-              Favoritos
-            </span>
-          </Link>
+              </Link>
 
-          <Link
-            href="/cart"
-            className="relative flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 text-gray-600 transition-colors hover:text-pink-500"
-          >
-            <div className="relative rounded-full p-2 transition-colors hover:bg-pink-100">
-              <MdShoppingCart size={20} />
-              {displayCart > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-pink-500 text-[10px] text-white">
-                  {displayCart > 9 ? "9+" : displayCart}
+              <Link
+                href="/cart"
+                className={`relative flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 transition-colors ${
+                  isActivePath("/cart")
+                    ? "text-pink-600"
+                    : "text-gray-600 hover:text-pink-500"
+                }`}
+              >
+                <div
+                  className={`relative rounded-full p-2 transition-colors ${
+                    isActivePath("/cart")
+                      ? "bg-pink-100 text-pink-600"
+                      : "hover:bg-pink-100"
+                  }`}
+                >
+                  <MdShoppingCart size={20} />
+                  {displayCart > 0 && (
+                    <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-pink-500 text-[10px] text-white">
+                      {displayCart > 9 ? "9+" : displayCart}
+                    </span>
+                  )}
+                </div>
+                <span
+                  className={`mt-1 w-full truncate text-center text-xs ${
+                    isActivePath("/cart") ? "font-semibold" : "font-normal"
+                  }`}
+                >
+                  Carrito
                 </span>
-              )}
-            </div>
-            <span className="text-xs mt-1 text-center truncate w-full font-normal">
-              Carrito
-            </span>
-          </Link>
+              </Link>
+            </>
+          )}
 
           {isAuthenticated ? (
             <>
               <Link
                 href="/account"
-                className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500"
+                className={`flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 transition-colors ${
+                  isActivePath("/account")
+                    ? "text-pink-600"
+                    : "text-gray-600 hover:text-pink-500"
+                }`}
               >
-                <div className="p-2 rounded-full hover:bg-pink-100 transition-colors">
+                <div
+                  className={`rounded-full p-2 transition-colors ${
+                    isActivePath("/account")
+                      ? "bg-pink-100 text-pink-600"
+                      : "hover:bg-pink-100"
+                  }`}
+                >
                   <MdPerson size={20} />
                 </div>
-                <span className="text-xs mt-1 text-center truncate w-full font-normal">
+                <span
+                  className={`mt-1 w-full truncate text-center text-xs ${
+                    isActivePath("/account") ? "font-semibold" : "font-normal"
+                  }`}
+                >
                   Cuenta
                 </span>
               </Link>
 
-              <Link
-                href="/orders"
-                className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500"
-              >
-                <div className="p-2 rounded-full hover:bg-pink-100 transition-colors">
-                  <MdReceiptLong size={20} />
-                </div>
-                <span className="text-xs mt-1 text-center truncate w-full font-normal">
-                  Pedidos
-                </span>
-              </Link>
+              {!isAdmin && (
+                <Link
+                  href="/orders"
+                  className={`flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 transition-colors ${
+                    isActivePath("/orders")
+                      ? "text-pink-600"
+                      : "text-gray-600 hover:text-pink-500"
+                  }`}
+                >
+                  <div
+                    className={`rounded-full p-2 transition-colors ${
+                      isActivePath("/orders")
+                        ? "bg-pink-100 text-pink-600"
+                        : "hover:bg-pink-100"
+                    }`}
+                  >
+                    <MdReceiptLong size={20} />
+                  </div>
+                  <span
+                    className={`mt-1 w-full truncate text-center text-xs ${
+                      isActivePath("/orders") ? "font-semibold" : "font-normal"
+                    }`}
+                  >
+                    Pedidos
+                  </span>
+                </Link>
+              )}
             </>
           ) : (
             <Link
               href="/login"
-              className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500"
+              className={`flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 transition-colors ${
+                isActivePath("/login")
+                  ? "text-pink-600"
+                  : "text-gray-600 hover:text-pink-500"
+              }`}
             >
-              <div className="p-2 rounded-full hover:bg-pink-100 transition-colors">
+              <div
+                className={`rounded-full p-2 transition-colors ${
+                  isActivePath("/login")
+                    ? "bg-pink-100 text-pink-600"
+                    : "hover:bg-pink-100"
+                }`}
+              >
                 <MdLogin size={20} />
               </div>
-              <span className="text-xs mt-1 text-center truncate w-full font-normal">
+              <span
+                className={`mt-1 w-full truncate text-center text-xs ${
+                  isActivePath("/login") ? "font-semibold" : "font-normal"
+                }`}
+              >
                 Ingresar
               </span>
             </Link>
@@ -298,12 +407,28 @@ export default function Navbar() {
           {isAdmin && (
             <Link
               href="/dashboard/products"
-              className="flex flex-col items-center py-2 px-1 rounded-lg transition-colors flex-1 min-w-0 text-gray-600 hover:text-pink-500"
+              className={`flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 transition-colors ${
+                isActivePath("/dashboard/products")
+                  ? "text-pink-600"
+                  : "text-gray-600 hover:text-pink-500"
+              }`}
             >
-              <div className="p-2 rounded-full hover:bg-pink-100 transition-colors">
+              <div
+                className={`rounded-full p-2 transition-colors ${
+                  isActivePath("/dashboard/products")
+                    ? "bg-pink-100 text-pink-600"
+                    : "hover:bg-pink-100"
+                }`}
+              >
                 <MdBarChart size={20} />
               </div>
-              <span className="text-xs mt-1 text-center truncate w-full font-normal">
+              <span
+                className={`mt-1 w-full truncate text-center text-xs ${
+                  isActivePath("/dashboard/products")
+                    ? "font-semibold"
+                    : "font-normal"
+                }`}
+              >
                 Dashboard
               </span>
             </Link>
