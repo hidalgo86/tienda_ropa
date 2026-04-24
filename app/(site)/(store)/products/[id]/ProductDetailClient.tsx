@@ -28,6 +28,9 @@ import {
   MdRemove,
   MdShare,
   MdShoppingCart,
+  MdTrendingUp,
+  MdVisibility,
+  MdSearch,
 } from "react-icons/md";
 import {
   PAYMENTS_ENABLED,
@@ -45,6 +48,7 @@ export default function ProductDetailClient({
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [showAddedToCart, setShowAddedToCart] = useState(false);
+  const [showShareCopied, setShowShareCopied] = useState(false);
   const isAdminMode = mode === "admin";
   const isRopa = hasProductVariants(producto) || Boolean(producto.genre);
   const { options } = useCategories();
@@ -78,9 +82,6 @@ export default function ProductDetailClient({
   }, [isRopa, producto.id, producto.variants]);
 
   const variants = producto.variants || [];
-  const totalStock = isRopa
-    ? variants.reduce((sum, v) => sum + (Number(v?.stock) || 0), 0)
-    : Number(producto.stock || 0);
   const currentVariant = isRopa
     ? findVariantBySelection(variants, selectedSize)
     : null;
@@ -113,6 +114,47 @@ export default function ProductDetailClient({
     : hasOnlySizeVariants
       ? `${variants.length} talla(s)`
       : `${variants.length} variante(s)`;
+  const stats = {
+    views: Number(producto.stats?.views ?? 0),
+    favorites: Number(producto.stats?.favorites ?? 0),
+    cartAdds: Number(producto.stats?.cartAdds ?? 0),
+    purchases: Number(producto.stats?.purchases ?? 0),
+    searches: Number(producto.stats?.searches ?? 0),
+  };
+  const conversionRate =
+    stats.views > 0 ? Math.round((stats.purchases / stats.views) * 1000) / 10 : 0;
+  const adminStats = [
+    {
+      label: "Vistas",
+      value: stats.views,
+      helper: "Aperturas del detalle publico",
+      icon: <MdVisibility size={20} />,
+    },
+    {
+      label: "Favoritos",
+      value: stats.favorites,
+      helper: "Usuarios que lo guardaron",
+      icon: <MdFavorite size={20} />,
+    },
+    {
+      label: "Carrito",
+      value: stats.cartAdds,
+      helper: "Veces agregado al carrito",
+      icon: <MdShoppingCart size={20} />,
+    },
+    {
+      label: "Compras",
+      value: stats.purchases,
+      helper: "Unidades pagadas",
+      icon: <MdTrendingUp size={20} />,
+    },
+    {
+      label: "Busquedas",
+      value: stats.searches,
+      helper: "Apariciones al buscar",
+      icon: <MdSearch size={20} />,
+    },
+  ];
 
   const handleAddToCart = () => {
     if (isRopa && !selectedSize) {
@@ -122,8 +164,8 @@ export default function ProductDetailClient({
     if (availableStock === 0) {
       alert(
         isRopa
-          ? "No hay stock disponible para esta talla"
-          : "No hay stock disponible",
+          ? "Esta talla no esta disponible"
+          : "Este producto no esta disponible",
       );
       return;
     }
@@ -142,6 +184,46 @@ export default function ProductDetailClient({
     void toggleProductFavorite(producto);
   };
 
+  const handleShare = async () => {
+    const shareUrl =
+      typeof window !== "undefined" ? window.location.href : `/products/${producto.id}`;
+    const shareTitle = producto.name || "Producto";
+    const shareText = producto.description?.trim()
+      ? `${producto.name} - ${producto.description.trim()}`
+      : `Mira este producto: ${producto.name}`;
+
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl,
+        });
+        return;
+      }
+
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(shareUrl);
+        setShowShareCopied(true);
+        setTimeout(() => setShowShareCopied(false), 2000);
+        return;
+      }
+
+      window.prompt("Copia el enlace del producto", shareUrl);
+    } catch (error) {
+      const name = error instanceof DOMException ? error.name : "";
+      if (name === "AbortError") return;
+
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        setShowShareCopied(true);
+        setTimeout(() => setShowShareCopied(false), 2000);
+      } catch {
+        window.prompt("Copia el enlace del producto", shareUrl);
+      }
+    }
+  };
+
   const handleBuyNow = () => {
     if (!PAYMENTS_ENABLED) {
       alert(paymentsDisabledMessage);
@@ -154,8 +236,8 @@ export default function ProductDetailClient({
     if (availableStock === 0) {
       alert(
         isRopa
-          ? "No hay stock disponible para esta talla"
-          : "No hay stock disponible",
+          ? "Esta talla no esta disponible"
+          : "Este producto no esta disponible",
       );
       return;
     }
@@ -202,14 +284,26 @@ export default function ProductDetailClient({
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 p-6 lg:p-8">
+          <div
+            className={`grid grid-cols-1 gap-8 p-5 sm:p-6 lg:p-8 ${
+              isAdminMode
+                ? "lg:grid-cols-2"
+                : "lg:grid-cols-[minmax(0,1.25fr)_minmax(340px,0.75fr)]"
+            }`}
+          >
             <div className="space-y-4">
-              <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center relative">
+              <div
+                className={`bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center relative ${
+                  isAdminMode
+                    ? "aspect-square"
+                    : "aspect-[4/5] min-h-[420px] lg:min-h-[620px]"
+                }`}
+              >
                 <Image
                   src={selectedImage.url}
                   alt={producto.name || "Producto"}
-                  width={600}
-                  height={600}
+                  width={900}
+                  height={1125}
                   className="object-contain max-w-full max-h-full"
                   priority
                 />
@@ -258,7 +352,12 @@ export default function ProductDetailClient({
                       <MdFavoriteBorder className="text-gray-600" size={20} />
                     )}
                   </button>
-                  <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                  <button
+                    onClick={handleShare}
+                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    title="Compartir producto"
+                    aria-label="Compartir producto"
+                  >
                     <MdShare className="text-gray-600" size={20} />
                   </button>
                   <button
@@ -274,7 +373,7 @@ export default function ProductDetailClient({
               )}
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-6 lg:pt-2">
               <div>
                 <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
                   {producto.name}
@@ -283,7 +382,7 @@ export default function ProductDetailClient({
                   <span className="text-3xl font-bold text-pink-600">
                     ${Number(displayPrice || 0).toFixed(2)}
                   </span>
-                  {displayStatus && (
+                  {isAdminMode && displayStatus && (
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-medium ${
                         displayStatus === "disponible"
@@ -327,11 +426,11 @@ export default function ProductDetailClient({
                     {displayCategory || "Sin categoria"}
                   </span>
                 </div>
-                {!isRopa && (
+                {isAdminMode && !isRopa && (
                   <div>
                     <span className="font-medium text-gray-900">Stock:</span>
                     <span className="ml-2 text-gray-600">
-                      {totalStock} unidades
+                      {getProductStock(producto)} unidades
                     </span>
                   </div>
                 )}
@@ -372,7 +471,7 @@ export default function ProductDetailClient({
               {isRopa && variants.length > 0 && (
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                    Variantes disponibles
+                    Variantes
                   </h3>
                   <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
                     {variants.map((variant) => {
@@ -396,9 +495,14 @@ export default function ProductDetailClient({
                           }`}
                         >
                           <div>{formatVariantLabel(variant)}</div>
-                          <div className="text-xs text-gray-500">
-                            {hasStock ? `(${variant.stock})` : "Agotado"}
-                          </div>
+                          {!isAdminMode && !hasStock ? (
+                            <div className="text-xs text-gray-500">Agotado</div>
+                          ) : null}
+                          {isAdminMode ? (
+                            <div className="text-xs text-gray-500">
+                              {hasStock ? `(${variant.stock})` : "Agotado"}
+                            </div>
+                          ) : null}
                         </button>
                       );
                     })}
@@ -410,10 +514,6 @@ export default function ProductDetailClient({
                         Variante seleccionada:{" "}
                         <span className="font-medium">
                           {formatVariantLabel(selectedSize)}
-                        </span>{" "}
-                        - Stock disponible:{" "}
-                        <span className="font-medium">
-                          {currentVariant.stock}
                         </span>{" "}
                         - Precio:{" "}
                         <span className="font-medium text-pink-600">
@@ -443,6 +543,50 @@ export default function ProductDetailClient({
                           Stock: {variant.stock} · $
                           {Number(variant.price || 0).toFixed(2)}
                         </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {isAdminMode && (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Estadisticas
+                      </h3>
+                      <p className="text-sm text-slate-500">
+                        Actividad guardada en el documento del producto.
+                      </p>
+                    </div>
+                    <div className="rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm">
+                      Conversion: {conversionRate.toFixed(1)}%
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    {adminStats.map((item) => (
+                      <div
+                        key={item.label}
+                        className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-medium uppercase text-slate-500">
+                              {item.label}
+                            </p>
+                            <p className="mt-1 text-2xl font-bold text-slate-900">
+                              {item.value.toLocaleString("es-ES")}
+                            </p>
+                          </div>
+                          <div className="rounded-lg bg-slate-100 p-2 text-slate-700">
+                            {item.icon}
+                          </div>
+                        </div>
+                        <p className="mt-2 text-xs text-slate-500">
+                          {item.helper}
+                        </p>
                       </div>
                     ))}
                   </div>
@@ -507,14 +651,24 @@ export default function ProductDetailClient({
                       </div>
                     </div>
                   )}
+
+                  {showShareCopied && (
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm font-medium text-slate-700">
+                      Enlace copiado
+                    </div>
+                  )}
                 </>
               )}
 
               <div className="pt-6 border-t border-gray-200">
                 <div className="text-sm text-gray-600 space-y-2">
                   <p>Entrega y condiciones sujetas a disponibilidad.</p>
-                  <p>Revisa stock y variantes antes de confirmar la compra.</p>
-                  <p>Si tienes dudas, consulta el detalle antes de editar.</p>
+                  <p>Revisa disponibilidad y variantes antes de confirmar.</p>
+                  <p>
+                    {isAdminMode
+                      ? "Si tienes dudas, consulta el detalle antes de editar."
+                      : "Si tienes dudas, contactanos antes de comprar."}
+                  </p>
                 </div>
               </div>
             </div>

@@ -30,6 +30,7 @@ export default async function DashboardProductDetailPage({
     const producto: Product = await getProductById(id, {
       baseUrl,
       cache: "no-store",
+      trackView: false,
     });
 
     if (!producto) {

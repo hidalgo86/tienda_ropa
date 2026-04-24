@@ -61,6 +61,9 @@ export enum ProductSortBy {
   NAME_DESC = "name_desc",
   MOST_PURCHASED = "most_purchased",
   MOST_VIEWED = "most_viewed",
+  MOST_FAVORITED = "most_favorited",
+  MOST_CART_ADDED = "most_cart_added",
+  MOST_SEARCHED = "most_searched",
 }
 
 export interface ProductFiltersModel {

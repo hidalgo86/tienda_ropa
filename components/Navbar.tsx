@@ -108,10 +108,10 @@ export default function Navbar() {
   return (
     <>
       <nav className="sticky top-0 z-40 border-b border-pink-200 bg-pink-50/95 shadow-md backdrop-blur supports-[backdrop-filter]:bg-pink-50/90">
-        <div className="relative mx-auto flex h-20 max-w-7xl items-center justify-center overflow-hidden px-4 sm:h-20 sm:justify-between sm:px-5 lg:h-24 lg:px-8">
+        <div className="relative mx-auto flex h-20 max-w-7xl items-center justify-center overflow-hidden px-4 sm:h-20 sm:justify-between sm:px-5 lg:grid lg:h-28 lg:grid-cols-[minmax(300px,430px)_minmax(0,1fr)_auto] lg:gap-8 lg:px-8 xl:grid-cols-[minmax(360px,500px)_minmax(0,1fr)_auto] xl:gap-10">
           <Link
             href="/"
-            className="flex min-w-0 flex-1 items-center justify-start overflow-hidden pr-14 sm:pr-0"
+            className="flex min-w-0 flex-1 items-center justify-start overflow-hidden pr-14 sm:pr-0 lg:flex-none"
           >
             <Image
               src="/chikitoslandia.png"
@@ -120,24 +120,30 @@ export default function Navbar() {
               height={260}
               priority
               unoptimized
-              className="h-36 w-auto max-w-[460px] object-cover object-left sm:h-14 sm:max-w-[220px] md:max-w-[260px] lg:h-16 lg:max-w-[320px] xl:max-w-[360px]"
+              className="h-36 w-auto max-w-[460px] object-cover object-left sm:h-14 sm:max-w-[220px] md:max-w-[260px] lg:h-32 lg:max-w-[430px] xl:h-36 xl:max-w-[500px]"
             />
           </Link>
 
-          <div className="hidden min-w-0 flex-1 items-center justify-center gap-5 lg:flex xl:gap-8">
+          <div className="hidden min-w-0 items-center justify-center gap-2 overflow-hidden border-r border-pink-200 pr-6 lg:flex xl:gap-4 xl:pr-8">
             {[...visibleNavLinks, ...accountNavLinks].map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="flex items-center gap-2 whitespace-nowrap text-sm font-medium text-gray-700 transition-colors hover:text-pink-500 xl:text-base"
+                className="flex min-w-0 items-center gap-1.5 whitespace-nowrap text-sm font-medium text-gray-700 transition-colors hover:text-pink-500 xl:gap-2"
               >
-                <span className="text-lg xl:text-xl">{link.icon}</span>
-                <span>{link.label}</span>
+                <span className="shrink-0 text-lg xl:text-xl">{link.icon}</span>
+                <span
+                  className={`truncate ${
+                    link.href === "/acerca" ? "hidden 2xl:inline" : ""
+                  }`}
+                >
+                  {link.label}
+                </span>
               </Link>
             ))}
           </div>
 
-          <div className="hidden items-center gap-3 lg:flex xl:gap-4">
+          <div className="hidden shrink-0 items-center justify-end gap-4 lg:flex xl:gap-5">
             {!isAdmin && (
               <>
                 <Link href="/favorites" title="Favoritos" className="relative group">

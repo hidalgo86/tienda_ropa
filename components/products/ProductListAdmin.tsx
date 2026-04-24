@@ -57,6 +57,15 @@ const resolvePrice = (product: ProductListAdminProps["products"][number]) => {
   return "Sin precio";
 };
 
+const getStats = (product: ProductListAdminProps["products"][number]) => ({
+  views: Number(product.stats?.views ?? 0),
+  favorites: Number(product.stats?.favorites ?? 0),
+  cartAdds: Number(product.stats?.cartAdds ?? 0),
+  purchases: Number(product.stats?.purchases ?? 0),
+});
+
+const formatMetric = (value: number): string => value.toLocaleString("es-ES");
+
 const ProductListAdmin: React.FC<ProductListAdminProps> = ({
   products,
   onEdit,
@@ -83,6 +92,7 @@ const ProductListAdmin: React.FC<ProductListAdminProps> = ({
               <th className="px-4 py-3">Variantes</th>
               <th className="px-4 py-3">Stock</th>
               <th className="px-4 py-3">Precio</th>
+              <th className="px-4 py-3">Metricas</th>
               <th className="px-4 py-3">Acciones</th>
             </tr>
           </thead>
@@ -92,6 +102,7 @@ const ProductListAdmin: React.FC<ProductListAdminProps> = ({
               const isDeleted = status === "eliminado";
               const isBusy = actionLoadingId === product.id;
               const imageSrc = product.images?.[0]?.url || PLACEHOLDER;
+              const stats = getStats(product);
 
               return (
                 <tr key={product.id} className="text-sm text-slate-700">
@@ -136,7 +147,42 @@ const ProductListAdmin: React.FC<ProductListAdminProps> = ({
                     {resolvePrice(product)}
                   </td>
                   <td className="px-4 py-4">
+                    <div className="grid min-w-[220px] grid-cols-2 gap-2 text-xs text-slate-600">
+                      <span className="rounded-lg bg-slate-50 px-2 py-1">
+                        Vistas:{" "}
+                        <b className="text-slate-900">
+                          {formatMetric(stats.views)}
+                        </b>
+                      </span>
+                      <span className="rounded-lg bg-slate-50 px-2 py-1">
+                        Fav:{" "}
+                        <b className="text-slate-900">
+                          {formatMetric(stats.favorites)}
+                        </b>
+                      </span>
+                      <span className="rounded-lg bg-slate-50 px-2 py-1">
+                        Carrito:{" "}
+                        <b className="text-slate-900">
+                          {formatMetric(stats.cartAdds)}
+                        </b>
+                      </span>
+                      <span className="rounded-lg bg-slate-50 px-2 py-1">
+                        Compras:{" "}
+                        <b className="text-slate-900">
+                          {formatMetric(stats.purchases)}
+                        </b>
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-4">
                     <div className="flex items-center gap-2">
+                      <Link
+                        href={`/dashboard/products/${product.id}`}
+                        className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+                      >
+                        Ver detalle
+                      </Link>
+
                       {onEdit && !isDeleted && (
                         <button
                           type="button"
@@ -184,6 +230,7 @@ const ProductListAdmin: React.FC<ProductListAdminProps> = ({
           const isDeleted = status === "eliminado";
           const isBusy = actionLoadingId === product.id;
           const imageSrc = product.images?.[0]?.url || PLACEHOLDER;
+          const stats = getStats(product);
 
           return (
             <article key={product.id} className="space-y-4 p-4">
@@ -242,7 +289,39 @@ const ProductListAdmin: React.FC<ProductListAdminProps> = ({
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-2 text-xs text-slate-600">
+                <span className="rounded-lg bg-slate-50 px-3 py-2">
+                  Vistas:{" "}
+                  <b className="text-slate-900">{formatMetric(stats.views)}</b>
+                </span>
+                <span className="rounded-lg bg-slate-50 px-3 py-2">
+                  Favoritos:{" "}
+                  <b className="text-slate-900">
+                    {formatMetric(stats.favorites)}
+                  </b>
+                </span>
+                <span className="rounded-lg bg-slate-50 px-3 py-2">
+                  Carrito:{" "}
+                  <b className="text-slate-900">
+                    {formatMetric(stats.cartAdds)}
+                  </b>
+                </span>
+                <span className="rounded-lg bg-slate-50 px-3 py-2">
+                  Compras:{" "}
+                  <b className="text-slate-900">
+                    {formatMetric(stats.purchases)}
+                  </b>
+                </span>
+              </div>
+
               <div className="flex flex-wrap gap-2">
+                <Link
+                  href={`/dashboard/products/${product.id}`}
+                  className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-50"
+                >
+                  Ver detalle
+                </Link>
+
                 {onEdit && !isDeleted && (
                   <button
                     type="button"

@@ -15,7 +15,7 @@ const ProductListPublic: React.FC<ProductListPublicProps> = ({
     );
   }
   return (
-    <div className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4">
       {products.map((product) => (
         <ProductCardPublic
           key={product.id}

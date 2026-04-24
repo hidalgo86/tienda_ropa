@@ -10,8 +10,8 @@ export async function GET(
   const { id } = await context.params;
 
   const query = `
-    query Product($id: String!) {
-      product(id: $id) {
+    query Product($id: String!, $trackView: Boolean) {
+      product(id: $id, trackView: $trackView) {
         id
         sku
         slug
@@ -36,13 +36,15 @@ export async function GET(
 
   try {
     const authorization = req.headers.get("authorization");
+    const { searchParams } = new URL(req.url);
+    const trackView = searchParams.get("trackView") !== "false";
     const res = await fetch(`${process.env.API_URL}/graphql`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         ...(authorization ? { Authorization: authorization } : {}),
       },
-      body: JSON.stringify({ query, variables: { id } }),
+      body: JSON.stringify({ query, variables: { id, trackView } }),
     });
 
     const data = (await res.json()) as ProductByIdQueryResponse;

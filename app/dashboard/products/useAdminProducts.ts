@@ -5,6 +5,7 @@ import {
   AdminProductFilter,
   Product,
   ProductAvailability,
+  ProductSortBy,
   ProductState,
 } from "@/types/domain/products";
 import { listProducts } from "@/services/products";
@@ -14,6 +15,7 @@ interface UseAdminProductsParams {
   page: number;
   limit: number;
   search: string;
+  sortBy?: ProductSortBy;
 }
 
 interface FetchProductsOptions {
@@ -30,6 +32,7 @@ export const useAdminProducts = ({
   page,
   limit,
   search,
+  sortBy,
 }: UseAdminProductsParams) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -66,6 +69,7 @@ export const useAdminProducts = ({
             availability,
             page,
             limit,
+            sortBy,
             name: search.trim() || undefined,
           },
           {
@@ -93,7 +97,7 @@ export const useAdminProducts = ({
         }
       }
     },
-    [filter, page, limit, search],
+    [filter, page, limit, search, sortBy],
   );
 
   useEffect(() => {

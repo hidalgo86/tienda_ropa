@@ -30,7 +30,7 @@ export default function FiltrosMobileButton({
               <div className="text-xs text-gray-500">
                 {activeCount > 0
                   ? `${activeCount} filtros activos`
-                  : "Categoria, talla, genero y precio"}
+                  : "Categoria, talla y precio"}
               </div>
             </div>
           </div>

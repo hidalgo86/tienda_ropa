@@ -53,7 +53,7 @@ export default function FiltrosModal({
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Filtros</h2>
                 <p className="mt-1 text-sm text-gray-500">
-                  Ajusta la busqueda para ver resultados mas precisos.
+                  Ajusta categoria, talla y precio.
                 </p>
               </div>
             </div>

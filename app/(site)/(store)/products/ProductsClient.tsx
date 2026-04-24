@@ -13,6 +13,7 @@ import {
 } from "@/types/domain/products";
 import FiltrosMobileButton from "./FiltrosMobileButton";
 import { listProducts } from "@/services/products";
+import ProductSearchBar from "./ProductSearchBar";
 
 const readSingleParam = (
   params: Record<string, string> | undefined,
@@ -92,7 +93,6 @@ export default async function ProductsClient({
   const safeTotalPages = Math.max(1, totalPages || 1);
   const noProducts = !items || items.length === 0;
   const activeFiltersCount = [
-    search,
     minPrice !== undefined ? String(minPrice) : "",
     maxPrice !== undefined ? String(maxPrice) : "",
     parsedGenre ?? "",
@@ -120,26 +120,34 @@ export default async function ProductsClient({
 
         <main className="min-w-0 flex-1 px-4 py-4 pb-24 sm:px-6 sm:py-6 sm:pb-24 lg:px-8 lg:py-8 lg:pb-8">
           <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
               <div className="min-w-0">
                 <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">
                   Productos
                 </h1>
                 <p className="mt-1 text-sm text-slate-500">
-                  Explora el catalogo disponible y filtra por lo que necesitas.
+                  Busca productos y ajusta filtros cuando lo necesites.
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
-                <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
-                  {data.total || 0} resultados
-                </span>
-                {activeFiltersCount > 0 ? (
-                  <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
-                    <MdTune size={16} />
-                    {activeFiltersCount} filtros activos
+              <div className="flex w-full flex-col gap-3 xl:max-w-2xl">
+                <ProductSearchBar initialSearch={search} />
+                <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
+                  <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
+                    {data.total || 0} resultados
                   </span>
-                ) : null}
+                  {search ? (
+                    <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
+                      Busqueda: {search}
+                    </span>
+                  ) : null}
+                  {activeFiltersCount > 0 ? (
+                    <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
+                      <MdTune size={16} />
+                      {activeFiltersCount} filtros activos
+                    </span>
+                  ) : null}
+                </div>
               </div>
             </div>
           </div>
@@ -155,7 +163,7 @@ export default async function ProductsClient({
                     Total productos: {data?.total || 0} • Pagina: {page}
                   </p>
                   <p className="text-slate-600">
-                    Ajusta los filtros o revisa el stock disponible para ver
+                    Ajusta los filtros o revisa la disponibilidad para ver
                     resultados aqui.
                   </p>
                 </div>

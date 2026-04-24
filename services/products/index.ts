@@ -13,6 +13,7 @@ interface ApiOptions {
   cache?: RequestCache;
   signal?: AbortSignal;
   token?: string | null;
+  trackView?: boolean;
 }
 
 const genericErrorMessages = new Set([
@@ -184,6 +185,7 @@ export const listProducts = async (
   if (params.genre) query.set("genre", String(params.genre));
   if (params.state) query.set("state", params.state);
   if (params.availability) query.set("availability", params.availability);
+  if (params.sortBy) query.set("sortBy", params.sortBy);
   if (typeof params.minPrice === "number") {
     query.set("minPrice", String(params.minPrice));
   }
@@ -218,7 +220,12 @@ export const getProductById = async (
   options: ApiOptions = {},
 ): Promise<Product> => {
   const response = await fetch(
-    buildApiUrl(`/api/products/get/${id}`, options.baseUrl),
+    buildApiUrl(
+      `/api/products/get/${id}${
+        options.trackView === false ? "?trackView=false" : ""
+      }`,
+      options.baseUrl,
+    ),
     {
       cache: options.cache ?? "no-store",
       headers: buildHeaders(options, false, options.token),

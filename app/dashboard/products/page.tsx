@@ -7,6 +7,7 @@ import {
   AdminProductFilter,
   Product,
   ProductAvailability,
+  ProductSortBy,
   ProductState,
   parseAdminProductFilter,
 } from "@/types/domain/products";
@@ -23,6 +24,25 @@ const FILTER_LABELS: Record<string, string> = {
   [ProductState.ELIMINADO]: "Eliminados",
 };
 
+const SORT_LABELS: Record<ProductSortBy, string> = {
+  [ProductSortBy.NEWEST]: "Mas recientes",
+  [ProductSortBy.OLDEST]: "Mas antiguos",
+  [ProductSortBy.PRICE_ASC]: "Precio menor",
+  [ProductSortBy.PRICE_DESC]: "Precio mayor",
+  [ProductSortBy.NAME_ASC]: "Nombre A-Z",
+  [ProductSortBy.NAME_DESC]: "Nombre Z-A",
+  [ProductSortBy.MOST_VIEWED]: "Mas vistos",
+  [ProductSortBy.MOST_FAVORITED]: "Mas favoritos",
+  [ProductSortBy.MOST_CART_ADDED]: "Mas agregados al carrito",
+  [ProductSortBy.MOST_PURCHASED]: "Mas comprados",
+  [ProductSortBy.MOST_SEARCHED]: "Mas buscados",
+};
+
+const parseProductSortBy = (value: string | null): ProductSortBy =>
+  Object.values(ProductSortBy).includes(value as ProductSortBy)
+    ? (value as ProductSortBy)
+    : ProductSortBy.NEWEST;
+
 const ProductsContent: React.FC = () => {
   const router = useRouter();
   const pathname = usePathname();
@@ -31,6 +51,7 @@ const ProductsContent: React.FC = () => {
   const initialLimit = Number(searchParams.get("limit")) || 50;
   const initialPage = Math.max(1, Number(searchParams.get("page")) || 1);
   const initialSearch = searchParams.get("search") || "";
+  const initialSortBy = parseProductSortBy(searchParams.get("sortBy"));
   const initialFilter =
     parseAdminProductFilter(searchParams.get("status")) ||
     ADMIN_PRODUCT_FILTER_ALL;
@@ -40,6 +61,7 @@ const ProductsContent: React.FC = () => {
   const [search, setSearch] = useState(initialSearch);
   const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
   const [filter, setFilter] = useState<AdminProductFilter>(initialFilter);
+  const [sortBy, setSortBy] = useState<ProductSortBy>(initialSortBy);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   const { products, setProducts, totalPages, loading, error, refetch } =
@@ -48,6 +70,7 @@ const ProductsContent: React.FC = () => {
       page,
       limit,
       search: debouncedSearch,
+      sortBy,
     });
 
   useEffect(() => {
@@ -67,6 +90,9 @@ const ProductsContent: React.FC = () => {
     if (debouncedSearch.trim()) {
       params.set("search", debouncedSearch.trim());
     }
+    if (sortBy !== ProductSortBy.NEWEST) {
+      params.set("sortBy", sortBy);
+    }
 
     const nextQuery = params.toString();
     const currentQuery = searchParams.toString();
@@ -76,7 +102,16 @@ const ProductsContent: React.FC = () => {
         scroll: false,
       });
     }
-  }, [page, filter, limit, debouncedSearch, pathname, router, searchParams]);
+  }, [
+    page,
+    filter,
+    limit,
+    debouncedSearch,
+    sortBy,
+    pathname,
+    router,
+    searchParams,
+  ]);
 
   useEffect(() => {
     const nextPage = Math.max(1, Number(searchParams.get("page")) || 1);
@@ -84,9 +119,11 @@ const ProductsContent: React.FC = () => {
       parseAdminProductFilter(searchParams.get("status")) ||
       ADMIN_PRODUCT_FILTER_ALL;
     const nextSearch = searchParams.get("search") || "";
+    const nextSortBy = parseProductSortBy(searchParams.get("sortBy"));
 
     setPage((prev) => (prev === nextPage ? prev : nextPage));
     setFilter((prev) => (prev === nextStatus ? prev : nextStatus));
+    setSortBy((prev) => (prev === nextSortBy ? prev : nextSortBy));
     setSearch((prev) => (prev === nextSearch ? prev : nextSearch));
     setDebouncedSearch((prev) => (prev === nextSearch ? prev : nextSearch));
   }, [searchParams]);
@@ -162,6 +199,11 @@ const ProductsContent: React.FC = () => {
     setSearch(value);
   };
 
+  const handleSortChange = (value: ProductSortBy) => {
+    setPage(1);
+    setSortBy(value);
+  };
+
   if (error) {
     return (
       <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
@@ -202,6 +244,9 @@ const ProductsContent: React.FC = () => {
                 Busqueda: {debouncedSearch.trim()}
               </span>
             ) : null}
+            <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
+              Orden: {SORT_LABELS[sortBy]}
+            </span>
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row">
@@ -229,6 +274,18 @@ const ProductsContent: React.FC = () => {
               <option value={ProductAvailability.DISPONIBLE}>Disponibles</option>
               <option value={ProductAvailability.AGOTADO}>Agotados</option>
               <option value={ProductState.ELIMINADO}>Eliminados</option>
+            </select>
+            <select
+              value={sortBy}
+              onChange={(e) => handleSortChange(e.target.value as ProductSortBy)}
+              className="rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-slate-400"
+              aria-label="Ordenar productos"
+            >
+              {Object.values(ProductSortBy).map((value) => (
+                <option key={value} value={value}>
+                  {SORT_LABELS[value]}
+                </option>
+              ))}
             </select>
           </div>
         </div>

@@ -1,12 +1,38 @@
 import Link from "next/link";
 import Image from "next/image";
 import { FaInstagram } from "react-icons/fa";
+import { MdLocalShipping, MdPayment, MdSupportAgent } from "react-icons/md";
 
 const socialLinks = [
   {
     href: "https://instagram.com/chikitoslandia",
     label: "Siguenos en Instagram",
     Icon: FaInstagram,
+  },
+];
+
+const shopLinks = [
+  { href: "/products", label: "Productos" },
+  { href: "/favorites", label: "Favoritos" },
+  { href: "/cart", label: "Carrito" },
+  { href: "/acerca", label: "Acerca de nosotros" },
+];
+
+const serviceItems = [
+  {
+    Icon: MdLocalShipping,
+    title: "Entrega",
+    text: "Coordinacion sujeta a disponibilidad.",
+  },
+  {
+    Icon: MdPayment,
+    title: "Pago",
+    text: "Confirmacion antes de preparar tu pedido.",
+  },
+  {
+    Icon: MdSupportAgent,
+    title: "Ayuda",
+    text: "Consultas por Instagram antes de comprar.",
   },
 ];
 
@@ -29,9 +55,10 @@ export default function Footer() {
           <Image
             src="/chikitoslandia.png"
             alt="Logo ChikitosLandia"
-            width={160}
-            height={48}
-            className="mb-3 object-contain sm:mb-4 sm:h-[54px] sm:w-[180px] lg:h-[60px] lg:w-[200px]"
+            width={520}
+            height={150}
+            unoptimized
+            className="mb-3 h-28 w-auto max-w-[320px] object-cover object-left sm:mb-4 sm:h-32 sm:max-w-[380px] lg:h-36 lg:max-w-[430px]"
           />
           <p
             className="max-w-xs text-center text-xs text-gray-600 
@@ -43,6 +70,48 @@ export default function Footer() {
         </div>
 
         <div className="flex flex-col items-center sm:items-start">
+          <h3
+            className="mb-2 text-sm font-semibold text-gray-800 
+                         sm:mb-3 sm:text-base lg:mb-4 lg:text-lg"
+          >
+            Tienda
+          </h3>
+          <nav className="flex flex-col items-center gap-2 text-sm text-gray-600 sm:items-start">
+            {shopLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="transition-colors hover:text-pink-600"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+
+        <div className="flex flex-col items-center sm:items-start">
+          <h3
+            className="mb-2 text-sm font-semibold text-gray-800 
+                         sm:mb-3 sm:text-base lg:mb-4 lg:text-lg"
+          >
+            Compra tranquila
+          </h3>
+          <div className="space-y-3">
+            {serviceItems.map(({ Icon, title, text }) => (
+              <div key={title} className="flex max-w-xs gap-3 text-left">
+                <div className="mt-0.5 rounded-xl bg-pink-100 p-2 text-pink-600">
+                  <Icon size={18} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">{title}</p>
+                  <p className="text-xs leading-relaxed text-gray-600">{text}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-col items-center sm:items-start lg:col-start-2">
           <h3
             className="mb-2 text-sm font-semibold text-gray-800 
                          sm:mb-3 sm:text-base lg:mb-4 lg:text-lg"
@@ -63,39 +132,6 @@ export default function Footer() {
               </Link>
             ))}
           </div>
-        </div>
-
-        <div className="flex flex-col items-center sm:items-start">
-          <h3
-            className="mb-2 text-sm font-semibold text-gray-800 
-                         sm:mb-3 sm:text-base lg:mb-4 lg:text-lg"
-          >
-            Suscribete
-          </h3>
-          <p
-            className="mb-3 max-w-xs text-center text-xs text-gray-600 
-                        sm:mb-4 sm:max-w-none sm:text-left sm:text-sm lg:text-base"
-          >
-            Recibe ofertas y novedades exclusivas en tu correo.
-          </p>
-          <form className="flex w-full max-w-xs flex-col gap-2 sm:max-w-none sm:gap-3">
-            <input
-              type="email"
-              placeholder="Tu correo electronico"
-              className="w-full rounded-lg border border-gray-300 
-                         px-3 py-2 text-xs transition-all duration-200
-                         focus:border-pink-300 focus:outline-none focus:ring-2 focus:ring-pink-300
-                         sm:px-4 sm:py-2.5 sm:text-sm lg:text-base"
-            />
-            <button
-              type="submit"
-              className="w-full rounded-lg bg-pink-500 px-4 py-2 text-xs font-medium text-white
-                         transition-all duration-200 hover:bg-pink-600 active:bg-pink-700
-                         sm:w-auto sm:px-6 sm:py-2.5 sm:text-sm lg:text-base"
-            >
-              Suscribirme
-            </button>
-          </form>
         </div>
       </div>
 

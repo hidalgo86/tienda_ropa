@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { MdOutlineRestartAlt, MdSearch, MdTune } from "react-icons/md";
+import { MdOutlineRestartAlt, MdTune } from "react-icons/md";
 import {
   formatSizeLabel,
   Genre,
@@ -49,7 +49,6 @@ export default function Filtros({ onFilterApply }: ProductFiltersProps) {
     ? options
     : legacyProductCategoryOptions;
 
-  const [search, setSearch] = useState(readParam(searchParams, "search"));
   const [categoryId, setCategoryId] = useState(
     readParam(searchParams, "categoryId", "category"),
   );
@@ -68,7 +67,6 @@ export default function Filtros({ onFilterApply }: ProductFiltersProps) {
     !categoryId || isClothingCategory(categoryId, categoryOptions);
 
   useEffect(() => {
-    setSearch(readParam(searchParams, "search"));
     setCategoryId(readParam(searchParams, "categoryId", "category"));
     setGenre(readParam(searchParams, "genre", "genero"));
     setSize(readParam(searchParams, "size", "talla"));
@@ -100,7 +98,7 @@ export default function Filtros({ onFilterApply }: ProductFiltersProps) {
     setIsSearching(true);
     try {
       updateURL({
-        search,
+        search: readParam(searchParams, "search"),
         categoryId,
         genre,
         size,
@@ -118,7 +116,6 @@ export default function Filtros({ onFilterApply }: ProductFiltersProps) {
   };
 
   const resetFilters = () => {
-    setSearch("");
     setCategoryId("");
     setGenre("");
     setSize("");
@@ -128,7 +125,6 @@ export default function Filtros({ onFilterApply }: ProductFiltersProps) {
   };
 
   const activeCount = [
-    search,
     categoryId,
     genre,
     size,
@@ -143,7 +139,7 @@ export default function Filtros({ onFilterApply }: ProductFiltersProps) {
           <div>
             <h2 className="text-lg font-semibold text-gray-900">Filtros</h2>
             <p className="mt-1 text-sm text-gray-500">
-              Ajusta la busqueda segun categoria, talla y precio.
+              Ajusta categoria, talla y precio.
             </p>
           </div>
           <div className="rounded-full border border-pink-100 bg-pink-50 px-3 py-1 text-xs font-medium text-pink-700">
@@ -153,26 +149,6 @@ export default function Filtros({ onFilterApply }: ProductFiltersProps) {
       </div>
 
       <form className="space-y-5" onSubmit={handleSubmit}>
-        <section className="space-y-3 rounded-2xl border border-gray-100 bg-gray-50/80 p-4">
-          <div className="text-sm font-semibold text-gray-900">
-            Buscar producto
-          </div>
-          <div className="relative">
-            <MdSearch
-              size={20}
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-            />
-            <input
-              id="search"
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className={`${fieldClassName} pl-11 pr-4`}
-              placeholder="Nombre del producto"
-            />
-          </div>
-        </section>
-
         <section className="space-y-4 rounded-2xl border border-gray-100 bg-gray-50/80 p-4">
           <div className="text-sm font-semibold text-gray-900">
             Clasificacion

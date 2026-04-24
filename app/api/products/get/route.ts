@@ -4,6 +4,7 @@ import {
   allowedSizes,
   PaginatedProducts,
   ProductsQueryModel,
+  ProductSortBy,
   Size,
   parseGenre,
   parseProductAvailability,
@@ -12,6 +13,7 @@ import {
 import {
   toGraphqlAvailability,
   toGraphqlGenre,
+  toGraphqlProductSortBy,
   toGraphqlState,
 } from "@/lib/graphqlMappers";
 import { normalizeProductsPage } from "../normalizeProduct";
@@ -22,6 +24,13 @@ const parseOptionalNumber = (value: string | null): number | undefined => {
   if (value === null || value.trim() === "") return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+const parseProductSortBy = (value: string | null): ProductSortBy | undefined => {
+  if (!value) return undefined;
+  return Object.values(ProductSortBy).includes(value as ProductSortBy)
+    ? (value as ProductSortBy)
+    : undefined;
 };
 
 const buildProductsQueryInput = (
@@ -39,7 +48,10 @@ const buildProductsQueryInput = (
       state: toGraphqlState(filters.state),
       availability: toGraphqlAvailability(filters.availability),
     },
-    pagination,
+    pagination: {
+      ...pagination,
+      sortBy: toGraphqlProductSortBy(pagination.sortBy),
+    },
   };
 };
 
@@ -93,6 +105,7 @@ export async function GET(req: Request) {
 
     const page = Number(searchParams.get("page")) || 1;
     const limit = Number(searchParams.get("limit")) || 20;
+    const sortBy = parseProductSortBy(searchParams.get("sortBy"));
 
     const name = searchParams.get("name") || undefined;
     const categoryId = searchParams.get("categoryId")?.trim() || undefined;
@@ -116,7 +129,7 @@ export async function GET(req: Request) {
     );
 
     const input: ProductsQueryModel = {
-      pagination: { page, limit },
+      pagination: { page, limit, sortBy },
       filters: {
         name,
         categoryId,
