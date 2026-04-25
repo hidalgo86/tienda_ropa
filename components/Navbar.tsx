@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useSelector } from "react-redux";
 import { getStoredAuthToken, getStoredUser } from "@/services/users";
 import { RootState } from "@/store";
+import { PAYMENTS_ENABLED } from "@/lib/commerceConfig";
 import {
   MdFavorite,
   MdShoppingCart,
@@ -66,7 +67,7 @@ export default function Navbar() {
           icon: <MdPerson />,
           label: "Mi Cuenta",
         },
-        ...(!isAdmin
+        ...(!isAdmin && PAYMENTS_ENABLED
           ? [
               {
                 href: "/orders",
@@ -321,7 +322,7 @@ export default function Navbar() {
                 </span>
               </Link>
 
-              {!isAdmin && (
+              {!isAdmin && PAYMENTS_ENABLED && (
                 <Link
                   href="/orders"
                   className={`flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 transition-colors ${

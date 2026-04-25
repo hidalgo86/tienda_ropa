@@ -100,7 +100,7 @@ export default function RegisterPage() {
             Registro de Usuario
           </h1>
           <p className="mb-6 text-center text-sm text-gray-600 sm:text-base">
-            Crea tu cuenta para guardar favoritos, carrito y pedidos.
+            Crea tu cuenta para guardar favoritos y sincronizar tu carrito.
           </p>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>

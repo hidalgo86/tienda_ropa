@@ -84,7 +84,7 @@ export default function LoginPage() {
               Iniciar sesion
             </h1>
             <p className="mt-2 text-sm text-gray-600 sm:text-base">
-              Accede a tu cuenta para ver favoritos, carrito y pedidos.
+              Accede a tu cuenta para guardar favoritos y sincronizar tu carrito.
             </p>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
