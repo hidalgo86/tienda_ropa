@@ -10,6 +10,7 @@ import {
   listAdminBanners,
   updateBanner,
 } from "@/services/banners";
+import { getStoredAuthToken } from "@/services/users";
 import type { Banner } from "@/types/domain/banners";
 
 const reorderBanners = (
@@ -47,8 +48,17 @@ export default function DashboardBannersPage() {
     setIsLoading(true);
 
     try {
+      if (!getStoredAuthToken()) {
+        setBanners([]);
+        return;
+      }
+
       const items = await listAdminBanners();
-      setBanners([...items].sort((a, b) => a.order - b.order));
+      setBanners(
+        (Array.isArray(items) ? [...items] : []).sort(
+          (a, b) => a.order - b.order,
+        ),
+      );
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "No se pudieron cargar banners",
@@ -61,6 +71,21 @@ export default function DashboardBannersPage() {
   React.useEffect(() => {
     void loadBanners();
   }, [loadBanners]);
+
+  React.useEffect(() => {
+    const handleSessionChanged = () => {
+      if (!getStoredAuthToken()) {
+        setBanners([]);
+        setIsLoading(false);
+      }
+    };
+
+    window.addEventListener("auth:session-changed", handleSessionChanged);
+
+    return () => {
+      window.removeEventListener("auth:session-changed", handleSessionChanged);
+    };
+  }, []);
 
   React.useEffect(() => {
     const handleFocus = () => {

@@ -3,12 +3,20 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   formatSizeLabel,
+  getVariantName,
   getProductStatusLabel,
 } from "@/types/domain/products";
 import type { ProductCardPublicProps } from "@/types/ui/products";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
-import { MdFavorite, MdFavoriteBorder, MdShoppingCart } from "react-icons/md";
+import {
+  MdAdd,
+  MdFavorite,
+  MdFavoriteBorder,
+  MdRemove,
+  MdShoppingCart,
+} from "react-icons/md";
+import { useCartActions } from "@/lib/useCartActions";
 
 const PLACEHOLDER = "/placeholder.webp";
 
@@ -53,13 +61,41 @@ const ProductCardPublic: React.FC<ProductCardPublicProps> = ({
   onAddToCart,
   onFavorite,
 }) => {
+  const { changeCartItemQuantity } = useCartActions();
   const imageSrc = product.images?.[0]?.url || PLACEHOLDER;
   const status = getProductStatusLabel(product);
   const isDeleted = status === "eliminado";
   const variantSummary = resolveVariantSummary(product);
+  const variants = product.variants ?? [];
+  const quickVariant = variants.find((variant) => (variant.stock || 0) > 0) || variants[0];
+  const quickVariantName = getVariantName(quickVariant) || undefined;
+  const allCartItems = useSelector((state: RootState) => state.cart.items);
+  const cartItems = React.useMemo(
+    () => allCartItems.filter((item) => item.id === product.id),
+    [allCartItems, product.id],
+  );
+  const primaryCartItem =
+    cartItems.find((item) => item.selectedSize === quickVariantName) ||
+    cartItems[0];
+  const cartQuantity = cartItems.reduce(
+    (total, item) => total + item.quantity,
+    0,
+  );
   const isFavorite = useSelector((state: RootState) =>
     state.favorites?.items?.some((item) => item.id === product.id),
   );
+  const isInCart = cartQuantity > 0;
+
+  const handleDecreaseCartQuantity = () => {
+    if (!primaryCartItem) return;
+
+    void changeCartItemQuantity({
+      productId: primaryCartItem.id,
+      quantity: primaryCartItem.quantity - 1,
+      selectedSize: primaryCartItem.selectedSize,
+      selectedColor: primaryCartItem.selectedColor,
+    });
+  };
 
   return (
     <article className="flex min-w-0 flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md">
@@ -110,17 +146,45 @@ const ProductCardPublic: React.FC<ProductCardPublicProps> = ({
               Ver
             </Link>
 
-            {onAddToCart && (
-              <button
-                type="button"
-                onClick={() => onAddToCart(product.id)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 text-slate-700 transition hover:bg-slate-50"
-                title="Agregar al carrito"
-                aria-label="Agregar al carrito"
-              >
-                <MdShoppingCart size={16} />
-              </button>
-            )}
+            {onAddToCart &&
+              (isInCart ? (
+                <div className="flex h-9 items-center overflow-hidden rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800">
+                  <button
+                    type="button"
+                    onClick={handleDecreaseCartQuantity}
+                    className="flex h-9 w-8 items-center justify-center transition hover:bg-emerald-100"
+                    title="Disminuir cantidad"
+                    aria-label="Disminuir cantidad en carrito"
+                  >
+                    <MdRemove size={15} />
+                  </button>
+                  <span
+                    className="min-w-7 px-1 text-center text-xs font-bold"
+                    title="Cantidad en carrito"
+                  >
+                    {cartQuantity}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onAddToCart(product.id)}
+                    className="flex h-9 w-8 items-center justify-center transition hover:bg-emerald-100"
+                    title="Aumentar cantidad"
+                    aria-label="Aumentar cantidad en carrito"
+                  >
+                    <MdAdd size={15} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onAddToCart(product.id)}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-300 text-slate-700 transition hover:bg-slate-50"
+                  title="Agregar al carrito"
+                  aria-label="Agregar al carrito"
+                >
+                  <MdShoppingCart size={16} />
+                </button>
+              ))}
 
             {onFavorite && (
               <button

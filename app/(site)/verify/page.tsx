@@ -3,7 +3,12 @@
 import { Suspense, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { getStoredUser, verifyEmail } from "@/services/users";
+import {
+  getStoredAuthToken,
+  getStoredUser,
+  resendVerification,
+  verifyEmail,
+} from "@/services/users";
 import type { VerifyEmailFormState } from "@/types/ui/users";
 
 const initialFormState: VerifyEmailFormState = {
@@ -26,6 +31,7 @@ function VerifyPageContent() {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResending, setIsResending] = useState(false);
 
   const canResend = useMemo(() => form.userId.trim().length > 0, [form.userId]);
 
@@ -66,6 +72,37 @@ function VerifyPageContent() {
       toast.error(message);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setError("");
+    setSuccessMessage("");
+
+    const userId = form.userId.trim();
+    if (!userId) {
+      setError("No pudimos identificar tu cuenta. Inicia sesion nuevamente.");
+      return;
+    }
+
+    setIsResending(true);
+
+    try {
+      const response = await resendVerification(
+        { userId },
+        { token: getStoredAuthToken() },
+      );
+      setSuccessMessage(response.message);
+      toast.success(response.message);
+    } catch (resendError) {
+      const message =
+        resendError instanceof Error
+          ? resendError.message
+          : "No se pudo reenviar el codigo";
+      setError(message);
+      toast.error(message);
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -126,16 +163,24 @@ function VerifyPageContent() {
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:justify-end">
             <button
               type="button"
-              className="w-full rounded-lg bg-gray-300 px-4 py-2.5 text-gray-700 hover:bg-gray-400 sm:w-auto"
+              className="w-full rounded-lg border border-amber-300 bg-white px-4 py-2.5 text-amber-900 hover:bg-amber-50 disabled:opacity-60 sm:w-auto"
+              onClick={handleResendVerification}
+              disabled={!canResend || isSubmitting || isResending}
+            >
+              {isResending ? "Reenviando..." : "Reenviar codigo"}
+            </button>
+            <button
+              type="button"
+              className="w-full rounded-lg bg-gray-300 px-4 py-2.5 text-gray-700 hover:bg-gray-400 disabled:opacity-60 sm:w-auto"
               onClick={() => router.push("/account")}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isResending}
             >
               Cancelar
             </button>
             <button
               type="submit"
               className="w-full rounded-lg bg-green-600 px-4 py-2.5 text-white hover:bg-green-700 disabled:opacity-60 sm:w-auto"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isResending}
             >
               {isSubmitting ? "Verificando..." : "Verificar"}
             </button>

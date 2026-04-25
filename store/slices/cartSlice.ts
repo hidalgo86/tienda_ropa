@@ -41,7 +41,8 @@ export const getGuestCart = (): CartItem[] => {
 
   try {
     const savedCart = window.localStorage.getItem(GUEST_CART_KEY);
-    return savedCart ? (JSON.parse(savedCart) as CartItem[]) : [];
+    const parsedCart = savedCart ? JSON.parse(savedCart) : [];
+    return Array.isArray(parsedCart) ? (parsedCart as CartItem[]) : [];
   } catch (error) {
     console.error("Error loading guest cart from localStorage:", error);
     return [];

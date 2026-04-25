@@ -211,6 +211,46 @@ export const clearStoredSession = (): void => {
   notifyAuthSessionChange();
 };
 
+const decodeJwtPayload = (token: string): Record<string, unknown> | null => {
+  const payload = token.split(".")[1];
+  if (!payload) return null;
+
+  try {
+    const normalizedPayload = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const paddedPayload = normalizedPayload.padEnd(
+      normalizedPayload.length + ((4 - (normalizedPayload.length % 4)) % 4),
+      "=",
+    );
+
+    return JSON.parse(window.atob(paddedPayload)) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+};
+
+export const isAuthTokenExpired = (token?: string | null): boolean => {
+  if (!token) return true;
+  if (!isBrowser()) return false;
+
+  const payload = decodeJwtPayload(token);
+  const expiresAt = typeof payload?.exp === "number" ? payload.exp : null;
+  if (!expiresAt) return false;
+
+  return expiresAt * 1000 <= Date.now() + 5000;
+};
+
+export const getValidStoredAuthToken = (): string | null => {
+  const token = getStoredAuthToken();
+  if (!token) return null;
+
+  if (isAuthTokenExpired(token)) {
+    clearStoredSession();
+    return null;
+  }
+
+  return token;
+};
+
 export const registerUser = async (
   input: RegisterUserInput,
   options: ApiOptions = {},

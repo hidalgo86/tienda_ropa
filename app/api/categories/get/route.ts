@@ -45,10 +45,12 @@ const normalizeCategory = (value: unknown): Category | null => {
   const name = typeof record.name === "string" ? record.name : "";
   const slug = typeof record.slug === "string" ? record.slug : "";
   const parent = typeof record.parent === "string" ? record.parent : undefined;
+  const parentId =
+    typeof record.parentId === "string" ? record.parentId : parent;
 
   if (!id || !name || !slug) return null;
 
-  return { id, name, slug, parent };
+  return { id, name, slug, parent, parentId };
 };
 
 const extractCategories = (data?: Record<string, unknown>): Category[] => {

@@ -20,6 +20,7 @@ export default function RootLayout({
     <html
       lang="es"
       translate="no"
+      data-scroll-behavior="smooth"
       className="notranslate"
       suppressHydrationWarning
     >

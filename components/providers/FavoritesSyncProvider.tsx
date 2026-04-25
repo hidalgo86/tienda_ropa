@@ -8,7 +8,7 @@ import {
   syncFavorites,
 } from "@/store/slices/favoriteSlice";
 import { addFavoriteProduct, listFavoriteProducts } from "@/services/favorites";
-import { getStoredAuthToken } from "@/services/users";
+import { clearStoredSession, getValidStoredAuthToken } from "@/services/users";
 import type { AppDispatch } from "@/store";
 
 export default function FavoritesSyncProvider({
@@ -27,7 +27,7 @@ export default function FavoritesSyncProvider({
       syncing = true;
 
       try {
-        const token = getStoredAuthToken();
+        const token = getValidStoredAuthToken();
 
         if (!token) {
           if (mounted) {
@@ -59,9 +59,16 @@ export default function FavoritesSyncProvider({
           dispatch(syncFavorites(remoteFavorites));
         }
       } catch (error) {
-        console.error("Error syncing favorites:", error);
+        const message = error instanceof Error ? error.message : "";
+        const isAuthError = /unauthorized|sesion|session/i.test(message);
 
-        if (!getStoredAuthToken() && mounted) {
+        if (isAuthError) {
+          clearStoredSession();
+        } else {
+          console.error("Error syncing favorites:", error);
+        }
+
+        if (mounted) {
           dispatch(syncFavorites(getGuestFavorites()));
         }
       } finally {

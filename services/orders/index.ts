@@ -1,4 +1,4 @@
-import type { Order } from "@/types/domain/orders";
+import type { Order, OrderItem, ShippingAddress } from "@/types/domain/orders";
 import {
   getStoredAuthToken,
   refreshSession,
@@ -55,6 +55,60 @@ const parseResponseOrThrow = async <T>(response: Response): Promise<T> => {
 
   return data as T;
 };
+
+const asRecord = (value: unknown): Record<string, unknown> =>
+  value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+
+const normalizeOrderItem = (value: unknown): OrderItem => {
+  const item = asRecord(value);
+
+  return {
+    productId: String(item.productId ?? ""),
+    variantName:
+      typeof item.variantName === "string" ? item.variantName : null,
+    quantity: Number(item.quantity ?? 0),
+    productName: String(item.productName ?? ""),
+    thumbnail: typeof item.thumbnail === "string" ? item.thumbnail : null,
+    unitPrice: Number(item.unitPrice ?? 0),
+    lineTotal: Number(item.lineTotal ?? 0),
+  };
+};
+
+const normalizeShippingAddress = (value: unknown): ShippingAddress => {
+  const address = asRecord(value);
+
+  return {
+    address: String(address.address ?? ""),
+    name: typeof address.name === "string" ? address.name : null,
+    phone: typeof address.phone === "string" ? address.phone : null,
+  };
+};
+
+const normalizeOrder = (value: unknown): Order => {
+  const order = asRecord(value);
+
+  return {
+    id: String(order.id ?? ""),
+    userId: String(order.userId ?? ""),
+    items: Array.isArray(order.items) ? order.items.map(normalizeOrderItem) : [],
+    totalAmount: Number(order.totalAmount ?? 0),
+    shippingAddress: normalizeShippingAddress(order.shippingAddress),
+    status: String(order.status ?? ""),
+    paymentMethod: String(order.paymentMethod ?? ""),
+    paymentReference:
+      typeof order.paymentReference === "string"
+        ? order.paymentReference
+        : null,
+    paidAt: typeof order.paidAt === "string" ? order.paidAt : null,
+    cancelledAt:
+      typeof order.cancelledAt === "string" ? order.cancelledAt : null,
+    createdAt: typeof order.createdAt === "string" ? order.createdAt : null,
+    updatedAt: typeof order.updatedAt === "string" ? order.updatedAt : null,
+  };
+};
+
+const normalizeOrders = (value: unknown): Order[] =>
+  Array.isArray(value) ? value.map(normalizeOrder) : [];
 
 const fetchWithAuthRetry = async <T>(
   requestFactory: (token: string) => Promise<T>,
@@ -113,7 +167,8 @@ export const listMyOrders = async (
       signal: options.signal,
     });
 
-    return parseResponseOrThrow<Order[]>(response);
+    const data = await parseResponseOrThrow<unknown>(response);
+    return normalizeOrders(data);
   }, options);
 };
 

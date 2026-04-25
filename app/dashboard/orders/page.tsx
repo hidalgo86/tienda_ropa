@@ -3,12 +3,15 @@
 import Link from "next/link";
 import Pagination from "@/components/Pagination";
 import {
+  getStoredAuthToken,
+  type PaginatedResult,
+} from "@/services/users";
+import {
   adminCancelOrder,
   adminPayOrder,
   listAdminOrders,
   type AdminOrder,
 } from "@/services/orders";
-import type { PaginatedResult } from "@/services/users";
 import { useCallback, useEffect, useState } from "react";
 import { MdChevronRight } from "react-icons/md";
 
@@ -46,6 +49,15 @@ const statusBadgeClass = (status: string): string => {
   }
 };
 
+const normalizeOrdersPage = (
+  response: Partial<PaginatedResult<AdminOrder>> | null | undefined,
+): PaginatedResult<AdminOrder> => ({
+  items: Array.isArray(response?.items) ? response.items : [],
+  total: Number(response?.total) || 0,
+  page: Math.max(1, Number(response?.page) || 1),
+  totalPages: Math.max(1, Number(response?.totalPages) || 1),
+});
+
 export default function DashboardOrdersPage() {
   const [ordersPage, setOrdersPage] = useState<PaginatedResult<AdminOrder>>({
     items: [],
@@ -58,18 +70,26 @@ export default function DashboardOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
+  const safeItems = Array.isArray(ordersPage?.items) ? ordersPage.items : [];
+  const safeTotalPages = Math.max(1, Number(ordersPage?.totalPages) || 1);
+  const safeTotal = Number(ordersPage?.total) || 0;
 
   const loadOrders = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
+      if (!getStoredAuthToken()) {
+        setOrdersPage(normalizeOrdersPage(null));
+        return;
+      }
+
       const response = await listAdminOrders({
         page,
         limit: 12,
         status: status || undefined,
       });
-      setOrdersPage(response);
+      setOrdersPage(normalizeOrdersPage(response));
     } catch (loadError) {
       setError(
         loadError instanceof Error
@@ -86,13 +106,29 @@ export default function DashboardOrdersPage() {
   }, [loadOrders]);
 
   useEffect(() => {
+    const handleSessionChanged = () => {
+      if (!getStoredAuthToken()) {
+        setOrdersPage(normalizeOrdersPage(null));
+        setLoading(false);
+        setError(null);
+      }
+    };
+
+    window.addEventListener("auth:session-changed", handleSessionChanged);
+
+    return () => {
+      window.removeEventListener("auth:session-changed", handleSessionChanged);
+    };
+  }, []);
+
+  useEffect(() => {
     setPage(1);
   }, [status]);
 
   const replaceOrder = (updatedOrder: AdminOrder) => {
     setOrdersPage((current) => ({
       ...current,
-      items: current.items.map((order) =>
+      items: (Array.isArray(current.items) ? current.items : []).map((order) =>
         order.id === updatedOrder.id ? updatedOrder : order,
       ),
     }));
@@ -139,7 +175,7 @@ export default function DashboardOrdersPage() {
 
         <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
           <div className="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
-            {ordersPage.total} ordenes
+            {safeTotal} ordenes
           </div>
 
           <select
@@ -164,7 +200,7 @@ export default function DashboardOrdersPage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-slate-500">
           Cargando ordenes...
         </div>
-      ) : ordersPage.items.length === 0 ? (
+      ) : safeItems.length === 0 ? (
         <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-slate-500">
           No hay ordenes para mostrar.
         </div>
@@ -186,7 +222,7 @@ export default function DashboardOrdersPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {ordersPage.items.map((order) => {
+                  {safeItems.map((order) => {
                     const isBusy = activeOrderId === order.id;
                     const isPending = order.status === "pending";
 
@@ -273,7 +309,7 @@ export default function DashboardOrdersPage() {
             </div>
 
             <div className="divide-y divide-slate-100 xl:hidden">
-              {ordersPage.items.map((order) => {
+              {safeItems.map((order) => {
                 const isBusy = activeOrderId === order.id;
                 const isPending = order.status === "pending";
 
@@ -358,7 +394,7 @@ export default function DashboardOrdersPage() {
 
           <Pagination
             currentPage={page}
-            totalPages={Math.max(1, ordersPage.totalPages)}
+            totalPages={safeTotalPages}
             onPageChange={setPage}
           />
         </>

@@ -2,19 +2,14 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useSelector } from "react-redux";
-import {
-  clearStoredSession,
-  getStoredAuthToken,
-  getStoredUser,
-} from "@/services/users";
+import { getStoredAuthToken, getStoredUser } from "@/services/users";
 import { RootState } from "@/store";
 import {
   MdFavorite,
   MdShoppingCart,
   MdLogin,
-  MdLogout,
   MdStore,
   MdHome,
   MdPerson,
@@ -33,7 +28,6 @@ const isAdminRole = (role?: string | null): boolean =>
   role?.trim().toLowerCase() === "administrador";
 
 export default function Navbar() {
-  const router = useRouter();
   const pathname = usePathname();
   const cartCount = useSelector((state: RootState) => state.cart.totalItems);
   const favoritesCount = useSelector((state: RootState) =>
@@ -88,11 +82,6 @@ export default function Navbar() {
         },
       ]
     : [];
-
-  const handleLogout = () => {
-    clearStoredSession();
-    router.push("/");
-  };
 
   const isActivePath = React.useCallback(
     (href: string) => {
@@ -172,16 +161,7 @@ export default function Navbar() {
               </>
             )}
 
-            {isAuthenticated ? (
-              <button
-                type="button"
-                onClick={handleLogout}
-                title="Logout"
-                className="text-gray-500 transition-colors hover:text-gray-700"
-              >
-                <MdLogout size={26} className="xl:h-7 xl:w-7" />
-              </button>
-            ) : (
+            {!isAuthenticated && (
               <Link href="/login" title="Login" className="group">
                 <MdLogin
                   size={26}
@@ -190,19 +170,6 @@ export default function Navbar() {
               </Link>
             )}
           </div>
-
-          {isAuthenticated && (
-            <div className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center gap-2 lg:hidden">
-              <button
-                type="button"
-                onClick={handleLogout}
-                title="Logout"
-                className="rounded-full bg-white/80 p-2 text-gray-500 shadow-sm transition-colors hover:text-gray-700"
-              >
-                <MdLogout size={24} />
-              </button>
-            </div>
-          )}
         </div>
       </nav>
 

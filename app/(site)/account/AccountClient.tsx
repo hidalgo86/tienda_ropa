@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { toast } from "sonner";
-import { MdReceiptLong } from "react-icons/md";
+import { MdLogout, MdReceiptLong } from "react-icons/md";
 import {
   changePassword,
   clearStoredSession,
@@ -76,11 +76,12 @@ export default function AccountClient() {
         const adminUser = isAdminRole(user.role);
 
         const orderList = adminUser ? [] : await listMyOrders({ token });
+        const safeOrderList = Array.isArray(orderList) ? orderList : [];
 
         setUserInfo(user);
-        setOrdersCount(orderList.length);
+        setOrdersCount(safeOrderList.length);
         setPendingOrdersCount(
-          orderList.filter((order) => order.status === "pending").length,
+          safeOrderList.filter((order) => order.status === "pending").length,
         );
         setProfileForm({
           name: user.name ?? "",
@@ -110,9 +111,11 @@ export default function AccountClient() {
 
     try {
       const orderList = await listMyOrders({ token });
-      setOrdersCount(orderList.length);
+      const safeOrderList = Array.isArray(orderList) ? orderList : [];
+
+      setOrdersCount(safeOrderList.length);
       setPendingOrdersCount(
-        orderList.filter((order) => order.status === "pending").length,
+        safeOrderList.filter((order) => order.status === "pending").length,
       );
     } catch (error) {
       const message =
@@ -225,6 +228,17 @@ export default function AccountClient() {
     }
   };
 
+  const handleLogout = () => {
+    const shouldLogout = window.confirm("Quieres cerrar tu sesion?");
+
+    if (!shouldLogout) {
+      return;
+    }
+
+    clearStoredSession();
+    router.push("/");
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -310,6 +324,16 @@ export default function AccountClient() {
                 <div>
                   <span className="font-medium text-gray-900">Email:</span>{" "}
                   {userInfo.email}
+                </div>
+                <div className="border-t border-gray-100 pt-4">
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 transition hover:text-red-600"
+                  >
+                    <MdLogout size={18} />
+                    Cerrar sesion
+                  </button>
                 </div>
               </div>
             </div>

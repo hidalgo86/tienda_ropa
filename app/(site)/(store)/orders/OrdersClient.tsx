@@ -63,7 +63,7 @@ export default function OrdersClient() {
 
     try {
       const orderList = await listMyOrders({ token });
-      setOrders(orderList);
+      setOrders(Array.isArray(orderList) ? orderList : []);
     } catch (error) {
       const message =
         error instanceof Error
@@ -237,7 +237,7 @@ export default function OrdersClient() {
                   </div>
 
                   <div className="mt-5 space-y-3">
-                    {order.items.map((item, index) => (
+                    {(Array.isArray(order.items) ? order.items : []).map((item, index) => (
                       <div
                         key={`${order.id}-${item.productId}-${index}`}
                         className="flex flex-col gap-2 rounded-lg bg-gray-50 px-4 py-3 min-[440px]:flex-row min-[440px]:items-center min-[440px]:justify-between"

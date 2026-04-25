@@ -4,7 +4,11 @@ export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
 import { UpdateProductRouteError } from "./updateProduct.error";
 import { buildUpdateProductInput } from "./updateProductInput";
-import { updateProductInBackend } from "./updateProductMutation";
+import {
+  deleteProductInBackend,
+  restoreProductInBackend,
+  updateProductInBackend,
+} from "./updateProductMutation";
 
 export async function PATCH(
   req: NextRequest,
@@ -17,11 +21,13 @@ export async function PATCH(
 
     const body = await req.json();
     const input = buildUpdateProductInput(body);
-    const product = await updateProductInBackend(
-      id,
-      input,
-      req.headers.get("authorization"),
-    );
+    const authorization = req.headers.get("authorization");
+    const product =
+      input.state === "ELIMINADO"
+        ? await deleteProductInBackend(id, authorization)
+        : input.state === "ACTIVO"
+          ? await restoreProductInBackend(id, authorization)
+          : await updateProductInBackend(id, input, authorization);
 
     return NextResponse.json(product);
   } catch (error: unknown) {

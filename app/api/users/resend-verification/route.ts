@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
     >({
       query: resendVerificationMutation,
       variables: { input: { userId } },
+      request: req,
     });
 
     return NextResponse.json(data.resendVerification);

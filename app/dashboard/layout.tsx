@@ -38,6 +38,7 @@ function DashboardLayoutContent({
   const pathname = usePathname();
   const [isAllowed, setIsAllowed] = React.useState<boolean | null>(null);
   const hasShownSessionExpiredRef = React.useRef(false);
+  const isRedirectingRef = React.useRef(false);
 
   const sidebarItems: SidebarItem[] = [
     {
@@ -45,6 +46,12 @@ function DashboardLayoutContent({
       alt: "products",
       label: "Productos",
       href: "/dashboard/products",
+    },
+    {
+      src: "/dashboard/productos.png",
+      alt: "categories",
+      label: "Categorias",
+      href: "/dashboard/categories",
     },
     {
       src: "/dashboard/clientes.png",
@@ -73,6 +80,7 @@ function DashboardLayoutContent({
   ];
 
   const activeOption = React.useMemo(() => {
+    if (pathname.includes("/dashboard/categories")) return "categories";
     if (pathname.includes("/dashboard/clients")) return "clients";
     if (pathname.includes("/dashboard/orders")) return "orders";
     if (pathname.includes("/dashboard/banners")) return "banners";
@@ -82,7 +90,14 @@ function DashboardLayoutContent({
   React.useEffect(() => {
     let isMounted = true;
 
-    const redirectToHome = (showToast: boolean) => {
+    const redirectToLogin = (showToast: boolean) => {
+      if (isRedirectingRef.current) return;
+      isRedirectingRef.current = true;
+
+      if (isMounted) {
+        setIsAllowed(false);
+      }
+
       clearStoredSession();
 
       if (showToast && !hasShownSessionExpiredRef.current) {
@@ -90,9 +105,9 @@ function DashboardLayoutContent({
         hasShownSessionExpiredRef.current = true;
       }
 
-      if (!isMounted) return;
-      setIsAllowed(false);
-      router.replace("/");
+      if (isMounted) {
+        router.replace(`/login?redirect=${encodeURIComponent(pathname)}`);
+      }
     };
 
     const validateSession = async (showToastOnExpire: boolean) => {
@@ -101,7 +116,7 @@ function DashboardLayoutContent({
       const isAdmin = Boolean(token) && isAdminRole(user?.role);
 
       if (!isAdmin) {
-        redirectToHome(false);
+        redirectToLogin(false);
         return;
       }
 
@@ -111,14 +126,14 @@ function DashboardLayoutContent({
         if (!isMounted) return;
 
         if (!isAdminRole(currentUser?.role)) {
-          redirectToHome(false);
+          redirectToLogin(false);
           return;
         }
 
         hasShownSessionExpiredRef.current = false;
         setIsAllowed(true);
       } catch {
-        redirectToHome(showToastOnExpire);
+        redirectToLogin(showToastOnExpire);
       }
     };
 
@@ -130,16 +145,28 @@ function DashboardLayoutContent({
       void validateSession(true);
     };
 
+    const handleStorage = (event: StorageEvent) => {
+      if (
+        event.key === "authToken" ||
+        event.key === "refreshToken" ||
+        event.key === "userData"
+      ) {
+        void validateSession(false);
+      }
+    };
+
     void validateSession(false);
     window.addEventListener("auth:session-changed", handleSessionChanged);
     window.addEventListener("focus", handleFocus);
+    window.addEventListener("storage", handleStorage);
 
     return () => {
       isMounted = false;
       window.removeEventListener("auth:session-changed", handleSessionChanged);
       window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("storage", handleStorage);
     };
-  }, [router]);
+  }, [pathname, router]);
 
   if (isAllowed !== true) {
     return null;

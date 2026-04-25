@@ -18,7 +18,8 @@ export const getGuestFavorites = (): Product[] => {
 
   try {
     const savedFavorites = window.localStorage.getItem(GUEST_FAVORITES_KEY);
-    return savedFavorites ? (JSON.parse(savedFavorites) as Product[]) : [];
+    const parsedFavorites = savedFavorites ? JSON.parse(savedFavorites) : [];
+    return Array.isArray(parsedFavorites) ? (parsedFavorites as Product[]) : [];
   } catch (error) {
     console.error("Error loading guest favorites from localStorage:", error);
     return [];
@@ -87,7 +88,7 @@ const favoriteSlice = createSlice({
       persistGuestFavorites(state.items);
     },
     syncFavorites: (state, action: PayloadAction<Product[]>) => {
-      state.items = action.payload;
+      state.items = Array.isArray(action.payload) ? action.payload : [];
     },
   },
 });

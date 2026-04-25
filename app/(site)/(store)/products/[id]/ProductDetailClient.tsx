@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import Image from "next/image";
@@ -52,7 +52,7 @@ export default function ProductDetailClient({
   const isAdminMode = mode === "admin";
   const isRopa = hasProductVariants(producto) || Boolean(producto.genre);
   const { options } = useCategories();
-  const { addProductToCart } = useCartActions();
+  const { addProductToCart, changeCartItemQuantity } = useCartActions();
   const { toggleProductFavorite } = useFavoriteActions();
   const categoryOptions = options.length
     ? options
@@ -67,6 +67,7 @@ export default function ProductDetailClient({
   const isFavorite = useSelector((state: RootState) =>
     state.favorites.items.some((item) => item.id === producto.id),
   );
+  const cartItems = useSelector((state: RootState) => state.cart.items);
 
   useEffect(() => {
     setSelectedImageIndex(0);
@@ -85,6 +86,17 @@ export default function ProductDetailClient({
   const currentVariant = isRopa
     ? findVariantBySelection(variants, selectedSize)
     : null;
+  const currentCartItem = useMemo(
+    () =>
+      cartItems.find(
+        (item) =>
+          item.id === producto.id &&
+          item.selectedSize === (isRopa ? selectedSize : undefined),
+      ) || null,
+    [cartItems, isRopa, producto.id, selectedSize],
+  );
+  const cartQuantity = currentCartItem?.quantity ?? 0;
+  const displayQuantity = cartQuantity || quantity;
   const displayPrice = isRopa
     ? (currentVariant?.price ??
       (variants.length > 0
@@ -156,6 +168,10 @@ export default function ProductDetailClient({
     },
   ];
 
+  useEffect(() => {
+    setQuantity(cartQuantity || 1);
+  }, [cartQuantity, selectedSize]);
+
   const handleAddToCart = () => {
     if (isRopa && !selectedSize) {
       alert("Por favor selecciona una talla");
@@ -170,11 +186,13 @@ export default function ProductDetailClient({
       return;
     }
 
-    void addProductToCart({
-      product: producto,
-      quantity,
-      selectedSize: isRopa ? selectedSize : undefined,
-    });
+    if (!currentCartItem) {
+      void addProductToCart({
+        product: producto,
+        quantity: displayQuantity,
+        selectedSize: isRopa ? selectedSize : undefined,
+      });
+    }
 
     setShowAddedToCart(true);
     setTimeout(() => setShowAddedToCart(false), 2000);
@@ -245,13 +263,41 @@ export default function ProductDetailClient({
     console.log("Compra directa:", {
       producto: producto.id,
       size: isRopa ? selectedSize : null,
-      quantity,
+      quantity: displayQuantity,
     });
     alert(
       isRopa
-        ? `Redirigiendo a checkout (Talla: ${selectedSize}, Cantidad: ${quantity})`
-        : `Redirigiendo a checkout (Cantidad: ${quantity})`,
+        ? `Redirigiendo a checkout (Talla: ${selectedSize}, Cantidad: ${displayQuantity})`
+        : `Redirigiendo a checkout (Cantidad: ${displayQuantity})`,
     );
+  };
+
+  const handleDecreaseQuantity = () => {
+    if (currentCartItem) {
+      void changeCartItemQuantity({
+        productId: currentCartItem.id,
+        quantity: currentCartItem.quantity - 1,
+        selectedSize: currentCartItem.selectedSize,
+        selectedColor: currentCartItem.selectedColor,
+      });
+      return;
+    }
+
+    setQuantity(Math.max(1, quantity - 1));
+  };
+
+  const handleIncreaseQuantity = () => {
+    if (currentCartItem) {
+      void changeCartItemQuantity({
+        productId: currentCartItem.id,
+        quantity: Math.min(availableStock, currentCartItem.quantity + 1),
+        selectedSize: currentCartItem.selectedSize,
+        selectedColor: currentCartItem.selectedColor,
+      });
+      return;
+    }
+
+    setQuantity(Math.min(availableStock, quantity + 1));
   };
 
   return (
@@ -599,22 +645,25 @@ export default function ProductDetailClient({
                     <h3 className="text-lg font-semibold text-gray-900 mb-3">
                       Cantidad
                     </h3>
+                    {cartQuantity > 0 && (
+                      <p className="mb-3 text-sm font-medium text-emerald-700">
+                        Ya tienes {cartQuantity} en el carrito.
+                      </p>
+                    )}
                     <div className="flex items-center gap-3">
                       <button
-                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        onClick={handleDecreaseQuantity}
                         className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                        disabled={quantity <= 1}
+                        disabled={!currentCartItem && quantity <= 1}
                       >
                         <MdRemove size={18} />
                       </button>
                       <span className="w-16 text-center font-medium">
-                        {quantity}
+                        {displayQuantity}
                       </span>
                       <button
-                        onClick={() =>
-                          setQuantity(Math.min(availableStock, quantity + 1))
-                        }
-                        disabled={quantity >= availableStock}
+                        onClick={handleIncreaseQuantity}
+                        disabled={displayQuantity >= availableStock}
                         className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
                       >
                         <MdAdd size={18} />
@@ -646,7 +695,9 @@ export default function ProductDetailClient({
                       <div className="flex items-center gap-2 text-green-800">
                         <MdShoppingCart size={20} />
                         <span className="font-medium">
-                          Producto agregado al carrito
+                          {currentCartItem
+                            ? "Producto ya esta en el carrito"
+                            : "Producto agregado al carrito"}
                         </span>
                       </div>
                     </div>

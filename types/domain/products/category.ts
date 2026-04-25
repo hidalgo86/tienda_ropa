@@ -14,6 +14,7 @@ export interface Category {
   name: string;
   slug: string;
   parent?: string;
+  parentId?: string;
 }
 
 export interface ProductCategoryOption {
@@ -78,12 +79,16 @@ export const buildProductCategoryOptions = (
         Boolean(category?.name?.trim()) &&
         Boolean(category?.slug?.trim()),
     )
-    .map((category) => ({
-      value: category.slug,
-      label: category.name,
-      categoryId: category.id,
-      supportsGenre: normalizeCategoryLookupValue(category.slug) === "ropa",
-    }));
+    .map((category) => {
+      const normalizedSlug = normalizeCategoryLookupValue(category.slug);
+      return {
+        value: category.slug,
+        label: category.name,
+        categoryId: category.id,
+        supportsGenre:
+          normalizedSlug === "ropa" || normalizedSlug.includes("ropa"),
+      };
+    });
 };
 
 const getCategoryOptionsPool = (

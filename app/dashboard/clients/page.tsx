@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Pagination from "@/components/Pagination";
 import {
+  getStoredAuthToken,
   listAdminUsers,
   updateAdminUserStatus,
   type PaginatedResult,
@@ -73,6 +74,11 @@ export default function DashboardClientsPage() {
     setError(null);
 
     try {
+      if (!getStoredAuthToken()) {
+        setUsersPage(normalizeUsersPage(null));
+        return;
+      }
+
       const response = await listAdminUsers({
         page,
         limit: 20,
@@ -94,6 +100,22 @@ export default function DashboardClientsPage() {
   useEffect(() => {
     void loadUsers();
   }, [loadUsers]);
+
+  useEffect(() => {
+    const handleSessionChanged = () => {
+      if (!getStoredAuthToken()) {
+        setUsersPage(normalizeUsersPage(null));
+        setLoading(false);
+        setError(null);
+      }
+    };
+
+    window.addEventListener("auth:session-changed", handleSessionChanged);
+
+    return () => {
+      window.removeEventListener("auth:session-changed", handleSessionChanged);
+    };
+  }, []);
 
   useEffect(() => {
     setPage(1);

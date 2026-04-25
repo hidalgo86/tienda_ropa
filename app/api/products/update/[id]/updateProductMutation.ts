@@ -77,3 +77,81 @@ export const updateProductInBackend = async (
 
   return normalizeProduct(backendData.data.updateProduct);
 };
+
+const mutateProductStateInBackend = async (
+  mutationName: "deleteProduct" | "restoreProduct",
+  id: string,
+  authorization?: string | null,
+): Promise<Product> => {
+  const apiUrl = process.env.API_URL?.trim();
+  if (!apiUrl) {
+    throw new UpdateProductRouteError(
+      "Falta API_URL en variables de entorno",
+      500,
+    );
+  }
+
+  const backendRes = await fetch(`${apiUrl}/graphql`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(authorization ? { Authorization: authorization } : {}),
+    },
+    body: JSON.stringify({
+      query: `
+        mutation ChangeProductState($id: String!) {
+          ${mutationName}(id: $id) {
+            id
+            sku
+            slug
+            categoryId
+            name
+            description
+            brand
+            thumbnail
+            genre
+            images { url publicId }
+            variants { name stock price image }
+            stock
+            price
+            state
+            availability
+            stats { views favorites cartAdds purchases searches }
+            createdAt
+            updatedAt
+          }
+        }
+      `,
+      variables: { id },
+    }),
+  });
+
+  const backendData = (await backendRes.json()) as {
+    data?: Record<typeof mutationName, unknown>;
+    errors?: GraphqlError[];
+  };
+
+  if (!backendRes.ok || backendData.errors) {
+    throw new UpdateProductRouteError(
+      getGraphqlErrorMessage(backendData.errors),
+      backendRes.status || 500,
+    );
+  }
+
+  const product = backendData.data?.[mutationName];
+  if (!product) {
+    throw new UpdateProductRouteError("Respuesta invalida del backend", 500);
+  }
+
+  return normalizeProduct(product);
+};
+
+export const deleteProductInBackend = async (
+  id: string,
+  authorization?: string | null,
+): Promise<Product> => mutateProductStateInBackend("deleteProduct", id, authorization);
+
+export const restoreProductInBackend = async (
+  id: string,
+  authorization?: string | null,
+): Promise<Product> => mutateProductStateInBackend("restoreProduct", id, authorization);

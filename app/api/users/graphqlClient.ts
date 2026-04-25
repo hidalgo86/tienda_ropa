@@ -61,7 +61,7 @@ export const executeUsersGraphql = async <TData, TVariables = undefined>({
   if (!response.ok || payload.errors?.length) {
     throw new UserApiRouteError(
       getGraphqlErrorMessage(payload.errors),
-      response.status || 500,
+      response.ok ? 400 : response.status || 500,
     );
   }
 

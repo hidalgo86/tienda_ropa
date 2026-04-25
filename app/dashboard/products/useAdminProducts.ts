@@ -9,6 +9,7 @@ import {
   ProductState,
 } from "@/types/domain/products";
 import { listProducts } from "@/services/products";
+import { getStoredAuthToken } from "@/services/users";
 
 interface UseAdminProductsParams {
   filter: AdminProductFilter;
@@ -53,6 +54,13 @@ export const useAdminProducts = ({
       setError(null);
 
       try {
+        if (!getStoredAuthToken()) {
+          setProducts([]);
+          setTotalPages(1);
+          setLoading(false);
+          return;
+        }
+
         const state =
           filter === ProductState.ELIMINADO
             ? ProductState.ELIMINADO
@@ -78,8 +86,8 @@ export const useAdminProducts = ({
           },
         );
 
-        setProducts((data && data.items) || []);
-        setTotalPages((data && data.totalPages) || 1);
+        setProducts(Array.isArray(data?.items) ? data.items : []);
+        setTotalPages(Math.max(1, Number(data?.totalPages) || 1));
         setLoading(false);
       } catch (err) {
         // Si se abortó por cambio de filtros/página, no tratamos como error de negocio
@@ -103,6 +111,24 @@ export const useAdminProducts = ({
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
+
+  useEffect(() => {
+    const handleSessionChanged = () => {
+      if (!getStoredAuthToken()) {
+        abortRef.current?.abort();
+        setProducts([]);
+        setTotalPages(1);
+        setLoading(false);
+        setError(null);
+      }
+    };
+
+    window.addEventListener("auth:session-changed", handleSessionChanged);
+
+    return () => {
+      window.removeEventListener("auth:session-changed", handleSessionChanged);
+    };
+  }, []);
 
   useEffect(() => {
     return () => {

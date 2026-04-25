@@ -11,14 +11,119 @@ import {
   removeFromCart,
   syncCart,
   updateQuantity,
+  type CartItem,
 } from "@/store/slices/cartSlice";
 import { clearRemoteCart, upsertCartItem } from "@/services/cart";
-import { getStoredAuthToken } from "@/services/users";
+import {
+  clearStoredSession,
+  getStoredAuthToken,
+  getValidStoredAuthToken,
+} from "@/services/users";
 
 type CartIdentity = {
   productId: string;
   selectedSize?: string;
   selectedColor?: string;
+};
+
+const isSessionError = (error: unknown): boolean => {
+  const message = error instanceof Error ? error.message.toLowerCase() : "";
+
+  return (
+    message.includes("token") ||
+    message.includes("jwt") ||
+    message.includes("unauthorized") ||
+    message.includes("unauthoriz") ||
+    message.includes("sesion") ||
+    message.includes("session")
+  );
+};
+
+const getCartItemKey = (item: CartIdentity): string =>
+  `${item.productId}::${item.selectedSize ?? ""}::${item.selectedColor ?? ""}`;
+
+const buildOptimisticCartItems = (
+  currentItems: CartItem[],
+  input: {
+    product: Product;
+    quantity?: number;
+    selectedSize?: string;
+    selectedColor?: string;
+  },
+): CartItem[] => {
+  const quantityToAdd = input.quantity ?? 1;
+  const nextItems = [...currentItems];
+  const itemIndex = nextItems.findIndex(
+    (item) =>
+      item.id === input.product.id &&
+      item.selectedSize === input.selectedSize &&
+      item.selectedColor === input.selectedColor,
+  );
+
+  if (itemIndex >= 0) {
+    nextItems[itemIndex] = {
+      ...nextItems[itemIndex],
+      quantity: nextItems[itemIndex].quantity + quantityToAdd,
+    };
+    return nextItems;
+  }
+
+  return [
+    ...nextItems,
+    {
+      ...input.product,
+      quantity: quantityToAdd,
+      selectedSize: input.selectedSize,
+      selectedColor: input.selectedColor,
+    },
+  ];
+};
+
+const mergeCartItems = (
+  remoteItems: CartItem[],
+  fallbackItems: CartItem[],
+): CartItem[] => {
+  const mergedItems = new Map<string, CartItem>();
+
+  for (const item of fallbackItems) {
+    mergedItems.set(
+      getCartItemKey({
+        productId: item.id,
+        selectedSize: item.selectedSize,
+        selectedColor: item.selectedColor,
+      }),
+      item,
+    );
+  }
+
+  for (const item of remoteItems) {
+    mergedItems.set(
+      getCartItemKey({
+        productId: item.id,
+        selectedSize: item.selectedSize,
+        selectedColor: item.selectedColor,
+      }),
+      item,
+    );
+  }
+
+  return Array.from(mergedItems.values());
+};
+
+const updateCartItemsQuantity = (
+  currentItems: CartItem[],
+  input: CartIdentity & { quantity: number },
+): CartItem[] => {
+  return currentItems
+    .map((item) => {
+      const isTargetItem =
+        item.id === input.productId &&
+        item.selectedSize === input.selectedSize &&
+        item.selectedColor === input.selectedColor;
+
+      return isTargetItem ? { ...item, quantity: input.quantity } : item;
+    })
+    .filter((item) => item.quantity > 0);
 };
 
 export const useCartActions = () => {
@@ -27,8 +132,8 @@ export const useCartActions = () => {
 
   const persistRemoteQuantity = React.useCallback(
     async (productId: string, quantity: number, selectedSize?: string) => {
-      const token = getStoredAuthToken();
-      if (!token) return false;
+      const token = getValidStoredAuthToken();
+      if (!token) return { ok: false, sessionExpired: false, items: [] };
 
       try {
         const nextCart = await upsertCartItem(
@@ -39,18 +144,28 @@ export const useCartActions = () => {
           },
           { token },
         );
-        dispatch(syncCart(nextCart));
-        return true;
+        return {
+          ok: true,
+          sessionExpired: false,
+          items: Array.isArray(nextCart) ? nextCart : [],
+        };
       } catch (error) {
         const message =
           error instanceof Error
             ? error.message
             : "No se pudo actualizar el carrito";
+        const sessionExpired = isSessionError(error);
+
+        if (sessionExpired) {
+          clearStoredSession();
+          return { ok: false, sessionExpired: true, items: [] };
+        }
+
         toast.error(message);
-        return true;
+        return { ok: false, sessionExpired: false, items: [] };
       }
     },
-    [dispatch],
+    [],
   );
 
   const addProductToCart = React.useCallback(
@@ -60,11 +175,14 @@ export const useCartActions = () => {
       selectedSize?: string;
       selectedColor?: string;
     }) => {
-      const token = getStoredAuthToken();
+      const token = getValidStoredAuthToken();
       if (!token) {
         dispatch(addToCart(input));
         return;
       }
+
+      const optimisticItems = buildOptimisticCartItems(cart.items, input);
+      dispatch(syncCart(optimisticItems));
 
       const existingItem = cart.items.find(
         (item) =>
@@ -73,11 +191,20 @@ export const useCartActions = () => {
           item.selectedColor === input.selectedColor,
       );
 
-      await persistRemoteQuantity(
+      const result = await persistRemoteQuantity(
         input.product.id,
         (existingItem?.quantity ?? 0) + (input.quantity ?? 1),
         input.selectedSize,
       );
+
+      if (!result.ok) {
+        if (result.sessionExpired) {
+          toast.info("Tu sesion expiro. Agregamos el producto al carrito local.");
+        }
+        return;
+      }
+
+      dispatch(syncCart(mergeCartItems(result.items, optimisticItems)));
     },
     [cart.items, dispatch, persistRemoteQuantity],
   );
@@ -89,7 +216,7 @@ export const useCartActions = () => {
       selectedSize,
       selectedColor,
     }: CartIdentity & { quantity: number }) => {
-      const token = getStoredAuthToken();
+      const token = getValidStoredAuthToken();
       if (!token) {
         dispatch(
           updateQuantity({ productId, quantity, selectedSize, selectedColor }),
@@ -97,22 +224,64 @@ export const useCartActions = () => {
         return;
       }
 
-      await persistRemoteQuantity(productId, quantity, selectedSize);
+      const optimisticItems = updateCartItemsQuantity(cart.items, {
+        productId,
+        quantity,
+        selectedSize,
+        selectedColor,
+      });
+      dispatch(
+        updateQuantity({ productId, quantity, selectedSize, selectedColor }),
+      );
+
+      const result = await persistRemoteQuantity(productId, quantity, selectedSize);
+
+      if (result.ok) {
+        dispatch(syncCart(mergeCartItems(result.items, optimisticItems)));
+        return;
+      }
+
+      if (result.sessionExpired) {
+        dispatch(
+          updateQuantity({ productId, quantity, selectedSize, selectedColor }),
+        );
+        toast.info("Tu sesion expiro. Actualizamos el carrito local.");
+      }
     },
-    [dispatch, persistRemoteQuantity],
+    [cart.items, dispatch, persistRemoteQuantity],
   );
 
   const removeCartItem = React.useCallback(
     async ({ productId, selectedSize, selectedColor }: CartIdentity) => {
-      const token = getStoredAuthToken();
+      const token = getValidStoredAuthToken();
       if (!token) {
         dispatch(removeFromCart({ productId, selectedSize, selectedColor }));
         return;
       }
 
-      await persistRemoteQuantity(productId, 0, selectedSize);
+      const optimisticItems = cart.items.filter(
+        (item) =>
+          !(
+            item.id === productId &&
+            item.selectedSize === selectedSize &&
+            item.selectedColor === selectedColor
+          ),
+      );
+      dispatch(removeFromCart({ productId, selectedSize, selectedColor }));
+
+      const result = await persistRemoteQuantity(productId, 0, selectedSize);
+
+      if (result.ok) {
+        dispatch(syncCart(mergeCartItems(result.items, optimisticItems)));
+        return;
+      }
+
+      if (result.sessionExpired) {
+        dispatch(removeFromCart({ productId, selectedSize, selectedColor }));
+        toast.info("Tu sesion expiro. Actualizamos el carrito local.");
+      }
     },
-    [dispatch, persistRemoteQuantity],
+    [cart.items, dispatch, persistRemoteQuantity],
   );
 
   const clearAllCart = React.useCallback(async () => {

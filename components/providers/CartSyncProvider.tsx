@@ -4,7 +4,7 @@ import React from "react";
 import { useDispatch } from "react-redux";
 import { clearGuestCart, getGuestCart, syncCart } from "@/store/slices/cartSlice";
 import { clearRemoteCart, listCartItems, upsertCartItem } from "@/services/cart";
-import { getStoredAuthToken } from "@/services/users";
+import { clearStoredSession, getValidStoredAuthToken } from "@/services/users";
 import type { AppDispatch } from "@/store";
 
 export default function CartSyncProvider({
@@ -23,7 +23,7 @@ export default function CartSyncProvider({
       syncing = true;
 
       try {
-        const token = getStoredAuthToken();
+        const token = getValidStoredAuthToken();
 
         if (!token) {
           if (mounted) {
@@ -79,9 +79,16 @@ export default function CartSyncProvider({
           dispatch(syncCart(remoteCart));
         }
       } catch (error) {
-        console.error("Error syncing cart:", error);
+        const message = error instanceof Error ? error.message : "";
+        const isAuthError = /unauthorized|sesion|session/i.test(message);
 
-        if (!getStoredAuthToken() && mounted) {
+        if (isAuthError) {
+          clearStoredSession();
+        } else {
+          console.error("Error syncing cart:", error);
+        }
+
+        if (mounted) {
           dispatch(syncCart(getGuestCart()));
         }
       } finally {
