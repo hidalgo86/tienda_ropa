@@ -6,6 +6,8 @@ import { clearGuestCart, getGuestCart, syncCart } from "@/store/slices/cartSlice
 import { clearRemoteCart, listCartItems, upsertCartItem } from "@/services/cart";
 import { clearStoredSession, getValidStoredAuthToken } from "@/services/users";
 import type { AppDispatch, RootState } from "@/store";
+import { findVariantBySelection, getProductStock } from "@/types/domain/products";
+import { toast } from "sonner";
 
 export default function CartSyncProvider({
   children,
@@ -70,10 +72,32 @@ export default function CartSyncProvider({
           for (const item of guestCart) {
             const key = `${item.id}::${item.selectedSize ?? ""}`;
             const current = mergedEntries.get(key);
+            const requestedQuantity = (current?.quantity ?? 0) + item.quantity;
+            const availableStock = item.selectedSize
+              ? Math.max(
+                  0,
+                  Number(
+                    findVariantBySelection(item.variants, item.selectedSize)
+                      ?.stock ?? 0,
+                  ),
+                )
+              : getProductStock(item);
+            const quantity = Math.min(requestedQuantity, availableStock);
+
+            if (quantity <= 0) {
+              continue;
+            }
+
+            if (quantity < requestedQuantity) {
+              toast.warning(
+                `Ajustamos "${item.name}" al stock disponible (${availableStock}).`,
+              );
+            }
+
             mergedEntries.set(key, {
               productId: item.id,
               variantName: item.selectedSize,
-              quantity: (current?.quantity ?? 0) + item.quantity,
+              quantity,
             });
           }
 

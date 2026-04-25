@@ -3,7 +3,11 @@
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
-import type { Product } from "@/types/domain/products";
+import {
+  findVariantBySelection,
+  getProductStock,
+  type Product,
+} from "@/types/domain/products";
 import type { AppDispatch, RootState } from "@/store";
 import {
   addToCart,
@@ -41,6 +45,20 @@ const isSessionError = (error: unknown): boolean => {
 
 const getCartItemKey = (item: CartIdentity): string =>
   `${item.productId}::${item.selectedSize ?? ""}::${item.selectedColor ?? ""}`;
+
+const getAvailableStockForSelection = (
+  product: Product,
+  selectedSize?: string,
+): number => {
+  if (selectedSize) {
+    return Math.max(
+      0,
+      Number(findVariantBySelection(product.variants, selectedSize)?.stock ?? 0),
+    );
+  }
+
+  return getProductStock(product);
+};
 
 const buildOptimisticCartItems = (
   currentItems: CartItem[],
@@ -175,25 +193,46 @@ export const useCartActions = () => {
       selectedSize?: string;
       selectedColor?: string;
     }) => {
-      const token = getValidStoredAuthToken();
-      if (!token) {
-        dispatch(addToCart(input));
-        return;
-      }
-
-      const optimisticItems = buildOptimisticCartItems(cart.items, input);
-      dispatch(syncCart(optimisticItems));
-
+      const requestedQuantity = input.quantity ?? 1;
       const existingItem = cart.items.find(
         (item) =>
           item.id === input.product.id &&
           item.selectedSize === input.selectedSize &&
           item.selectedColor === input.selectedColor,
       );
+      const availableStock = getAvailableStockForSelection(
+        input.product,
+        input.selectedSize,
+      );
+      const nextQuantity = (existingItem?.quantity ?? 0) + requestedQuantity;
+
+      if (availableStock <= 0) {
+        toast.error("Este producto no tiene stock disponible.");
+        return;
+      }
+
+      if (nextQuantity > availableStock) {
+        toast.error(
+          `Solo hay ${availableStock} unidad${availableStock === 1 ? "" : "es"} disponible${availableStock === 1 ? "" : "s"}.`,
+        );
+        return;
+      }
+
+      const token = getValidStoredAuthToken();
+      if (!token) {
+        dispatch(addToCart({ ...input, quantity: requestedQuantity }));
+        return;
+      }
+
+      const optimisticItems = buildOptimisticCartItems(cart.items, {
+        ...input,
+        quantity: requestedQuantity,
+      });
+      dispatch(syncCart(optimisticItems));
 
       const result = await persistRemoteQuantity(
         input.product.id,
-        (existingItem?.quantity ?? 0) + (input.quantity ?? 1),
+        nextQuantity,
         input.selectedSize,
       );
 
@@ -216,6 +255,27 @@ export const useCartActions = () => {
       selectedSize,
       selectedColor,
     }: CartIdentity & { quantity: number }) => {
+      const existingItem = cart.items.find(
+        (item) =>
+          item.id === productId &&
+          item.selectedSize === selectedSize &&
+          item.selectedColor === selectedColor,
+      );
+
+      if (quantity > 0 && existingItem) {
+        const availableStock = getAvailableStockForSelection(
+          existingItem,
+          selectedSize,
+        );
+
+        if (quantity > availableStock) {
+          toast.error(
+            `Solo hay ${availableStock} unidad${availableStock === 1 ? "" : "es"} disponible${availableStock === 1 ? "" : "s"}.`,
+          );
+          return;
+        }
+      }
+
       const token = getValidStoredAuthToken();
       if (!token) {
         dispatch(
