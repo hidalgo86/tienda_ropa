@@ -1,11 +1,11 @@
 "use client";
 
 import React from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { clearGuestCart, getGuestCart, syncCart } from "@/store/slices/cartSlice";
 import { clearRemoteCart, listCartItems, upsertCartItem } from "@/services/cart";
 import { clearStoredSession, getValidStoredAuthToken } from "@/services/users";
-import type { AppDispatch } from "@/store";
+import type { AppDispatch, RootState } from "@/store";
 
 export default function CartSyncProvider({
   children,
@@ -13,6 +13,13 @@ export default function CartSyncProvider({
   children: React.ReactNode;
 }) {
   const dispatch = useDispatch<AppDispatch>();
+  const cartItems = useSelector((state: RootState) => state.cart.items);
+  const cartItemsRef = React.useRef(cartItems);
+  const previousTokenRef = React.useRef<string | null>(null);
+
+  React.useEffect(() => {
+    cartItemsRef.current = cartItems;
+  }, [cartItems]);
 
   React.useEffect(() => {
     let mounted = true;
@@ -24,15 +31,27 @@ export default function CartSyncProvider({
 
       try {
         const token = getValidStoredAuthToken();
+        const isLoginTransition = Boolean(token) && !previousTokenRef.current;
 
         if (!token) {
+          previousTokenRef.current = null;
           if (mounted) {
             dispatch(syncCart(getGuestCart()));
           }
           return;
         }
 
-        const guestCart = getGuestCart();
+        const localGuestCart = getGuestCart();
+        const guestCartByKey = new Map(
+          [
+            ...localGuestCart,
+            ...(isLoginTransition ? cartItemsRef.current : []),
+          ].map((item) => [
+            `${item.id}::${item.selectedSize ?? ""}::${item.selectedColor ?? ""}`,
+            item,
+          ]),
+        );
+        const guestCart = Array.from(guestCartByKey.values());
         let remoteCart = await listCartItems({ token });
         remoteCart = Array.isArray(remoteCart) ? remoteCart : [];
 
@@ -78,11 +97,13 @@ export default function CartSyncProvider({
         if (mounted) {
           dispatch(syncCart(remoteCart));
         }
+        previousTokenRef.current = token;
       } catch (error) {
         const message = error instanceof Error ? error.message : "";
         const isAuthError = /unauthorized|sesion|session/i.test(message);
 
         if (isAuthError) {
+          previousTokenRef.current = null;
           clearStoredSession();
         } else {
           console.error("Error syncing cart:", error);
