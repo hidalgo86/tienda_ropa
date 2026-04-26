@@ -260,11 +260,6 @@ export default function ProductDetailClient({
       return;
     }
 
-    console.log("Compra directa:", {
-      producto: producto.id,
-      size: isRopa ? selectedSize : null,
-      quantity: displayQuantity,
-    });
     alert(
       isRopa
         ? `Redirigiendo a checkout (Talla: ${selectedSize}, Cantidad: ${displayQuantity})`
