@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeUsersGraphql } from "../graphqlClient";
 import { UserApiRouteError } from "../userApi.error";
+import { jsonError, setAccessCookie, setRefreshCookie } from "../../_utils/security";
+
+const COOKIE_SESSION_MARKER = "__cookie_session__";
 
 const loginMutation = `
   mutation Login($input: LoginInput!) {
@@ -75,19 +78,22 @@ export async function POST(req: NextRequest) {
       variables: { input: body },
     });
 
-    return NextResponse.json(data.login);
+    const { refresh_token, ...session } = data.login;
+    const response = NextResponse.json({
+      ...session,
+      access_token: COOKIE_SESSION_MARKER,
+    });
+
+    setAccessCookie(response, session.access_token);
+    setRefreshCookie(response, refresh_token);
+
+    return response;
   } catch (error) {
     if (error instanceof UserApiRouteError) {
       const mappedError = mapLoginError(error.message);
-      return NextResponse.json(
-        { error: mappedError.message },
-        { status: mappedError.status },
-      );
+      return NextResponse.json({ error: mappedError.message }, { status: mappedError.status });
     }
 
-    return NextResponse.json(
-      { error: "No se pudo iniciar sesion. Intenta nuevamente." },
-      { status: 500 },
-    );
+    return jsonError(500, "No se pudo iniciar sesion. Intenta nuevamente.");
   }
 }

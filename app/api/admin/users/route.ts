@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeUsersGraphql } from "../../users/graphqlClient";
 import { UserApiRouteError } from "../../users/userApi.error";
+import { clampInteger, jsonError } from "../../_utils/security";
 
 const adminUsersQuery = `
   query AdminUsers($input: UsersQueryInput) {
@@ -80,8 +81,8 @@ const toGraphqlUserRole = (value?: string): string | undefined => {
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const page = Math.max(1, Number(searchParams.get("page")) || 1);
-    const limit = Math.max(1, Number(searchParams.get("limit")) || 20);
+    const page = clampInteger(searchParams.get("page"), 1, 1, 1000);
+    const limit = clampInteger(searchParams.get("limit"), 20, 1, 100);
     const username = searchParams.get("username")?.trim() || undefined;
     const email = searchParams.get("email")?.trim() || undefined;
     const role = toGraphqlUserRole(searchParams.get("role") ?? undefined);
@@ -137,13 +138,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(data.adminUsers);
   } catch (error) {
     if (error instanceof UserApiRouteError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return jsonError(error.status);
     }
 
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Error interno" },
-      { status: 500 },
-    );
+    return jsonError(500);
   }
 }
 
@@ -165,12 +163,9 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json(data.updateUserStatus);
   } catch (error) {
     if (error instanceof UserApiRouteError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return jsonError(error.status);
     }
 
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Error interno" },
-      { status: 500 },
-    );
+    return jsonError(500);
   }
 }

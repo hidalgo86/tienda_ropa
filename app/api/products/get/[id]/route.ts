@@ -1,10 +1,11 @@
 // app/api/products/get/[id]/route.ts
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import type { ProductByIdQueryResponse } from "@/types/api/products/graphql";
 import { normalizeProduct } from "../../normalizeProduct";
+import { getBackendAuthorization } from "../../../_utils/security";
 
 export async function GET(
-  req: Request,
+  req: NextRequest,
   context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
@@ -35,7 +36,7 @@ export async function GET(
   `;
 
   try {
-    const authorization = req.headers.get("authorization");
+    const authorization = getBackendAuthorization(req);
     const { searchParams } = new URL(req.url);
     const trackView = searchParams.get("trackView") !== "false";
     const res = await fetch(`${process.env.API_URL}/graphql`, {
@@ -59,10 +60,10 @@ export async function GET(
     }
 
     return NextResponse.json(normalizeProduct(data.data.product));
-  } catch (error: unknown) {
+  } catch {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Error interno",
+        error: "Error interno",
       },
       { status: 500 },
     );

@@ -1,6 +1,7 @@
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
+import { getBackendAuthorization } from "../../../_utils/security";
 
 const updateMutation = `
   mutation UpdateBanner($id: String!, $input: UpdateBannerInput!) {
@@ -62,8 +63,8 @@ export async function PATCH(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(req.headers.get("authorization")
-          ? { Authorization: req.headers.get("authorization") as string }
+        ...(getBackendAuthorization(req)
+          ? { Authorization: getBackendAuthorization(req) as string }
           : {}),
       },
       body: JSON.stringify({
@@ -81,11 +82,11 @@ export async function PATCH(
     }
 
     return NextResponse.json(payload.data?.updateBanner);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       {
         error:
-          error instanceof Error ? error.message : "Error al actualizar banner",
+          "Error al actualizar banner",
       },
       { status: 500 },
     );
@@ -109,8 +110,8 @@ export async function DELETE(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(req.headers.get("authorization")
-          ? { Authorization: req.headers.get("authorization") as string }
+        ...(getBackendAuthorization(req)
+          ? { Authorization: getBackendAuthorization(req) as string }
           : {}),
       },
       body: JSON.stringify({
@@ -128,11 +129,11 @@ export async function DELETE(
     }
 
     return NextResponse.json(payload.data?.deleteBanner);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       {
         error:
-          error instanceof Error ? error.message : "Error al eliminar banner",
+          "Error al eliminar banner",
       },
       { status: 500 },
     );

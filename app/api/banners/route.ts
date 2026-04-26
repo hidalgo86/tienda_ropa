@@ -54,11 +54,10 @@ export async function GET() {
     }
 
     return NextResponse.json(payload.data?.banners ?? []);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       {
-        error:
-          error instanceof Error ? error.message : "Error al cargar banners",
+        error: "Error al cargar banners",
       },
       { status: 500 },
     );

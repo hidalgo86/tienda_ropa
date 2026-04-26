@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { CreateProductRouteError } from "./createProduct.error";
 import { buildCreateProductInput } from "./createProductInput";
 import { createProductInBackend } from "./createProductMutation";
+import { getBackendAuthorization } from "../../_utils/security";
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,7 +12,7 @@ export async function POST(req: NextRequest) {
     const productInput = buildCreateProductInput(body);
     const product = await createProductInBackend(
       productInput,
-      req.headers.get("authorization"),
+      getBackendAuthorization(req),
     );
 
     return NextResponse.json(product);
@@ -24,9 +25,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Error interno",
-      },
+      { error: "Error interno" },
       { status: 500 },
     );
   }

@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import type { Category } from "@/types/domain/products";
+import { getBackendAuthorization } from "../_utils/security";
 
 type GraphqlError = { message?: string };
 type GraphqlResponse<TData> = {
@@ -31,7 +32,7 @@ const getGraphqlErrorMessage = (errors?: GraphqlError[]): string =>
 
 const buildHeaders = (request?: NextRequest): HeadersInit => {
   const headers: HeadersInit = { "Content-Type": "application/json" };
-  const authorization = request?.headers.get("authorization");
+  const authorization = getBackendAuthorization(request);
   if (authorization) headers.Authorization = authorization;
   return headers;
 };

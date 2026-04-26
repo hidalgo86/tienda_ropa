@@ -1,6 +1,7 @@
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
+import { getBackendAuthorization } from "../../_utils/security";
 
 const query = `
   query AdminBanners {
@@ -56,8 +57,8 @@ export async function GET(req: NextRequest) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(req.headers.get("authorization")
-          ? { Authorization: req.headers.get("authorization") as string }
+        ...(getBackendAuthorization(req)
+          ? { Authorization: getBackendAuthorization(req) as string }
           : {}),
       },
       body: JSON.stringify({ query }),
@@ -71,11 +72,11 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json(payload.data?.adminBanners ?? []);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       {
         error:
-          error instanceof Error ? error.message : "Error al cargar banners",
+          "Error al cargar banners",
       },
       { status: 500 },
     );
@@ -96,8 +97,8 @@ export async function POST(req: NextRequest) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        ...(req.headers.get("authorization")
-          ? { Authorization: req.headers.get("authorization") as string }
+        ...(getBackendAuthorization(req)
+          ? { Authorization: getBackendAuthorization(req) as string }
           : {}),
       },
       body: JSON.stringify({
@@ -113,10 +114,10 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(payload.data?.createBanner);
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Error al crear banner",
+        error: "Error al crear banner",
       },
       { status: 500 },
     );

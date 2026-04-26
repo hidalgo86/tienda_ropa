@@ -74,7 +74,7 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Error interno" },
+      { error: "Error interno" },
       { status: 500 },
     );
   }
@@ -94,7 +94,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Error interno" },
+      { error: "Error interno" },
       { status: 500 },
     );
   }

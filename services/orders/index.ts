@@ -1,5 +1,6 @@
 import type { Order, OrderItem, ShippingAddress } from "@/types/domain/orders";
 import {
+  COOKIE_SESSION_MARKER,
   getStoredAuthToken,
   refreshSession,
   type PaginatedResult,
@@ -15,20 +16,16 @@ const buildHeaders = (token?: string | null): HeadersInit => {
     "Content-Type": "application/json",
   };
 
-  if (token) {
+  if (token && token !== COOKIE_SESSION_MARKER) {
     headers.Authorization = `Bearer ${token}`;
   }
 
   return headers;
 };
 
-const storeRefreshedTokens = (tokens: {
-  access_token: string;
-  refresh_token: string;
-}) => {
+const storeRefreshedTokens = () => {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem("authToken", tokens.access_token);
-  window.localStorage.setItem("refreshToken", tokens.refresh_token);
+  window.localStorage.removeItem("refreshToken");
   window.dispatchEvent(new Event("auth:session-changed"));
 };
 
@@ -137,7 +134,7 @@ const fetchWithAuthRetry = async <T>(
     }
 
     const refreshedTokens = await refreshSession();
-    storeRefreshedTokens(refreshedTokens);
+    storeRefreshedTokens();
 
     return requestFactory(refreshedTokens.access_token);
   }

@@ -27,6 +27,19 @@ import type {
 const isAdminRole = (role?: string | null): boolean =>
   role?.trim().toLowerCase() === "administrador";
 
+const isAuthSessionError = (error: unknown): boolean => {
+  const message = error instanceof Error ? error.message.toLowerCase() : "";
+
+  return (
+    message.includes("unauthorized") ||
+    message.includes("unauthoriz") ||
+    message.includes("token") ||
+    message.includes("jwt") ||
+    message.includes("sesion") ||
+    message.includes("session")
+  );
+};
+
 const initialProfileForm: AccountProfileFormState = {
   name: "",
   phone: "",
@@ -73,11 +86,11 @@ export default function AccountClient() {
 
     const loadUserAndOrders = async () => {
       try {
-        const user = await getCurrentUser({ token });
+        const user = await getCurrentUser();
         const adminUser = isAdminRole(user.role);
 
         const orderList =
-          adminUser || !PAYMENTS_ENABLED ? [] : await listMyOrders({ token });
+          adminUser || !PAYMENTS_ENABLED ? [] : await listMyOrders();
         const safeOrderList = Array.isArray(orderList) ? orderList : [];
 
         setUserInfo(user);
@@ -92,11 +105,13 @@ export default function AccountClient() {
         });
       } catch (loadError) {
         clearStoredSession();
-        const message =
-          loadError instanceof Error
-            ? loadError.message
-            : "No se pudo cargar tu perfil";
-        toast.error(message);
+        if (!isAuthSessionError(loadError)) {
+          const message =
+            loadError instanceof Error
+              ? loadError.message
+              : "No se pudo cargar tu perfil";
+          toast.error(message);
+        }
         router.push("/login?redirect=%2Faccount");
       } finally {
         setIsLoading(false);
@@ -110,11 +125,10 @@ export default function AccountClient() {
   const refreshOrders = async () => {
     if (!PAYMENTS_ENABLED) return;
 
-    const token = getStoredAuthToken();
-    if (!token) return;
+    if (!getStoredAuthToken()) return;
 
     try {
-      const orderList = await listMyOrders({ token });
+      const orderList = await listMyOrders();
       const safeOrderList = Array.isArray(orderList) ? orderList : [];
 
       setOrdersCount(safeOrderList.length);

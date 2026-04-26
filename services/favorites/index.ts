@@ -1,5 +1,5 @@
 import type { Product } from "@/types/domain/products";
-import { getStoredAuthToken } from "@/services/users";
+import { COOKIE_SESSION_MARKER, getStoredAuthToken } from "@/services/users";
 
 interface FavoriteApiOptions {
   token?: string | null;
@@ -11,7 +11,7 @@ const buildHeaders = (token?: string | null): HeadersInit => {
     "Content-Type": "application/json",
   };
 
-  if (token) {
+  if (token && token !== COOKIE_SESSION_MARKER) {
     headers.Authorization = `Bearer ${token}`;
   }
 

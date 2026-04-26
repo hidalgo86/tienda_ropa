@@ -7,12 +7,10 @@ export interface MessageResponse {
 export interface AuthSession {
   user: User;
   access_token: string;
-  refresh_token: string;
 }
 
 export interface RefreshTokenResponse {
   access_token: string;
-  refresh_token: string;
 }
 
 export interface RegisterUserInput {

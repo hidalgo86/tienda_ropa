@@ -17,6 +17,7 @@ import {
   toGraphqlState,
 } from "@/lib/graphqlMappers";
 import { normalizeProductsPage } from "../normalizeProduct";
+import { clampInteger } from "../../_utils/security";
 
 export const dynamic = "force-dynamic";
 
@@ -103,8 +104,8 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
 
-    const page = Number(searchParams.get("page")) || 1;
-    const limit = Number(searchParams.get("limit")) || 20;
+    const page = clampInteger(searchParams.get("page"), 1, 1, 1000);
+    const limit = clampInteger(searchParams.get("limit"), 20, 1, 50);
     const sortBy = parseProductSortBy(searchParams.get("sortBy"));
 
     const name = searchParams.get("name") || undefined;
@@ -163,7 +164,7 @@ export async function GET(req: Request) {
     const response = await backendRes.json();
 
     if (response.errors) {
-      throw new Error(response.errors[0]?.message || "Error en GraphQL");
+      throw new Error("Error al obtener productos");
     }
 
     if (!response.data?.products) {

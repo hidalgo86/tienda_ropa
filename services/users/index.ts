@@ -43,6 +43,7 @@ const AUTH_TOKEN_KEY = "authToken";
 const REFRESH_TOKEN_KEY = "refreshToken";
 const USER_DATA_KEY = "userData";
 const AUTH_SESSION_EVENT = "auth:session-changed";
+export const COOKIE_SESSION_MARKER = "__cookie_session__";
 
 const genericErrorMessages = new Set([
   "bad request exception",
@@ -122,7 +123,7 @@ const buildHeaders = (options: ApiOptions, includeJson = false): HeadersInit => 
     headers["Content-Type"] = "application/json";
   }
 
-  if (options.token) {
+  if (options.token && options.token !== COOKIE_SESSION_MARKER) {
     headers.Authorization = `Bearer ${options.token}`;
   }
 
@@ -158,7 +159,7 @@ const notifyAuthSessionChange = (): void => {
 
 export const getStoredAuthToken = (): string | null => {
   if (!isBrowser()) return null;
-  return window.localStorage.getItem(AUTH_TOKEN_KEY);
+  return window.localStorage.getItem(USER_DATA_KEY) ? COOKIE_SESSION_MARKER : null;
 };
 
 export const getStoredRefreshToken = (): string | null => {
@@ -183,8 +184,8 @@ export const getStoredUser = (): User | null => {
 export const storeAuthSession = (session: AuthSession): void => {
   if (!isBrowser()) return;
 
-  window.localStorage.setItem(AUTH_TOKEN_KEY, session.access_token);
-  window.localStorage.setItem(REFRESH_TOKEN_KEY, session.refresh_token);
+  window.localStorage.removeItem(AUTH_TOKEN_KEY);
+  window.localStorage.removeItem(REFRESH_TOKEN_KEY);
   window.localStorage.setItem(USER_DATA_KEY, JSON.stringify(session.user));
   notifyAuthSessionChange();
 };
@@ -194,11 +195,11 @@ export const updateStoredUser = (user: User): void => {
   window.localStorage.setItem(USER_DATA_KEY, JSON.stringify(user));
 };
 
-const storeTokens = (tokens: RefreshTokenApiResponse): void => {
+const storeTokens = (): void => {
   if (!isBrowser()) return;
 
-  window.localStorage.setItem(AUTH_TOKEN_KEY, tokens.access_token);
-  window.localStorage.setItem(REFRESH_TOKEN_KEY, tokens.refresh_token);
+  window.localStorage.removeItem(AUTH_TOKEN_KEY);
+  window.localStorage.removeItem(REFRESH_TOKEN_KEY);
   notifyAuthSessionChange();
 };
 
@@ -208,6 +209,11 @@ export const clearStoredSession = (): void => {
   window.localStorage.removeItem(AUTH_TOKEN_KEY);
   window.localStorage.removeItem(REFRESH_TOKEN_KEY);
   window.localStorage.removeItem(USER_DATA_KEY);
+  void fetch("/api/users/logout", {
+    method: "POST",
+    credentials: "same-origin",
+    keepalive: true,
+  }).catch(() => undefined);
   notifyAuthSessionChange();
 };
 
@@ -230,6 +236,7 @@ const decodeJwtPayload = (token: string): Record<string, unknown> | null => {
 
 export const isAuthTokenExpired = (token?: string | null): boolean => {
   if (!token) return true;
+  if (token === COOKIE_SESSION_MARKER) return false;
   if (!isBrowser()) return false;
 
   const payload = decodeJwtPayload(token);
@@ -259,6 +266,7 @@ export const registerUser = async (
     method: "POST",
     headers: buildHeaders(options, true),
     body: JSON.stringify(input),
+    credentials: "same-origin",
     signal: options.signal,
   });
 
@@ -276,6 +284,7 @@ export const loginUser = async (
     method: "POST",
     headers: buildHeaders(options, true),
     body: JSON.stringify(input),
+    credentials: "same-origin",
     signal: options.signal,
   });
 
@@ -414,7 +423,7 @@ const fetchWithAuthRetry = async <T>(
     }
 
     const refreshedTokens = await refreshSession(options);
-    storeTokens(refreshedTokens);
+    storeTokens();
 
     return requestFactory(refreshedTokens.access_token);
   }
@@ -549,18 +558,12 @@ export const updateAdminUserStatus = async (
 export const refreshSession = async (
   options: ApiOptions = {},
 ): Promise<RefreshTokenApiResponse> => {
-  const refreshToken = getStoredRefreshToken();
-
-  if (!refreshToken) {
-    throw new Error("No hay refresh token disponible");
-  }
-
   const response = await fetch(
     buildApiUrl("/api/users/refresh-token", options.baseUrl),
     {
       method: "POST",
       headers: buildHeaders(options, true),
-      body: JSON.stringify({ refresh_token: refreshToken }),
+      credentials: "same-origin",
       signal: options.signal,
     },
   );

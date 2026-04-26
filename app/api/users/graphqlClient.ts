@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { UserApiRouteError } from "./userApi.error";
+import { getBackendAuthorization } from "../_utils/security";
 
 type GraphqlError = {
   message?: string;
@@ -36,7 +37,7 @@ const buildHeaders = (request?: NextRequest): HeadersInit => {
     "Content-Type": "application/json",
   };
 
-  const authorization = request?.headers.get("authorization");
+  const authorization = getBackendAuthorization(request);
   if (authorization) {
     headers.Authorization = authorization;
   }

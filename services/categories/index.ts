@@ -1,5 +1,5 @@
 import type { Category } from "@/types/domain/products";
-import { getStoredAuthToken } from "@/services/users";
+import { COOKIE_SESSION_MARKER, getStoredAuthToken } from "@/services/users";
 
 interface ApiOptions {
   baseUrl?: string;
@@ -52,7 +52,9 @@ const buildHeaders = (options: ApiOptions, includeJson = false): HeadersInit => 
   if (includeJson) headers["Content-Type"] = "application/json";
 
   const token = options.token ?? getStoredAuthToken();
-  if (token) headers.Authorization = `Bearer ${token}`;
+  if (token && token !== COOKIE_SESSION_MARKER) {
+    headers.Authorization = `Bearer ${token}`;
+  }
 
   return headers;
 };

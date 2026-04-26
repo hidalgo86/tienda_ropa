@@ -9,6 +9,7 @@ import {
   restoreProductInBackend,
   updateProductInBackend,
 } from "./updateProductMutation";
+import { getBackendAuthorization } from "../../../_utils/security";
 
 export async function PATCH(
   req: NextRequest,
@@ -21,7 +22,7 @@ export async function PATCH(
 
     const body = await req.json();
     const input = buildUpdateProductInput(body);
-    const authorization = req.headers.get("authorization");
+    const authorization = getBackendAuthorization(req);
     const product =
       input.state === "ELIMINADO"
         ? await deleteProductInBackend(id, authorization)
@@ -39,7 +40,7 @@ export async function PATCH(
     }
 
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Error interno" },
+      { error: "Error interno" },
       { status: 500 },
     );
   }

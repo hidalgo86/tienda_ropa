@@ -15,6 +15,16 @@ const initialFormState: LoginFormState = {
   password: "",
 };
 
+const getSafeRedirectPath = (): string => {
+  const redirectTo = new URLSearchParams(window.location.search).get("redirect");
+
+  if (!redirectTo?.startsWith("/") || redirectTo.startsWith("//")) {
+    return "/";
+  }
+
+  return redirectTo;
+};
+
 export default function LoginPage() {
   const [form, setForm] = useState<LoginFormState>(initialFormState);
   const [error, setError] = useState("");
@@ -48,9 +58,7 @@ export default function LoginPage() {
       storeAuthSession(session);
       toast.success("Sesion iniciada");
 
-      const redirectTo =
-        new URLSearchParams(window.location.search).get("redirect") || "/";
-      router.push(redirectTo);
+      router.push(getSafeRedirectPath());
     } catch (submissionError) {
       const message =
         submissionError instanceof Error

@@ -52,7 +52,7 @@ export default function CheckoutPage() {
 
     const loadUser = async () => {
       try {
-        const currentUser = await getCurrentUser({ token });
+        const currentUser = await getCurrentUser();
         setUser(currentUser);
       } catch (error) {
         const message =

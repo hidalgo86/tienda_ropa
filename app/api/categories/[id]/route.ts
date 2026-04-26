@@ -65,7 +65,7 @@ export async function PATCH(
     }
 
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Error interno" },
+      { error: "Error interno" },
       { status: 500 },
     );
   }
@@ -96,7 +96,7 @@ export async function DELETE(
     }
 
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Error interno" },
+      { error: "Error interno" },
       { status: 500 },
     );
   }
