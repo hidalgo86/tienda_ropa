@@ -53,6 +53,8 @@ const parseResponseOrThrow = async <T>(response: Response): Promise<T> => {
 const ensureCartItemsArray = (value: unknown): CartItem[] =>
   Array.isArray(value) ? (value as CartItem[]) : [];
 
+let replaceRemoteCartQueue = Promise.resolve();
+
 export const listCartItems = async (
   options: CartApiOptions = {},
 ): Promise<CartItem[]> => {
@@ -100,21 +102,31 @@ export const replaceRemoteCart = async (
   items: CartItem[],
   options: CartApiOptions = {},
 ): Promise<CartItem[]> => {
-  const token = resolveToken(options.token);
-  await clearRemoteCart({ ...options, token });
+  const runReplacement = async (): Promise<CartItem[]> => {
+    const token = resolveToken(options.token);
+    await clearRemoteCart({ ...options, token });
 
-  let nextCart: CartItem[] = [];
+    let nextCart: CartItem[] = [];
 
-  for (const item of items) {
-    nextCart = await upsertCartItem(
-      {
-        productId: item.id,
-        quantity: item.quantity,
-        variantName: item.selectedSize,
-      },
-      { ...options, token },
-    );
-  }
+    for (const item of items) {
+      nextCart = await upsertCartItem(
+        {
+          productId: item.id,
+          quantity: item.quantity,
+          variantName: item.selectedSize,
+        },
+        { ...options, token },
+      );
+    }
 
-  return nextCart;
+    return nextCart;
+  };
+
+  const replacement = replaceRemoteCartQueue.then(runReplacement, runReplacement);
+  replaceRemoteCartQueue = replacement.then(
+    () => undefined,
+    () => undefined,
+  );
+
+  return replacement;
 };

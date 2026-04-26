@@ -11,6 +11,7 @@ import {
 import type { AppDispatch, RootState } from "@/store";
 import {
   addToCart,
+  calculateCartTotals,
   clearCart,
   removeFromCart,
   syncCart,
@@ -147,6 +148,25 @@ const updateCartItemsQuantity = (
 export const useCartActions = () => {
   const dispatch = useDispatch<AppDispatch>();
   const cart = useSelector((state: RootState) => state.cart);
+  const cartRef = React.useRef(cart);
+  const mutationVersionRef = React.useRef(0);
+
+  React.useEffect(() => {
+    cartRef.current = cart;
+  }, [cart]);
+
+  const syncOptimisticCart = React.useCallback(
+    (items: CartItem[]) => {
+      const totals = calculateCartTotals(items);
+      cartRef.current = {
+        items,
+        totalItems: totals.totalItems,
+        totalPrice: totals.totalPrice,
+      };
+      dispatch(syncCart(items));
+    },
+    [dispatch],
+  );
 
   const addProductToCart = React.useCallback(
     async (input: {
@@ -156,7 +176,8 @@ export const useCartActions = () => {
       selectedColor?: string;
     }) => {
       const requestedQuantity = input.quantity ?? 1;
-      const existingItem = cart.items.find(
+      const currentItems = cartRef.current.items;
+      const existingItem = currentItems.find(
         (item) =>
           item.id === input.product.id &&
           item.selectedSize === input.selectedSize &&
@@ -182,20 +203,25 @@ export const useCartActions = () => {
 
       const token = getValidStoredAuthToken();
       if (!token) {
+        mutationVersionRef.current += 1;
         dispatch(addToCart({ ...input, quantity: requestedQuantity }));
         return;
       }
 
-      const optimisticItems = buildOptimisticCartItems(cart.items, {
+      const optimisticItems = buildOptimisticCartItems(currentItems, {
         ...input,
         quantity: requestedQuantity,
       });
-      dispatch(syncCart(optimisticItems));
+      const mutationVersion = mutationVersionRef.current + 1;
+      mutationVersionRef.current = mutationVersion;
+      syncOptimisticCart(optimisticItems);
 
       try {
         const remoteItems = await replaceRemoteCart(optimisticItems, { token });
-        dispatch(syncCart(mergeCartItems(remoteItems, optimisticItems)));
+        if (mutationVersion !== mutationVersionRef.current) return;
+        syncOptimisticCart(mergeCartItems(remoteItems, optimisticItems));
       } catch (error) {
+        if (mutationVersion !== mutationVersionRef.current) return;
         const sessionExpired = isSessionError(error);
 
         if (sessionExpired) {
@@ -211,7 +237,7 @@ export const useCartActions = () => {
         toast.error(message);
       }
     },
-    [cart.items, dispatch],
+    [dispatch, syncOptimisticCart],
   );
 
   const changeCartItemQuantity = React.useCallback(
@@ -221,7 +247,8 @@ export const useCartActions = () => {
       selectedSize,
       selectedColor,
     }: CartIdentity & { quantity: number }) => {
-      const existingItem = cart.items.find(
+      const currentItems = cartRef.current.items;
+      const existingItem = currentItems.find(
         (item) =>
           item.id === productId &&
           item.selectedSize === selectedSize &&
@@ -244,26 +271,29 @@ export const useCartActions = () => {
 
       const token = getValidStoredAuthToken();
       if (!token) {
+        mutationVersionRef.current += 1;
         dispatch(
           updateQuantity({ productId, quantity, selectedSize, selectedColor }),
         );
         return;
       }
 
-      const optimisticItems = updateCartItemsQuantity(cart.items, {
+      const optimisticItems = updateCartItemsQuantity(currentItems, {
         productId,
         quantity,
         selectedSize,
         selectedColor,
       });
-      dispatch(
-        updateQuantity({ productId, quantity, selectedSize, selectedColor }),
-      );
+      const mutationVersion = mutationVersionRef.current + 1;
+      mutationVersionRef.current = mutationVersion;
+      syncOptimisticCart(optimisticItems);
 
       try {
         const remoteItems = await replaceRemoteCart(optimisticItems, { token });
-        dispatch(syncCart(mergeCartItems(remoteItems, optimisticItems)));
+        if (mutationVersion !== mutationVersionRef.current) return;
+        syncOptimisticCart(mergeCartItems(remoteItems, optimisticItems));
       } catch (error) {
+        if (mutationVersion !== mutationVersionRef.current) return;
         const sessionExpired = isSessionError(error);
 
         if (sessionExpired) {
@@ -282,18 +312,19 @@ export const useCartActions = () => {
         toast.error(message);
       }
     },
-    [cart.items, dispatch],
+    [dispatch, syncOptimisticCart],
   );
 
   const removeCartItem = React.useCallback(
     async ({ productId, selectedSize, selectedColor }: CartIdentity) => {
       const token = getValidStoredAuthToken();
       if (!token) {
+        mutationVersionRef.current += 1;
         dispatch(removeFromCart({ productId, selectedSize, selectedColor }));
         return;
       }
 
-      const optimisticItems = cart.items.filter(
+      const optimisticItems = cartRef.current.items.filter(
         (item) =>
           !(
             item.id === productId &&
@@ -301,12 +332,16 @@ export const useCartActions = () => {
             item.selectedColor === selectedColor
           ),
       );
-      dispatch(removeFromCart({ productId, selectedSize, selectedColor }));
+      const mutationVersion = mutationVersionRef.current + 1;
+      mutationVersionRef.current = mutationVersion;
+      syncOptimisticCart(optimisticItems);
 
       try {
         const remoteItems = await replaceRemoteCart(optimisticItems, { token });
-        dispatch(syncCart(mergeCartItems(remoteItems, optimisticItems)));
+        if (mutationVersion !== mutationVersionRef.current) return;
+        syncOptimisticCart(mergeCartItems(remoteItems, optimisticItems));
       } catch (error) {
+        if (mutationVersion !== mutationVersionRef.current) return;
         const sessionExpired = isSessionError(error);
 
         if (sessionExpired) {
@@ -323,25 +358,27 @@ export const useCartActions = () => {
         toast.error(message);
       }
     },
-    [cart.items, dispatch],
+    [dispatch, syncOptimisticCart],
   );
 
   const clearAllCart = React.useCallback(async () => {
     const token = getStoredAuthToken();
     if (!token) {
+      mutationVersionRef.current += 1;
       dispatch(clearCart());
       return;
     }
 
     try {
       await clearRemoteCart({ token });
-      dispatch(syncCart([]));
+      mutationVersionRef.current += 1;
+      syncOptimisticCart([]);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "No se pudo limpiar el carrito";
       toast.error(message);
     }
-  }, [dispatch]);
+  }, [dispatch, syncOptimisticCart]);
 
   return {
     cart,
