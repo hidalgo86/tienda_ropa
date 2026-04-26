@@ -78,8 +78,12 @@ const normalizeImages = (value: unknown): ProductImage[] | undefined => {
 const normalizeVariants = (
   value: unknown,
 ): CreateProductGraphqlVariantInput[] | undefined => {
-  if (!Array.isArray(value) || value.length === 0) {
+  if (!Array.isArray(value)) {
     return undefined;
+  }
+
+  if (value.length === 0) {
+    return [];
   }
 
   return value.map((variant) => {
@@ -156,6 +160,10 @@ export const buildUpdateProductInput = (
   const images = normalizeImages(source.images);
   if (images) {
     input.images = images;
+  }
+
+  if ("genre" in source && source.genre === null) {
+    input.genre = null;
   }
 
   const genreValue = parseOptionalString(source.genre);

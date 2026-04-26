@@ -357,8 +357,7 @@ const EditProductContent: React.FC = () => {
           throw new Error("Precio invalido: usa numeros no negativos");
         }
 
-        payload.genre = undefined;
-        payload.variants = undefined;
+        Object.assign(payload, { genre: null, variants: [] });
         payload.stock = nextStock;
         payload.price = nextPrice;
       }

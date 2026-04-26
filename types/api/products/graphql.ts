@@ -38,7 +38,7 @@ export interface UpdateProductGraphqlInput {
   brand?: string;
   thumbnail?: string;
   images?: ProductImage[];
-  genre?: "NINA" | "NINO" | "UNISEX";
+  genre?: "NINA" | "NINO" | "UNISEX" | null;
   variants?: CreateProductGraphqlVariantInput[];
   stock?: number;
   price?: number;
