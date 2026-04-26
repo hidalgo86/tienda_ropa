@@ -17,7 +17,7 @@ import {
   updateQuantity,
   type CartItem,
 } from "@/store/slices/cartSlice";
-import { clearRemoteCart, upsertCartItem } from "@/services/cart";
+import { clearRemoteCart, replaceRemoteCart, upsertCartItem } from "@/services/cart";
 import {
   clearStoredSession,
   getStoredAuthToken,
@@ -294,21 +294,29 @@ export const useCartActions = () => {
         updateQuantity({ productId, quantity, selectedSize, selectedColor }),
       );
 
-      const result = await persistRemoteQuantity(productId, quantity, selectedSize);
+      try {
+        const remoteItems = await replaceRemoteCart(optimisticItems, { token });
+        dispatch(syncCart(mergeCartItems(remoteItems, optimisticItems)));
+      } catch (error) {
+        const sessionExpired = isSessionError(error);
 
-      if (result.ok) {
-        dispatch(syncCart(mergeCartItems(result.items, optimisticItems)));
-        return;
-      }
+        if (sessionExpired) {
+          clearStoredSession();
+          dispatch(
+            updateQuantity({ productId, quantity, selectedSize, selectedColor }),
+          );
+          toast.info("Tu sesion expiro. Actualizamos el carrito local.");
+          return;
+        }
 
-      if (result.sessionExpired) {
-        dispatch(
-          updateQuantity({ productId, quantity, selectedSize, selectedColor }),
-        );
-        toast.info("Tu sesion expiro. Actualizamos el carrito local.");
+        const message =
+          error instanceof Error
+            ? error.message
+            : "No se pudo actualizar el carrito";
+        toast.error(message);
       }
     },
-    [cart.items, dispatch, persistRemoteQuantity],
+    [cart.items, dispatch],
   );
 
   const removeCartItem = React.useCallback(
@@ -329,19 +337,27 @@ export const useCartActions = () => {
       );
       dispatch(removeFromCart({ productId, selectedSize, selectedColor }));
 
-      const result = await persistRemoteQuantity(productId, 0, selectedSize);
+      try {
+        const remoteItems = await replaceRemoteCart(optimisticItems, { token });
+        dispatch(syncCart(mergeCartItems(remoteItems, optimisticItems)));
+      } catch (error) {
+        const sessionExpired = isSessionError(error);
 
-      if (result.ok) {
-        dispatch(syncCart(mergeCartItems(result.items, optimisticItems)));
-        return;
-      }
+        if (sessionExpired) {
+          clearStoredSession();
+          dispatch(removeFromCart({ productId, selectedSize, selectedColor }));
+          toast.info("Tu sesion expiro. Actualizamos el carrito local.");
+          return;
+        }
 
-      if (result.sessionExpired) {
-        dispatch(removeFromCart({ productId, selectedSize, selectedColor }));
-        toast.info("Tu sesion expiro. Actualizamos el carrito local.");
+        const message =
+          error instanceof Error
+            ? error.message
+            : "No se pudo actualizar el carrito";
+        toast.error(message);
       }
     },
-    [cart.items, dispatch, persistRemoteQuantity],
+    [cart.items, dispatch],
   );
 
   const clearAllCart = React.useCallback(async () => {

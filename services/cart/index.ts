@@ -95,3 +95,26 @@ export const clearRemoteCart = async (
 
   await parseResponseOrThrow<{ success: boolean }>(response);
 };
+
+export const replaceRemoteCart = async (
+  items: CartItem[],
+  options: CartApiOptions = {},
+): Promise<CartItem[]> => {
+  const token = resolveToken(options.token);
+  await clearRemoteCart({ ...options, token });
+
+  let nextCart: CartItem[] = [];
+
+  for (const item of items) {
+    nextCart = await upsertCartItem(
+      {
+        productId: item.id,
+        quantity: item.quantity,
+        variantName: item.selectedSize,
+      },
+      { ...options, token },
+    );
+  }
+
+  return nextCart;
+};
