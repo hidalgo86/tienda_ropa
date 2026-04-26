@@ -762,38 +762,47 @@ const CreateProductPage: React.FC = () => {
               Usa nombres como color, volumen o presentacion.
             </p>
             <div className="grid grid-cols-[minmax(0,1.3fr)_90px_110px_auto] gap-2 mb-2 items-end">
-              <input
-                type="text"
-                name="name"
-                value={variant.name}
-                onChange={handleVariantChange}
-                placeholder="Nombre de variante"
-                className="p-2 border border-gray-300 rounded"
-              />
-              <input
-                type="number"
-                name="stock"
-                value={variant.stock}
-                onChange={handleVariantChange}
-                onKeyDown={preventStockInvalidKeys}
-                placeholder="Stock"
-                min={0}
-                step={1}
-                inputMode="numeric"
-                className="p-2 border border-gray-300 rounded"
-              />
-              <input
-                type="number"
-                name="price"
-                value={variant.price}
-                onChange={handleVariantChange}
-                onKeyDown={preventPriceInvalidKeys}
-                placeholder="Precio"
-                min={0}
-                step="any"
-                inputMode="decimal"
-                className="p-2 border border-gray-300 rounded"
-              />
+              <label className="block text-sm font-medium text-gray-700">
+                Variante
+                <input
+                  type="text"
+                  name="name"
+                  value={variant.name}
+                  onChange={handleVariantChange}
+                  placeholder="Nombre de variante"
+                  className="mt-1 w-full p-2 border border-gray-300 rounded"
+                />
+              </label>
+              <label className="block text-sm font-medium text-gray-700">
+                Stock
+                <input
+                  type="number"
+                  name="stock"
+                  value={variant.stock}
+                  onChange={handleVariantChange}
+                  onKeyDown={preventStockInvalidKeys}
+                  placeholder="Stock"
+                  min={0}
+                  step={1}
+                  inputMode="numeric"
+                  className="mt-1 w-full p-2 border border-gray-300 rounded"
+                />
+              </label>
+              <label className="block text-sm font-medium text-gray-700">
+                Precio
+                <input
+                  type="number"
+                  name="price"
+                  value={variant.price}
+                  onChange={handleVariantChange}
+                  onKeyDown={preventPriceInvalidKeys}
+                  placeholder="Precio"
+                  min={0}
+                  step="any"
+                  inputMode="decimal"
+                  className="mt-1 w-full p-2 border border-gray-300 rounded"
+                />
+              </label>
               <button
                 onClick={handleAddVariant}
                 className="bg-green-600 text-white px-2 py-2 rounded hover:bg-green-700"
@@ -846,32 +855,38 @@ const CreateProductPage: React.FC = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input
-              type="number"
-              name="stock"
-              value={form.stock ?? ""}
-              onChange={handleChange}
-              onKeyDown={preventStockInvalidKeys}
-              placeholder="Stock"
-              min={0}
-              step={1}
-              inputMode="numeric"
-              className="w-full p-2 border border-gray-300 rounded"
-              required
-            />
-            <input
-              type="number"
-              name="price"
-              value={form.price ?? ""}
-              onChange={handleChange}
-              onKeyDown={preventPriceInvalidKeys}
-              placeholder="Precio"
-              min={0}
-              step="any"
-              inputMode="decimal"
-              className="w-full p-2 border border-gray-300 rounded"
-              required
-            />
+            <label className="block text-sm font-medium text-gray-700">
+              Stock
+              <input
+                type="number"
+                name="stock"
+                value={form.stock ?? ""}
+                onChange={handleChange}
+                onKeyDown={preventStockInvalidKeys}
+                placeholder="Stock"
+                min={0}
+                step={1}
+                inputMode="numeric"
+                className="mt-1 w-full p-2 border border-gray-300 rounded"
+                required
+              />
+            </label>
+            <label className="block text-sm font-medium text-gray-700">
+              Precio
+              <input
+                type="number"
+                name="price"
+                value={form.price ?? ""}
+                onChange={handleChange}
+                onKeyDown={preventPriceInvalidKeys}
+                placeholder="Precio"
+                min={0}
+                step="any"
+                inputMode="decimal"
+                className="mt-1 w-full p-2 border border-gray-300 rounded"
+                required
+              />
+            </label>
           </div>
         )}
         <button
