@@ -17,7 +17,7 @@ import {
   updateQuantity,
   type CartItem,
 } from "@/store/slices/cartSlice";
-import { clearRemoteCart, replaceRemoteCart, upsertCartItem } from "@/services/cart";
+import { clearRemoteCart, replaceRemoteCart } from "@/services/cart";
 import {
   clearStoredSession,
   getStoredAuthToken,
@@ -148,44 +148,6 @@ export const useCartActions = () => {
   const dispatch = useDispatch<AppDispatch>();
   const cart = useSelector((state: RootState) => state.cart);
 
-  const persistRemoteQuantity = React.useCallback(
-    async (productId: string, quantity: number, selectedSize?: string) => {
-      const token = getValidStoredAuthToken();
-      if (!token) return { ok: false, sessionExpired: false, items: [] };
-
-      try {
-        const nextCart = await upsertCartItem(
-          {
-            productId,
-            quantity,
-            variantName: selectedSize,
-          },
-          { token },
-        );
-        return {
-          ok: true,
-          sessionExpired: false,
-          items: Array.isArray(nextCart) ? nextCart : [],
-        };
-      } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "No se pudo actualizar el carrito";
-        const sessionExpired = isSessionError(error);
-
-        if (sessionExpired) {
-          clearStoredSession();
-          return { ok: false, sessionExpired: true, items: [] };
-        }
-
-        toast.error(message);
-        return { ok: false, sessionExpired: false, items: [] };
-      }
-    },
-    [],
-  );
-
   const addProductToCart = React.useCallback(
     async (input: {
       product: Product;
@@ -230,22 +192,26 @@ export const useCartActions = () => {
       });
       dispatch(syncCart(optimisticItems));
 
-      const result = await persistRemoteQuantity(
-        input.product.id,
-        nextQuantity,
-        input.selectedSize,
-      );
+      try {
+        const remoteItems = await replaceRemoteCart(optimisticItems, { token });
+        dispatch(syncCart(mergeCartItems(remoteItems, optimisticItems)));
+      } catch (error) {
+        const sessionExpired = isSessionError(error);
 
-      if (!result.ok) {
-        if (result.sessionExpired) {
+        if (sessionExpired) {
+          clearStoredSession();
           toast.info("Tu sesion expiro. Agregamos el producto al carrito local.");
+          return;
         }
-        return;
-      }
 
-      dispatch(syncCart(mergeCartItems(result.items, optimisticItems)));
+        const message =
+          error instanceof Error
+            ? error.message
+            : "No se pudo actualizar el carrito";
+        toast.error(message);
+      }
     },
-    [cart.items, dispatch, persistRemoteQuantity],
+    [cart.items, dispatch],
   );
 
   const changeCartItemQuantity = React.useCallback(
