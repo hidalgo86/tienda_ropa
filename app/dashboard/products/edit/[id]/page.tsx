@@ -277,7 +277,10 @@ const EditProductContent: React.FC = () => {
       const shouldUseVariants =
         isClothingProduct || useVariants || hasProductVariants(form);
 
-      const { status: formStatus, ...formWithoutStatus } = form;
+      const formStatus = form.status;
+      const formWithoutStatus: Partial<UploadProduct> = { ...form };
+      delete formWithoutStatus.state;
+      delete formWithoutStatus.status;
       const payload: Partial<UploadProduct> = {
         ...formWithoutStatus,
         name: String(form.name || "").trim(),
