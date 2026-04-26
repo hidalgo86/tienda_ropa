@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FiEye, FiEyeOff } from "react-icons/fi";
 import { toast } from "sonner";
 import { getStoredAuthToken, registerUser } from "@/services/users";
 import type { RegisterFormState } from "@/types/ui/users";
@@ -22,7 +21,6 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -47,7 +45,7 @@ export default function RegisterPage() {
 
     // Validación de contraseña fuerte igual que backend
     const strongPasswordRegex =
-      /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
     if (!strongPasswordRegex.test(form.password)) {
       setError(
         "La contraseña debe tener al menos 6 caracteres, una mayúscula, un número y un carácter especial (@$!%*?&)",
@@ -138,66 +136,45 @@ export default function RegisterPage() {
               <label className="mb-1 block text-sm font-medium sm:text-base">
                 Contrasena
               </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 pr-12 text-sm sm:text-base"
-                  value={form.password}
-                  onChange={(e) =>
-                    setForm((current) => ({
-                      ...current,
-                      password: e.target.value,
-                    }))
-                  }
-                  required
-                />
-                <button
-                  type="button"
-                  aria-label={
-                    showPassword ? "Ocultar contrasena" : "Mostrar contrasena"
-                  }
-                  className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700"
-                  onClick={() => setShowPassword((current) => !current)}
-                >
-                  {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
-                </button>
-              </div>
+              <input
+                type={showPassword ? "text" : "password"}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm sm:text-base"
+                value={form.password}
+                onChange={(e) =>
+                  setForm((current) => ({
+                    ...current,
+                    password: e.target.value,
+                  }))
+                }
+                required
+              />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium sm:text-base">
                 Confirmar contrasena
               </label>
-              <div className="relative">
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 pr-12 text-sm sm:text-base"
-                  value={form.confirmPassword}
-                  onChange={(e) =>
-                    setForm((current) => ({
-                      ...current,
-                      confirmPassword: e.target.value,
-                    }))
-                  }
-                  required
-                />
-                <button
-                  type="button"
-                  aria-label={
-                    showConfirmPassword
-                      ? "Ocultar confirmacion de contrasena"
-                      : "Mostrar confirmacion de contrasena"
-                  }
-                  className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700"
-                  onClick={() => setShowConfirmPassword((current) => !current)}
-                >
-                  {showConfirmPassword ? (
-                    <FiEyeOff size={18} />
-                  ) : (
-                    <FiEye size={18} />
-                  )}
-                </button>
-              </div>
+              <input
+                type={showPassword ? "text" : "password"}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm sm:text-base"
+                value={form.confirmPassword}
+                onChange={(e) =>
+                  setForm((current) => ({
+                    ...current,
+                    confirmPassword: e.target.value,
+                  }))
+                }
+                required
+              />
             </div>
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-gray-300 text-green-600"
+                checked={showPassword}
+                onChange={(e) => setShowPassword(e.target.checked)}
+              />
+              Mostrar contrasena
+            </label>
             {error && (
               <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
                 {error}

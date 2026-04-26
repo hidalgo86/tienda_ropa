@@ -28,6 +28,7 @@ function ResetPasswordContent() {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const hasResetLinkData = Boolean(form.username.trim() && form.token.trim());
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -141,7 +142,7 @@ function ResetPasswordContent() {
                 Nueva contrasena
               </label>
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm sm:text-base"
                 value={form.newPassword}
                 onChange={(e) =>
@@ -158,7 +159,7 @@ function ResetPasswordContent() {
                 Confirmar nueva contrasena
               </label>
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm sm:text-base"
                 value={form.confirmPassword}
                 onChange={(e) =>
@@ -170,6 +171,15 @@ function ResetPasswordContent() {
                 required
               />
             </div>
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-gray-300 text-green-600"
+                checked={showPassword}
+                onChange={(e) => setShowPassword(e.target.checked)}
+              />
+              Mostrar contrasena
+            </label>
             {error && (
               <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
                 {error}

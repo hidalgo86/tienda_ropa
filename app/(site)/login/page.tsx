@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FiEye, FiEyeOff } from "react-icons/fi";
 import { toast } from "sonner";
 import {
   getStoredAuthToken,
@@ -109,31 +108,28 @@ export default function LoginPage() {
               <label className="mb-1 block text-sm font-medium sm:text-base">
                 Contrasena
               </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 pr-12 text-sm sm:text-base"
-                  value={form.password}
-                  onChange={(e) =>
-                    setForm((current) => ({
-                      ...current,
-                      password: e.target.value,
-                    }))
-                  }
-                  required
-                />
-                <button
-                  type="button"
-                  aria-label={
-                    showPassword ? "Ocultar contrasena" : "Mostrar contrasena"
-                  }
-                  className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-gray-700"
-                  onClick={() => setShowPassword((current) => !current)}
-                >
-                  {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
-                </button>
-              </div>
+              <input
+                type={showPassword ? "text" : "password"}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm sm:text-base"
+                value={form.password}
+                onChange={(e) =>
+                  setForm((current) => ({
+                    ...current,
+                    password: e.target.value,
+                  }))
+                }
+                required
+              />
             </div>
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-gray-300 text-green-600"
+                checked={showPassword}
+                onChange={(e) => setShowPassword(e.target.checked)}
+              />
+              Mostrar contrasena
+            </label>
             {error && (
               <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2 text-sm text-red-700">
                 {error}
