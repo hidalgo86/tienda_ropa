@@ -273,13 +273,9 @@ const EditProductContent: React.FC = () => {
           product?.category,
         categoryOptions,
       );
-      const isClothingProduct =
-        categoryIsClothing || Boolean(form.genre || product?.genre);
+      const isClothingProduct = categoryIsClothing || Boolean(form.genre);
       const shouldUseVariants =
-        isClothingProduct ||
-        useVariants ||
-        hasProductVariants(form) ||
-        hasProductVariants(product);
+        isClothingProduct || useVariants || hasProductVariants(form);
 
       const { status: formStatus, ...formWithoutStatus } = form;
       const payload: Partial<UploadProduct> = {
@@ -395,12 +391,9 @@ const EditProductContent: React.FC = () => {
     form.categoryId ?? inferredCategory ?? form.category ?? product.category,
     categoryOptions,
   );
-  const isClothingProduct = categoryIsClothing || Boolean(form.genre || product.genre);
+  const isClothingProduct = categoryIsClothing || Boolean(form.genre);
   const shouldUseVariants =
-    isClothingProduct ||
-    useVariants ||
-    hasProductVariants(form) ||
-    hasProductVariants(product);
+    isClothingProduct || useVariants || hasProductVariants(form);
   const currentImagesCount = form.images?.length || 0;
   const totalSelectedCount = currentImagesCount + selectedFiles.length;
   const currentImageUrl =
