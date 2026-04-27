@@ -12,9 +12,13 @@ import Link from "next/link";
 import { useCartActions } from "@/lib/useCartActions";
 import { useFavoriteActions } from "@/lib/useFavoriteActions";
 
-export default function Cards() {
-  const [productos, setProductos] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+interface CardsProps {
+  initialProducts?: Product[];
+}
+
+export default function Cards({ initialProducts = [] }: CardsProps) {
+  const [productos, setProductos] = useState<Product[]>(initialProducts);
+  const [loading, setLoading] = useState(initialProducts.length === 0);
   const [error, setError] = useState<string | null>(null);
   const { addProductToCart } = useCartActions();
   const { toggleProductFavorite } = useFavoriteActions();

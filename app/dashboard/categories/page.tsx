@@ -243,7 +243,7 @@ export default function DashboardCategoriesPage() {
               return (
                 <article
                   key={category.id}
-                  className="grid gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+                  className="grid gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_auto]"
                 >
                   {isEditing ? (
                     <>
@@ -291,17 +291,9 @@ export default function DashboardCategoriesPage() {
                   ) : (
                     <>
                       <div className="min-w-0">
-                        <div className="font-semibold text-slate-900">
+                        <h2 className="truncate text-sm font-semibold text-slate-900">
                           {category.name}
-                        </div>
-                        <div className="mt-1 text-xs text-slate-500">
-                          ID: {category.id}
-                        </div>
-                      </div>
-                      <div className="flex items-center">
-                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
-                          {category.slug}
-                        </span>
+                        </h2>
                       </div>
                       <div className="flex flex-wrap gap-2 lg:justify-end">
                         <button

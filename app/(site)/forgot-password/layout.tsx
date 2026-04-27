@@ -1,4 +1,3 @@
-import Navbar from "../../../components/Navbar";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -8,15 +7,10 @@ export const metadata: Metadata = {
   },
 };
 
-export default function AccountLayout({
+export default function ForgotPasswordLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <>
-      <Navbar />
-      {children}
-    </>
-  );
+  return children;
 }
