@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { executeUsersGraphql } from "../graphqlClient";
 import { UserApiRouteError } from "../userApi.error";
 
+const safeResendError =
+  "No se pudo reenviar el codigo. Intenta nuevamente mas tarde.";
+
 const meQuery = `
   query Me {
     me {
@@ -56,11 +59,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(data.resendVerification);
   } catch (error) {
     if (error instanceof UserApiRouteError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      console.warn("[Resend Verification]", error.message);
+      return NextResponse.json({ error: safeResendError }, { status: error.status });
     }
 
     return NextResponse.json(
-      { error: "Error interno" },
+      { error: safeResendError },
       { status: 500 },
     );
   }

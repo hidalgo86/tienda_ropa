@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   } catch (error: unknown) {
     if (error instanceof CreateProductRouteError) {
       return NextResponse.json(
-        { error: error.message },
+        { error: "No se pudo completar la solicitud" },
         { status: error.status },
       );
     }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useSubmitCooldown } from "@/lib/useSubmitCooldown";
 import { getStoredAuthToken, registerUser } from "@/services/users";
 import type { RegisterFormState } from "@/types/ui/users";
 
@@ -21,6 +22,8 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const { isCoolingDown, remainingSeconds, startCooldown } =
+    useSubmitCooldown(10);
   const router = useRouter();
 
   useEffect(() => {
@@ -31,6 +34,8 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting || isCoolingDown) return;
+
     setError("");
 
     if (!validateEmail(form.email)) {
@@ -70,12 +75,12 @@ export default function RegisterPage() {
       toast.success(response.message || "Registro exitoso");
       router.push("/login");
     } catch (submissionError) {
+      console.warn("[Register]", submissionError);
       const message =
-        submissionError instanceof Error
-          ? submissionError.message
-          : "No se pudo completar el registro";
+        "No se pudo completar el registro. Revisa los datos o intenta mas tarde.";
       setError(message);
       toast.error(message);
+      startCooldown();
     } finally {
       setIsSubmitting(false);
     }
@@ -185,16 +190,20 @@ export default function RegisterPage() {
                 type="button"
                 className="w-full rounded-lg bg-gray-300 px-6 py-2.5 text-gray-700 hover:bg-gray-400 sm:w-1/2"
                 onClick={() => router.push("/login")}
-                disabled={isSubmitting}
+                disabled={isSubmitting || isCoolingDown}
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 className="w-full rounded-lg bg-green-600 px-6 py-2.5 text-white hover:bg-green-700 disabled:opacity-60 sm:w-1/2"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isCoolingDown}
               >
-                {isSubmitting ? "Enviando..." : "Registrarse"}
+                {isSubmitting
+                  ? "Enviando..."
+                  : isCoolingDown
+                    ? `Espera ${remainingSeconds}s`
+                    : "Registrarse"}
               </button>
             </div>
           </form>

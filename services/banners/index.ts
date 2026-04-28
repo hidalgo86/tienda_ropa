@@ -17,6 +17,30 @@ interface ApiOptions {
 }
 
 type RawBanner = Partial<Banner> & { _id?: string | null };
+const BANNER_PLACEHOLDER = "/placeholder.webp";
+const ALLOWED_IMAGE_HOSTS = new Set(["res.cloudinary.com"]);
+
+const normalizeImageUrl = (value: unknown): string => {
+  if (typeof value !== "string") return BANNER_PLACEHOLDER;
+
+  const url = value.trim();
+  if (!url) return BANNER_PLACEHOLDER;
+  if (url.startsWith("/")) return url;
+
+  try {
+    const parsedUrl = new URL(url);
+    if (
+      parsedUrl.protocol === "https:" &&
+      ALLOWED_IMAGE_HOSTS.has(parsedUrl.hostname)
+    ) {
+      return url;
+    }
+  } catch {
+    return BANNER_PLACEHOLDER;
+  }
+
+  return BANNER_PLACEHOLDER;
+};
 
 const normalizeIdentifier = (value: unknown): string => {
   if (typeof value !== "string") return "";
@@ -62,7 +86,7 @@ const parseResponseOrThrow = async <T>(
 const normalizeBanner = (raw: RawBanner): Banner => ({
   id: normalizeIdentifier(raw.id) || normalizeIdentifier(raw._id),
   title: String(raw.title ?? ""),
-  imageUrl: String(raw.imageUrl ?? ""),
+  imageUrl: normalizeImageUrl(raw.imageUrl),
   imagePublicId:
     typeof raw.imagePublicId === "string" ? raw.imagePublicId : null,
   altText: String(raw.altText ?? ""),

@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(normalizeCartItems(data.addToMyCart?.items ?? []));
   } catch (error) {
     if (error instanceof UserApiRouteError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return NextResponse.json({ error: "No se pudo completar la solicitud" }, { status: error.status });
     }
 
     return NextResponse.json(

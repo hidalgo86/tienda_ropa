@@ -59,7 +59,7 @@ export async function PATCH(
   } catch (error) {
     if (error instanceof CategoryApiError) {
       return NextResponse.json(
-        { error: error.message },
+        { error: "No se pudo completar la solicitud" },
         { status: error.status },
       );
     }
@@ -90,7 +90,7 @@ export async function DELETE(
   } catch (error) {
     if (error instanceof CategoryApiError) {
       return NextResponse.json(
-        { error: error.message },
+        { error: "No se pudo completar la solicitud" },
         { status: error.status },
       );
     }

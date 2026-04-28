@@ -1,8 +1,9 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { useSubmitCooldown } from "@/lib/useSubmitCooldown";
 import { resetPassword } from "@/services/users";
 import type { ResetPasswordFormState } from "@/types/ui/users";
 
@@ -15,6 +16,8 @@ const initialFormState: ResetPasswordFormState = {
 
 const strongPasswordRegex =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{6,}$/;
+const safeResetError =
+  "No se pudo restablecer la contrasena. Solicita un nuevo enlace e intenta otra vez.";
 
 function ResetPasswordContent() {
   const router = useRouter();
@@ -29,10 +32,20 @@ function ResetPasswordContent() {
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const { isCoolingDown, remainingSeconds, startCooldown } =
+    useSubmitCooldown(10);
   const hasResetLinkData = Boolean(form.username.trim() && form.token.trim());
+
+  useEffect(() => {
+    if (searchParams.get("token") || searchParams.get("username")) {
+      router.replace("/reset-password", { scroll: false });
+    }
+  }, [router, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting || isCoolingDown) return;
+
     setError("");
     setSuccessMessage("");
 
@@ -64,14 +77,13 @@ function ResetPasswordContent() {
 
       setSuccessMessage(response.message);
       toast.success(response.message);
+      setForm(initialFormState);
       setTimeout(() => router.push("/login"), 1200);
     } catch (submissionError) {
-      const message =
-        submissionError instanceof Error
-          ? submissionError.message
-          : "No se pudo restablecer la contrasena";
-      setError(message);
-      toast.error(message);
+      console.warn("[Reset Password]", submissionError);
+      setError(safeResetError);
+      toast.error(safeResetError);
+      startCooldown();
     } finally {
       setIsSubmitting(false);
     }
@@ -195,16 +207,20 @@ function ResetPasswordContent() {
                 type="button"
                 className="w-full rounded-lg bg-gray-300 px-6 py-2.5 text-gray-700 hover:bg-gray-400 sm:w-1/2"
                 onClick={() => router.push("/login")}
-                disabled={isSubmitting}
+                disabled={isSubmitting || isCoolingDown}
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 className="w-full rounded-lg bg-green-600 px-6 py-2.5 text-white hover:bg-green-700 disabled:opacity-60 sm:w-1/2"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isCoolingDown}
               >
-                {isSubmitting ? "Guardando..." : "Guardar"}
+                {isSubmitting
+                  ? "Guardando..."
+                  : isCoolingDown
+                    ? `Espera ${remainingSeconds}s`
+                    : "Guardar"}
               </button>
             </div>
           </form>

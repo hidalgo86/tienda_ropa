@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useSubmitCooldown } from "@/lib/useSubmitCooldown";
 import { forgotPassword } from "@/services/users";
 import type { ForgotPasswordFormState } from "@/types/ui/users";
 
@@ -12,16 +13,22 @@ const validateEmail = (email: string) =>
 const initialFormState: ForgotPasswordFormState = {
   email: "",
 };
+const safeRecoveryMessage =
+  "Si la cuenta existe, enviaremos instrucciones al correo indicado.";
 
 export default function Page() {
   const [form, setForm] = useState<ForgotPasswordFormState>(initialFormState);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { isCoolingDown, remainingSeconds, startCooldown } =
+    useSubmitCooldown(20);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting || isCoolingDown) return;
+
     setError("");
     setSuccessMessage("");
 
@@ -33,21 +40,19 @@ export default function Page() {
     setIsSubmitting(true);
 
     try {
-      const response = await forgotPassword({
+      await forgotPassword({
         email: form.email.trim().toLowerCase(),
       });
 
-      setSuccessMessage(response.message);
-      toast.success(response.message);
+      setSuccessMessage(safeRecoveryMessage);
+      toast.success(safeRecoveryMessage);
       setForm(initialFormState);
     } catch (submissionError) {
-      const message =
-        submissionError instanceof Error
-          ? submissionError.message
-          : "No se pudo procesar la solicitud";
-      setError(message);
-      toast.error(message);
+      console.warn("[Forgot Password]", submissionError);
+      setSuccessMessage(safeRecoveryMessage);
+      toast.success(safeRecoveryMessage);
     } finally {
+      startCooldown();
       setIsSubmitting(false);
     }
   };
@@ -101,16 +106,20 @@ export default function Page() {
               type="button"
               className="w-full rounded-lg bg-gray-300 px-6 py-2.5 text-gray-700 hover:bg-gray-400 sm:w-1/2"
               onClick={() => router.push("/login")}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isCoolingDown}
             >
               Cancelar
             </button>
             <button
               type="submit"
               className="w-full rounded-lg bg-green-600 px-6 py-2.5 text-white hover:bg-green-700 disabled:opacity-60 sm:w-1/2"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isCoolingDown}
             >
-              {isSubmitting ? "Enviando..." : "Enviar"}
+              {isSubmitting
+                ? "Enviando..."
+                : isCoolingDown
+                  ? `Espera ${remainingSeconds}s`
+                  : "Enviar"}
             </button>
           </div>
         </form>

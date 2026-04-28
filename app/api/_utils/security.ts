@@ -39,11 +39,11 @@ export const clearAuthCookies = (response: NextResponse): void => {
 export const getBackendAuthorization = (
   request?: NextRequest,
 ): string | undefined => {
-  const header = request?.headers.get("authorization")?.trim();
-  if (header) return header;
-
   const accessToken = request?.cookies.get(ACCESS_COOKIE_NAME)?.value?.trim();
-  return accessToken ? `Bearer ${accessToken}` : undefined;
+  if (accessToken) return `Bearer ${accessToken}`;
+
+  const header = request?.headers.get("authorization")?.trim();
+  return header || undefined;
 };
 
 const publicMessages: Record<number, string> = {
@@ -61,6 +61,17 @@ const publicMessages: Record<number, string> = {
 export const jsonError = (
   status: number,
   fallback = "Error interno",
+): NextResponse => {
+  const safeStatus = Number.isInteger(status) && status >= 400 ? status : 500;
+  return NextResponse.json(
+    { error: publicMessages[safeStatus] ?? fallback },
+    { status: safeStatus },
+  );
+};
+
+export const jsonPublicError = (
+  status: number,
+  fallback = "No se pudo completar la solicitud",
 ): NextResponse => {
   const safeStatus = Number.isInteger(status) && status >= 400 ? status : 500;
   return NextResponse.json(

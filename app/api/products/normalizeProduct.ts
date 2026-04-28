@@ -14,6 +14,27 @@ import {
 } from "@/types/domain/products";
 
 type UnknownRecord = Record<string, unknown>;
+const PLACEHOLDER_IMAGE = "/placeholder.webp";
+const ALLOWED_IMAGE_HOSTS = new Set(["res.cloudinary.com"]);
+
+const normalizeImageUrl = (value: unknown): string | undefined => {
+  if (typeof value !== "string") return undefined;
+
+  const url = value.trim();
+  if (!url) return undefined;
+  if (url.startsWith("/")) return url;
+
+  try {
+    const parsedUrl = new URL(url);
+    if (parsedUrl.protocol === "https:" && ALLOWED_IMAGE_HOSTS.has(parsedUrl.hostname)) {
+      return url;
+    }
+  } catch {
+    return undefined;
+  }
+
+  return undefined;
+};
 
 const normalizeVariant = (variant: unknown): VariantProduct => {
   const source = (
@@ -24,14 +45,14 @@ const normalizeVariant = (variant: unknown): VariantProduct => {
     size: typeof source.size === "string" ? source.size : undefined,
   });
 
-  return {
-    name,
-    size: name,
-    stock: Number(source.stock ?? 0),
-    price: Number(source.price ?? 0),
-    image: typeof source.image === "string" ? source.image : undefined,
+    return {
+      name,
+      size: name,
+      stock: Number(source.stock ?? 0),
+      price: Number(source.price ?? 0),
+      image: normalizeImageUrl(source.image),
+    };
   };
-};
 
 const normalizeStatus = (product: UnknownRecord): ProductStatus | undefined => {
   if (typeof product.status === "string" && product.status.trim()) {
@@ -64,15 +85,13 @@ const normalizeImages = (images: unknown): ProductImage[] => {
         image && typeof image === "object" ? image : {}
       ) as UnknownRecord;
 
-      if (
-        typeof source.url !== "string" ||
-        typeof source.publicId !== "string"
-      ) {
+      const url = normalizeImageUrl(source.url);
+      if (!url || typeof source.publicId !== "string") {
         return null;
       }
 
       return {
-        url: source.url,
+        url,
         publicId: source.publicId,
       } satisfies ProductImage;
     })
@@ -113,8 +132,7 @@ export const normalizeProduct = (value: unknown): Product => {
     description:
       typeof product.description === "string" ? product.description : undefined,
     brand: typeof product.brand === "string" ? product.brand : undefined,
-    thumbnail:
-      typeof product.thumbnail === "string" ? product.thumbnail : undefined,
+    thumbnail: normalizeImageUrl(product.thumbnail) ?? PLACEHOLDER_IMAGE,
     genre:
       typeof product.genre === "string"
         ? (parseGenre(product.genre) ?? undefined)

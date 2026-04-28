@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useDispatch } from "react-redux";
 import { MdCheckCircle, MdLocationOn, MdShoppingCart } from "react-icons/md";
 import { useCartActions } from "@/lib/useCartActions";
+import { useSubmitCooldown } from "@/lib/useSubmitCooldown";
 import { checkoutCart } from "@/services/orders";
 import {
   PAYMENTS_ENABLED,
@@ -15,7 +16,6 @@ import {
 import {
   getCurrentUser,
   getStoredAuthToken,
-  getStoredUser,
 } from "@/services/users";
 import { syncCart } from "@/store/slices/cartSlice";
 import type { Order } from "@/types/domain/orders";
@@ -32,10 +32,12 @@ export default function CheckoutPage() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const { cart } = useCartActions();
-  const [user, setUser] = useState<User | null>(getStoredUser());
+  const [user, setUser] = useState<User | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
+  const { isCoolingDown, remainingSeconds, startCooldown } =
+    useSubmitCooldown(5);
 
   useEffect(() => {
     if (!PAYMENTS_ENABLED) {
@@ -91,6 +93,8 @@ export default function CheckoutPage() {
   );
 
   const handleCheckout = async () => {
+    if (isSubmitting || isCoolingDown) return;
+
     if (!PAYMENTS_ENABLED) {
       toast.error(checkoutDisabledMessage);
       return;
@@ -110,6 +114,7 @@ export default function CheckoutPage() {
           ? error.message
           : "No se pudo completar la compra";
       toast.error(message);
+      startCooldown();
     } finally {
       setIsSubmitting(false);
     }
@@ -330,10 +335,14 @@ export default function CheckoutPage() {
               <button
                 type="button"
                 onClick={handleCheckout}
-                disabled={!canCheckout || isSubmitting}
+                disabled={!canCheckout || isSubmitting || isCoolingDown}
                 className="mt-6 w-full px-6 py-3 rounded-xl bg-gray-900 text-white font-medium hover:bg-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? "Procesando compra..." : "Confirmar compra"}
+                {isSubmitting
+                  ? "Procesando compra..."
+                  : isCoolingDown
+                    ? `Espera ${remainingSeconds}s`
+                    : "Confirmar compra"}
               </button>
 
               <div className="mt-4 flex flex-col gap-3">

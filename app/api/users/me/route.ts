@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(data.me);
   } catch (error) {
     if (error instanceof UserApiRouteError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return NextResponse.json({ error: "No se pudo completar la solicitud" }, { status: error.status });
     }
 
     return NextResponse.json(

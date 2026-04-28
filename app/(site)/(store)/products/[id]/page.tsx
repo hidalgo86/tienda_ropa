@@ -21,6 +21,9 @@ const getRequestBaseUrl = async (): Promise<string> => {
   return host ? `${protocol}://${host}` : siteUrl;
 };
 
+const safeJsonLd = (value: unknown): string =>
+  JSON.stringify(value).replace(/</g, "\\u003c");
+
 export async function generateMetadata({
   params,
 }: ProductPageProps): Promise<Metadata> {
@@ -90,6 +93,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       baseUrl: await getRequestBaseUrl(),
       cache: "no-store",
     });
+    const nonce = (await headers()).get("x-nonce") ?? undefined;
     const price = getProductPrice(producto);
     const productSchema = {
       "@context": "https://schema.org",
@@ -120,8 +124,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
     return (
       <>
         <script
+          nonce={nonce}
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(productSchema) }}
         />
         <ProductDetailClient producto={producto} />
       </>

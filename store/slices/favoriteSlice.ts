@@ -6,11 +6,11 @@ interface FavoriteState {
 }
 
 const GUEST_FAVORITES_KEY = "guestFavorites";
-const AUTH_TOKEN_KEY = "authToken";
+const USER_DATA_KEY = "userData";
 
 const hasActiveSession = (): boolean => {
   if (typeof window === "undefined") return false;
-  return Boolean(window.localStorage.getItem(AUTH_TOKEN_KEY));
+  return Boolean(window.localStorage.getItem(USER_DATA_KEY));
 };
 
 export const getGuestFavorites = (): Product[] => {

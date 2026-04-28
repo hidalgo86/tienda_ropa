@@ -14,6 +14,9 @@ type RegisterMutationResponse = {
   };
 };
 
+const safeRegisterError =
+  "No se pudo completar el registro. Revisa los datos o intenta mas tarde.";
+
 const registerMutation = `
   mutation Register($input: RegisterUserInput!) {
     register(input: $input) {
@@ -51,17 +54,18 @@ export async function POST(req: NextRequest) {
       variables: { input },
     });
 
-    return NextResponse.json(data.register, { status: 201 });
+    return NextResponse.json(
+      { message: data.register?.message || "Registro recibido" },
+      { status: 201 },
+    );
   } catch (error: unknown) {
     if (error instanceof UserApiRouteError) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: error.status },
-      );
+      console.warn("[Register]", error.message);
+      return NextResponse.json({ error: safeRegisterError }, { status: 400 });
     }
 
     return NextResponse.json(
-      { error: "Error interno" },
+      { error: safeRegisterError },
       { status: 500 },
     );
   }

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeUsersGraphql } from "../graphqlClient";
-import { UserApiRouteError } from "../userApi.error";
+
+const safeRecoveryMessage =
+  "Si la cuenta existe, enviaremos el usuario al correo indicado.";
 
 const forgotUsernameMutation = `
   mutation ForgotUsername($input: EmailInput!) {
@@ -13,7 +15,7 @@ const forgotUsernameMutation = `
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const data = await executeUsersGraphql<
+    await executeUsersGraphql<
       { forgotUsername: { message: string } },
       { input: { email: string } }
     >({
@@ -21,15 +23,9 @@ export async function POST(req: NextRequest) {
       variables: { input: body },
     });
 
-    return NextResponse.json(data.forgotUsername);
+    return NextResponse.json({ message: safeRecoveryMessage });
   } catch (error) {
-    if (error instanceof UserApiRouteError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-
-    return NextResponse.json(
-      { error: "Error interno" },
-      { status: 500 },
-    );
+    console.warn("[Forgot Username]", error);
+    return NextResponse.json({ message: safeRecoveryMessage });
   }
 }

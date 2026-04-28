@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { executeUsersGraphql } from "../graphqlClient";
 import { UserApiRouteError } from "../userApi.error";
 
+const safeResetError =
+  "No se pudo restablecer la contrasena. Solicita un nuevo enlace e intenta otra vez.";
+
 const resetPasswordMutation = `
   mutation ResetPassword($input: ResetPasswordInput!) {
     resetPassword(input: $input) {
@@ -24,11 +27,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(data.resetPassword);
   } catch (error) {
     if (error instanceof UserApiRouteError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      console.warn("[Reset Password]", error.message);
+      return NextResponse.json({ error: safeResetError }, { status: 400 });
     }
 
     return NextResponse.json(
-      { error: "Error interno" },
+      { error: safeResetError },
       { status: 500 },
     );
   }

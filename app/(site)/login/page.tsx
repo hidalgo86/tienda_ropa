@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useSubmitCooldown } from "@/lib/useSubmitCooldown";
 import {
   getStoredAuthToken,
   loginUser,
@@ -30,6 +31,8 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const { isCoolingDown, remainingSeconds, startCooldown } =
+    useSubmitCooldown(5);
   const router = useRouter();
 
   useEffect(() => {
@@ -40,6 +43,8 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting || isCoolingDown) return;
+
     setError("");
 
     if (!form.username.trim() || !form.password) {
@@ -60,15 +65,14 @@ export default function LoginPage() {
 
       router.push(getSafeRedirectPath());
     } catch (submissionError) {
-      const message =
-        submissionError instanceof Error
-          ? submissionError.message
-          : "No se pudo iniciar sesion. Intenta nuevamente.";
+      console.warn("[Login]", submissionError);
+      const message = "No se pudo iniciar sesion. Intenta nuevamente.";
       setError(message);
       toast.error(message, {
         description:
           "Verifica tus datos o vuelve a intentarlo en unos minutos.",
       });
+      startCooldown();
     } finally {
       setIsSubmitting(false);
     }
@@ -170,9 +174,13 @@ export default function LoginPage() {
               <button
                 type="submit"
                 className="w-full rounded-lg bg-green-600 px-4 py-2.5 text-white disabled:opacity-60"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isCoolingDown}
               >
-                {isSubmitting ? "Entrando..." : "Iniciar sesion"}
+                {isSubmitting
+                  ? "Entrando..."
+                  : isCoolingDown
+                    ? `Espera ${remainingSeconds}s`
+                    : "Iniciar sesion"}
               </button>
             </div>
           </form>

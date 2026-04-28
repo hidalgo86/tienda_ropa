@@ -12,7 +12,6 @@ const ALLOWED_IMAGE_TYPES = new Set([
   "image/jpeg",
   "image/png",
   "image/webp",
-  "image/gif",
 ]);
 const ALLOWED_FOLDERS = new Set(["products", "banners"]);
 
@@ -67,9 +66,8 @@ const hasAllowedImageSignature = (buffer: Buffer): boolean => {
     buffer[3] === 0x47;
   const header = buffer.subarray(0, 12).toString("ascii");
   const isWebp = header.startsWith("RIFF") && header.includes("WEBP");
-  const isGif = header.startsWith("GIF87a") || header.startsWith("GIF89a");
 
-  return isJpeg || isPng || isWebp || isGif;
+  return isJpeg || isPng || isWebp;
 };
 
 const uploadBufferToCloudinary = async (
@@ -125,7 +123,7 @@ export async function POST(req: NextRequest) {
 
     if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
       return NextResponse.json(
-        { error: "El archivo debe ser una imagen JPG, PNG, WEBP o GIF" },
+        { error: "El archivo debe ser una imagen JPG, PNG o WEBP" },
         { status: 400 },
       );
     }

@@ -157,6 +157,15 @@ const notifyAuthSessionChange = (): void => {
   window.dispatchEvent(new Event(AUTH_SESSION_EVENT));
 };
 
+const toStoredUser = (user: User): User => ({
+  id: user.id,
+  username: user.username,
+  email: "",
+  isEmailVerified: user.isEmailVerified,
+  status: user.status,
+  role: user.role,
+});
+
 export const getStoredAuthToken = (): string | null => {
   if (!isBrowser()) return null;
   return window.localStorage.getItem(USER_DATA_KEY) ? COOKIE_SESSION_MARKER : null;
@@ -174,7 +183,14 @@ export const getStoredUser = (): User | null => {
   if (!raw) return null;
 
   try {
-    return JSON.parse(raw) as User;
+    const user = JSON.parse(raw) as User;
+    const storedUser = toStoredUser(user);
+
+    if (JSON.stringify(user) !== JSON.stringify(storedUser)) {
+      window.localStorage.setItem(USER_DATA_KEY, JSON.stringify(storedUser));
+    }
+
+    return storedUser;
   } catch {
     clearStoredSession();
     return null;
@@ -186,13 +202,13 @@ export const storeAuthSession = (session: AuthSession): void => {
 
   window.localStorage.removeItem(AUTH_TOKEN_KEY);
   window.localStorage.removeItem(REFRESH_TOKEN_KEY);
-  window.localStorage.setItem(USER_DATA_KEY, JSON.stringify(session.user));
+  window.localStorage.setItem(USER_DATA_KEY, JSON.stringify(toStoredUser(session.user)));
   notifyAuthSessionChange();
 };
 
 export const updateStoredUser = (user: User): void => {
   if (!isBrowser()) return;
-  window.localStorage.setItem(USER_DATA_KEY, JSON.stringify(user));
+  window.localStorage.setItem(USER_DATA_KEY, JSON.stringify(toStoredUser(user)));
 };
 
 const storeTokens = (): void => {

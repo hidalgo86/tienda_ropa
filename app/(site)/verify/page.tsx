@@ -1,8 +1,9 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { useSubmitCooldown } from "@/lib/useSubmitCooldown";
 import {
   getStoredAuthToken,
   getStoredUser,
@@ -32,8 +33,19 @@ function VerifyPageContent() {
   const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResending, setIsResending] = useState(false);
+  const {
+    isCoolingDown: isResendCoolingDown,
+    remainingSeconds: resendRemainingSeconds,
+    startCooldown: startResendCooldown,
+  } = useSubmitCooldown(60);
 
   const canResend = useMemo(() => form.userId.trim().length > 0, [form.userId]);
+
+  useEffect(() => {
+    if (searchParams.get("code") || searchParams.get("userId")) {
+      router.replace("/verify", { scroll: false });
+    }
+  }, [router, searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,6 +88,8 @@ function VerifyPageContent() {
   };
 
   const handleResendVerification = async () => {
+    if (isResending || isResendCoolingDown) return;
+
     setError("");
     setSuccessMessage("");
 
@@ -95,13 +109,13 @@ function VerifyPageContent() {
       setSuccessMessage(response.message);
       toast.success(response.message);
     } catch (resendError) {
+      console.warn("[Resend Verification]", resendError);
       const message =
-        resendError instanceof Error
-          ? resendError.message
-          : "No se pudo reenviar el codigo";
+        "No se pudo reenviar el codigo. Intenta nuevamente mas tarde.";
       setError(message);
       toast.error(message);
     } finally {
+      startResendCooldown();
       setIsResending(false);
     }
   };
@@ -165,9 +179,15 @@ function VerifyPageContent() {
               type="button"
               className="w-full rounded-lg border border-amber-300 bg-white px-4 py-2.5 text-amber-900 hover:bg-amber-50 disabled:opacity-60 sm:w-auto"
               onClick={handleResendVerification}
-              disabled={!canResend || isSubmitting || isResending}
+              disabled={
+                !canResend || isSubmitting || isResending || isResendCoolingDown
+              }
             >
-              {isResending ? "Reenviando..." : "Reenviar codigo"}
+              {isResending
+                ? "Reenviando..."
+                : isResendCoolingDown
+                  ? `Espera ${resendRemainingSeconds}s`
+                  : "Reenviar codigo"}
             </button>
             <button
               type="button"

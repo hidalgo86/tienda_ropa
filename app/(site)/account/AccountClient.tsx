@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { toast } from "sonner";
 import { MdLogout, MdReceiptLong } from "react-icons/md";
+import { useSubmitCooldown } from "@/lib/useSubmitCooldown";
 import {
   changePassword,
   clearStoredSession,
@@ -74,6 +75,11 @@ export default function AccountClient() {
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const {
+    isCoolingDown: isResendCoolingDown,
+    remainingSeconds: resendRemainingSeconds,
+    startCooldown: startResendCooldown,
+  } = useSubmitCooldown(60);
 
   useEffect(() => {
     const token = getStoredAuthToken();
@@ -145,6 +151,8 @@ export default function AccountClient() {
   };
 
   const handleResendVerification = async () => {
+    if (isResendingVerification || isResendCoolingDown) return;
+
     const resolvedUserId = userInfo?.id?.trim() || storedUser?.id?.trim() || "";
     const token = getStoredAuthToken();
 
@@ -167,13 +175,13 @@ export default function AccountClient() {
       setVerificationMessage(response.message);
       toast.success(response.message);
     } catch (resendError) {
+      console.warn("[Resend Verification]", resendError);
       const message =
-        resendError instanceof Error
-          ? resendError.message
-          : "No se pudo reenviar el codigo de verificacion";
+        "No se pudo reenviar el codigo de verificacion. Intenta nuevamente mas tarde.";
       setVerificationMessage(message);
       toast.error(message);
     } finally {
+      startResendCooldown();
       setIsResendingVerification(false);
     }
   };
@@ -317,10 +325,12 @@ export default function AccountClient() {
                   type="button"
                   onClick={handleResendVerification}
                   className="inline-flex w-full items-center justify-center rounded-md border border-amber-300 bg-white px-4 py-2 text-sm font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-60 sm:w-auto"
-                  disabled={isResendingVerification}
+                  disabled={isResendingVerification || isResendCoolingDown}
                 >
                   {isResendingVerification
                     ? "Reenviando..."
+                    : isResendCoolingDown
+                      ? `Espera ${resendRemainingSeconds}s`
                     : "Reenviar codigo"}
                 </button>
               </div>

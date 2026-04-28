@@ -70,7 +70,7 @@ export async function GET(req: NextRequest) {
     );
   } catch (error) {
     if (error instanceof UserApiRouteError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return NextResponse.json({ error: "No se pudo completar la solicitud" }, { status: error.status });
     }
 
     return NextResponse.json(
@@ -90,7 +90,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ success: Boolean(data.clearMyFavorites) });
   } catch (error) {
     if (error instanceof UserApiRouteError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return NextResponse.json({ error: "No se pudo completar la solicitud" }, { status: error.status });
     }
 
     return NextResponse.json(
