@@ -5,14 +5,16 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { toast } from "sonner";
-import { MdLogout, MdReceiptLong } from "react-icons/md";
+import { MdDeleteForever, MdLogout, MdReceiptLong } from "react-icons/md";
 import { useSubmitCooldown } from "@/lib/useSubmitCooldown";
 import {
   changePassword,
   clearStoredSession,
+  confirmAccountDeletion,
   getCurrentUser,
   getStoredAuthToken,
   getStoredUser,
+  requestAccountDeletion,
   resendVerification,
   updateProfile,
   updateStoredUser,
@@ -69,9 +71,14 @@ export default function AccountClient() {
   const [profileError, setProfileError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [verificationMessage, setVerificationMessage] = useState("");
+  const [deletionCode, setDeletionCode] = useState("");
+  const [deletionError, setDeletionError] = useState("");
+  const [deletionMessage, setDeletionMessage] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [isResendingVerification, setIsResendingVerification] = useState(false);
+  const [isRequestingDeletion, setIsRequestingDeletion] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -254,6 +261,68 @@ export default function AccountClient() {
     }
   };
 
+  const handleRequestDeletionCode = async () => {
+    const shouldRequest = window.confirm(
+      "Vas a solicitar un codigo para eliminar tu cuenta definitivamente. Quieres continuar?",
+    );
+
+    if (!shouldRequest) return;
+
+    setDeletionError("");
+    setDeletionMessage("");
+    setIsRequestingDeletion(true);
+
+    try {
+      const response = await requestAccountDeletion();
+      setDeletionMessage(response.message);
+      toast.success(response.message);
+    } catch (requestError) {
+      const message =
+        requestError instanceof Error
+          ? requestError.message
+          : "No se pudo enviar el codigo de eliminacion";
+      setDeletionError(message);
+      toast.error(message);
+    } finally {
+      setIsRequestingDeletion(false);
+    }
+  };
+
+  const handleDeleteAccountSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setDeletionError("");
+
+    const code = deletionCode.trim();
+    if (code.length !== 6) {
+      setDeletionError("Ingresa el codigo de 6 digitos enviado a tu correo");
+      return;
+    }
+
+    const shouldDelete = window.confirm(
+      "Esta accion eliminara tu cuenta definitivamente y cerrara tu sesion. No podras recuperarla. Confirmas el borrado?",
+    );
+
+    if (!shouldDelete) return;
+
+    setIsDeletingAccount(true);
+
+    try {
+      const response = await confirmAccountDeletion(code);
+      toast.success(response.message || "Cuenta eliminada");
+      clearStoredSession();
+      router.replace("/");
+    } catch (deleteError) {
+      const message =
+        deleteError instanceof Error
+          ? deleteError.message
+          : "No se pudo eliminar la cuenta";
+      setDeletionError(message);
+      toast.error(message);
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
+
   const handleLogout = () => {
     const shouldLogout = window.confirm("Quieres cerrar tu sesion?");
 
@@ -357,7 +426,7 @@ export default function AccountClient() {
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 transition hover:text-red-600"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-100 sm:w-auto"
                   >
                     <MdLogout size={18} />
                     Cerrar sesion
@@ -631,6 +700,75 @@ export default function AccountClient() {
                     : "Actualizar contrasena"}
                 </button>
               </form>
+            </div>
+
+            <div className="bg-white shadow rounded-lg border border-red-100">
+              <div className="px-6 py-4 border-b border-red-100">
+                <div className="flex items-center gap-2">
+                  <MdDeleteForever className="text-red-600" size={22} />
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Eliminar cuenta
+                  </h3>
+                </div>
+                <p className="mt-2 text-sm text-gray-600">
+                  Esta accion es definitiva. Se eliminara tu cuenta de usuario,
+                  tus datos de perfil, carrito y favoritos. Es posible que se
+                  conserven registros de pedidos y auditoria cuando sean
+                  necesarios para soporte, seguridad u obligaciones operativas.
+                </p>
+              </div>
+              <div className="px-6 py-4 space-y-4">
+                <button
+                  type="button"
+                  onClick={handleRequestDeletionCode}
+                  disabled={isRequestingDeletion || isDeletingAccount}
+                  className="inline-flex w-full items-center justify-center rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-60 sm:w-auto"
+                >
+                  {isRequestingDeletion
+                    ? "Enviando codigo..."
+                    : "Enviar codigo de eliminacion"}
+                </button>
+
+                {(deletionMessage || deletionError) && (
+                  <div
+                    className={`rounded-md border px-3 py-2 text-sm ${
+                      deletionError
+                        ? "border-red-200 bg-red-50 text-red-700"
+                        : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                    }`}
+                  >
+                    {deletionError || deletionMessage}
+                  </div>
+                )}
+
+                <form
+                  onSubmit={handleDeleteAccountSubmit}
+                  className="flex flex-col gap-3 sm:flex-row sm:items-end"
+                >
+                  <label className="block flex-1 text-sm font-medium text-gray-700">
+                    Codigo recibido por correo
+                    <input
+                      value={deletionCode}
+                      onChange={(event) =>
+                        setDeletionCode(event.target.value.replace(/\D/g, ""))
+                      }
+                      inputMode="numeric"
+                      maxLength={6}
+                      className="mt-1 w-full rounded border border-gray-300 px-3 py-2"
+                      placeholder="123456"
+                    />
+                  </label>
+                  <button
+                    type="submit"
+                    disabled={isDeletingAccount || deletionCode.trim().length !== 6}
+                    className="inline-flex w-full items-center justify-center rounded-md bg-red-600 px-4 py-2 text-white hover:bg-red-700 disabled:opacity-60 sm:w-auto"
+                  >
+                    {isDeletingAccount
+                      ? "Eliminando..."
+                      : "Eliminar definitivamente"}
+                  </button>
+                </form>
+              </div>
             </div>
           </div>
         </div>

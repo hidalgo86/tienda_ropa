@@ -506,6 +506,48 @@ export const changePassword = async (
   }, "Error al cambiar la contrasena", options);
 };
 
+export const requestAccountDeletion = async (
+  options: ApiOptions = {},
+): Promise<{ message: string }> => {
+  return fetchWithAuthRetry(async (token) => {
+    const response = await fetch(
+      buildApiUrl("/api/users/request-account-deletion", options.baseUrl),
+      {
+        method: "POST",
+        headers: buildHeaders({ ...options, token }, true),
+        signal: options.signal,
+      },
+    );
+
+    return parseResponseOrThrow<{ message: string }>(
+      response,
+      "Error al solicitar la eliminacion de cuenta",
+    );
+  }, "Error al solicitar la eliminacion de cuenta", options);
+};
+
+export const confirmAccountDeletion = async (
+  code: string,
+  options: ApiOptions = {},
+): Promise<{ message: string }> => {
+  return fetchWithAuthRetry(async (token) => {
+    const response = await fetch(
+      buildApiUrl("/api/users/confirm-account-deletion", options.baseUrl),
+      {
+        method: "POST",
+        headers: buildHeaders({ ...options, token }, true),
+        body: JSON.stringify({ code }),
+        signal: options.signal,
+      },
+    );
+
+    return parseResponseOrThrow<{ message: string }>(
+      response,
+      "Error al eliminar la cuenta",
+    );
+  }, "Error al eliminar la cuenta", options);
+};
+
 interface ListAdminUsersParams {
   page?: number;
   limit?: number;

@@ -72,6 +72,12 @@ function DashboardLayoutContent({
       href: "/dashboard/banners",
     },
     {
+      src: "/dashboard/finanzas.png",
+      alt: "audit",
+      label: "Auditorias",
+      href: "/dashboard/audit",
+    },
+    {
       src: "/dashboard/salir.png",
       alt: "exit",
       label: "Salir",
@@ -84,6 +90,7 @@ function DashboardLayoutContent({
     if (pathname.includes("/dashboard/clients")) return "clients";
     if (pathname.includes("/dashboard/orders")) return "orders";
     if (pathname.includes("/dashboard/banners")) return "banners";
+    if (pathname.includes("/dashboard/audit")) return "audit";
     return "products";
   }, [pathname]);
 
