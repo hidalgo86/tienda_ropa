@@ -15,7 +15,6 @@ const auditLogsQuery = `
         entityType
         entityId
         ip
-        userAgent
         createdAt
       }
       total

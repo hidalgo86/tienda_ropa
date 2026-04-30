@@ -7,7 +7,6 @@ export interface AuditLog {
   entityType: string;
   entityId?: string | null;
   ip?: string | null;
-  userAgent?: string | null;
   createdAt: string;
 }
 

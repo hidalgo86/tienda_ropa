@@ -37,8 +37,89 @@ const normalizeAuditPage = (
 });
 
 const compactId = (value?: string | null): string => {
-  if (!value) return "Sin dato";
+  if (!value) return "-";
   return value.length > 18 ? `${value.slice(0, 8)}...${value.slice(-6)}` : value;
+};
+
+const shouldShowEntityId = (log: AuditLog): boolean => {
+  if (!log.entityId) return false;
+  return log.entityId !== log.actorUserId;
+};
+
+const actorRoleLabel = (log: AuditLog): string => {
+  if (log.actorRole) return log.actorRole;
+  return log.actorUserId ? "Usuario identificado" : "Sin autenticar";
+};
+
+const ipLabel = (value?: string | null): string => {
+  if (!value) return "Sin IP";
+
+  const normalizedValue = value.trim();
+  if (
+    normalizedValue === "::1" ||
+    normalizedValue === "0:0:0:0:0:0:0:1" ||
+    normalizedValue === "0:0:0::" ||
+    normalizedValue === "127.0.0.1"
+  ) {
+    return "Local";
+  }
+
+  return normalizedValue;
+};
+
+const actionLabel = (action: string): string => {
+  const labels: Record<string, string> = {
+    login: "Inicio de sesion",
+    refreshToken: "Renovacion de sesion",
+    register: "Registro",
+    updateMyProfile: "Actualizacion de perfil",
+    updateUserStatus: "Cambio de estado",
+    changePassword: "Cambio de contrasena",
+    requestAccountDeletion: "Solicitud de borrado",
+    confirmAccountDeletion: "Borrado de cuenta",
+    checkoutMyCart: "Compra",
+    payMyOrder: "Pago de pedido",
+    adminPayOrder: "Pago admin",
+    cancelMyOrder: "Cancelacion de pedido",
+    adminCancelOrder: "Cancelacion admin",
+    createProduct: "Producto creado",
+    updateProduct: "Producto actualizado",
+    deleteProduct: "Producto eliminado",
+    restoreProduct: "Producto restaurado",
+    createCategory: "Categoria creada",
+    updateCategory: "Categoria actualizada",
+    deleteCategory: "Categoria eliminada",
+    createBanner: "Banner creado",
+    updateBanner: "Banner actualizado",
+    deleteBanner: "Banner eliminado",
+  };
+
+  return labels[action] ?? action;
+};
+
+const moduleLabel = (log: AuditLog): string => {
+  const modules: Record<string, string> = {
+    login: "Autenticacion",
+    refreshToken: "Autenticacion",
+    register: "Usuarios",
+    updateUserStatus: "Usuarios",
+    updateMyProfile: "Cuenta",
+    changePassword: "Cuenta",
+    requestAccountDeletion: "Cuenta",
+    confirmAccountDeletion: "Cuenta",
+    checkoutMyCart: "Pedidos",
+    payMyOrder: "Pedidos",
+    adminPayOrder: "Pedidos",
+    cancelMyOrder: "Pedidos",
+    adminCancelOrder: "Pedidos",
+    User: "Usuarios",
+    Order: "Pedidos",
+    Product: "Productos",
+    Category: "Categorias",
+    Banner: "Banners",
+  };
+
+  return modules[log.entityType] ?? modules[log.action] ?? (log.entityType || "-");
 };
 
 const badgeClass = (action: string): string => {
@@ -54,6 +135,10 @@ const badgeClass = (action: string): string => {
 
   if (normalizedAction.includes("update") || normalizedAction.includes("pay")) {
     return "bg-blue-50 text-blue-700";
+  }
+
+  if (normalizedAction.includes("login") || normalizedAction.includes("token")) {
+    return "bg-violet-50 text-violet-700";
   }
 
   return "bg-slate-100 text-slate-700";
@@ -158,7 +243,7 @@ export default function DashboardAuditPage() {
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Auditorias</h1>
             <p className="mt-1 text-sm text-slate-500">
-              Consulta acciones registradas por trazabilidad del backend.
+              Bitacora basica de seguridad, pedidos y cambios de administracion.
             </p>
           </div>
 
@@ -197,7 +282,7 @@ export default function DashboardAuditPage() {
               />
             </label>
             <label className="space-y-1 text-sm font-medium text-slate-700">
-              Entidad
+              Modulo
               <input
                 value={filters.entityType ?? ""}
                 onChange={(event) => updateFilter("entityType", event.target.value)}
@@ -263,10 +348,9 @@ export default function DashboardAuditPage() {
                   <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                     <th className="px-4 py-3">Fecha</th>
                     <th className="px-4 py-3">Accion</th>
-                    <th className="px-4 py-3">Entidad</th>
-                    <th className="px-4 py-3">Actor</th>
-                    <th className="px-4 py-3">IP anonimizada</th>
-                    <th className="px-4 py-3">Request</th>
+                    <th className="px-4 py-3">Modulo</th>
+                    <th className="px-4 py-3">Usuario</th>
+                    <th className="px-4 py-3">IP</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -279,30 +363,29 @@ export default function DashboardAuditPage() {
                         <span
                           className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(log.action)}`}
                         >
-                          {log.action}
+                          {actionLabel(log.action)}
                         </span>
                       </td>
                       <td className="px-4 py-4">
                         <div className="font-medium text-slate-900">
-                          {log.entityType}
+                          {moduleLabel(log)}
                         </div>
-                        <div className="mt-1 font-mono text-xs text-slate-500">
-                          {compactId(log.entityId)}
-                        </div>
+                        {shouldShowEntityId(log) && (
+                          <div className="mt-1 font-mono text-xs text-slate-500">
+                            {compactId(log.entityId)}
+                          </div>
+                        )}
                       </td>
                       <td className="px-4 py-4">
                         <div className="font-mono text-xs text-slate-700">
                           {compactId(log.actorUserId)}
                         </div>
                         <div className="mt-1 text-xs text-slate-500">
-                          {log.actorRole || "Sin rol"}
+                          {actorRoleLabel(log)}
                         </div>
                       </td>
                       <td className="px-4 py-4 text-slate-600">
-                        {log.ip || "Sin IP"}
-                      </td>
-                      <td className="px-4 py-4 font-mono text-xs text-slate-500">
-                        {compactId(log.requestId)}
+                        {ipLabel(log.ip)}
                       </td>
                     </tr>
                   ))}
@@ -316,16 +399,18 @@ export default function DashboardAuditPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="font-medium text-slate-900">
-                        {log.entityType}
+                        {moduleLabel(log)}
                       </p>
-                      <p className="mt-1 font-mono text-xs text-slate-500">
-                        {compactId(log.entityId)}
-                      </p>
+                      {shouldShowEntityId(log) && (
+                        <p className="mt-1 font-mono text-xs text-slate-500">
+                          {compactId(log.entityId)}
+                        </p>
+                      )}
                     </div>
                     <span
                       className={`inline-flex shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(log.action)}`}
                     >
-                      {log.action}
+                      {actionLabel(log.action)}
                     </span>
                   </div>
 
@@ -338,25 +423,20 @@ export default function DashboardAuditPage() {
                     </div>
                     <div>
                       <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                        Actor
+                        Usuario
                       </p>
                       <p className="mt-1 font-mono text-xs">
                         {compactId(log.actorUserId)}
                       </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        {actorRoleLabel(log)}
+                      </p>
                     </div>
                     <div>
                       <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                        IP anonimizada
+                        IP
                       </p>
-                      <p className="mt-1">{log.ip || "Sin IP"}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                        Request
-                      </p>
-                      <p className="mt-1 font-mono text-xs">
-                        {compactId(log.requestId)}
-                      </p>
+                      <p className="mt-1">{ipLabel(log.ip)}</p>
                     </div>
                   </div>
                 </article>
