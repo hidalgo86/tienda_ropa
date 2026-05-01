@@ -415,37 +415,90 @@ const EditProductContent: React.FC = () => {
         <span className="text-sm font-medium">Volver</span>
       </button>
       <div className="flex justify-center mb-6 relative">
-        {currentImageUrl ? (
-          <Image
-            src={currentImageUrl}
-            alt={form.name || "Imagen del producto"}
-            width={224}
-            height={224}
-            className="max-h-56 rounded shadow object-contain"
-          />
-        ) : (
-          <div className="h-56 w-56 bg-gray-100 rounded shadow flex items-center justify-center text-gray-400">
-            Sin imagen
-          </div>
-        )}
+        <div className="relative h-56 w-56 overflow-hidden rounded border border-gray-300 bg-gray-100 shadow">
+          {currentImageUrl ? (
+            <Image
+              src={currentImageUrl}
+              alt={form.name || "Imagen del producto"}
+              width={224}
+              height={224}
+              className="h-full w-full object-contain"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-gray-400">
+              <svg
+                className="h-16 w-16 text-gray-300"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 7v10a4 4 0 004 4h10a4 4 0 004-4V7a4 4 0 00-4-4H7a4 4 0 00-4 4z"
+                />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </div>
+          )}
 
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-3">
-          <button
-            type="button"
-            title="Subir desde galeria"
-            className="group relative bg-white/90 hover:bg-white text-emerald-600 hover:text-emerald-700 rounded-full p-3 shadow backdrop-blur"
-            onClick={() => galleryInputRef.current?.click()}
-          >
-            Galeria
-          </button>
-          <button
-            type="button"
-            title="Tomar foto"
-            className="group relative bg-white/90 hover:bg-white text-blue-600 hover:text-blue-700 rounded-full p-3 shadow backdrop-blur"
-            onClick={openCamera}
-          >
-            Camara
-          </button>
+          <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-3">
+            <button
+              type="button"
+              aria-label="Subir desde galeria"
+              title="Subir desde galeria"
+              className="group relative rounded-full bg-white/90 p-2 text-emerald-600 shadow backdrop-blur transition hover:bg-white hover:text-emerald-700"
+              onClick={() => galleryInputRef.current?.click()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  galleryInputRef.current?.click();
+                }
+              }}
+            >
+              <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus:opacity-100">
+                Galeria
+              </span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="h-5 w-5"
+              >
+                <path d="M4 5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H4zm3.5 3a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zM4 17l4.5-4.5 3 3L15 12l5 5H4z" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              aria-label="Tomar foto"
+              title="Tomar foto"
+              className="group relative rounded-full bg-white/90 p-2 text-blue-600 shadow backdrop-blur transition hover:bg-white hover:text-blue-700"
+              onClick={openCamera}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  openCamera();
+                }
+              }}
+            >
+              <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus:opacity-100">
+                Camara
+              </span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="h-5 w-5"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M9.25 4.5a1.75 1.75 0 0 0-1.49.833L6.86 6.75H5A2.75 2.75 0 0 0 2.25 9.5v7A2.75 2.75 0 0 0 5 19.25h14A2.75 2.75 0 0 0 21.75 16.5v-7A2.75 2.75 0 0 0 19 6.75h-1.86l-.9-1.417A1.75 1.75 0 0 0 14.75 4.5h-5.5Zm2.75 11.75a4 4 0 1 1 0-8 4 4 0 0 1 0 8Zm0-1.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
