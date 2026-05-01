@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import React from "react";
 import type { SidebarMobileProps } from "@/types/ui/products";
 
@@ -12,40 +11,38 @@ const SidebarMobile: React.FC<SidebarMobileProps> = ({
       className="grid gap-1 py-2 px-2 safe-area-inset-bottom"
       style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}
     >
-      {items.map((img, idx) => (
+      {items.map((item, idx) => {
+        const Icon = item.Icon;
+
+        return (
         <Link
           key={idx}
-          href={img.href}
+          href={item.href}
           className={`flex flex-col items-center py-2 px-1 rounded-lg transition-all duration-200 ${
-            activeOption === img.alt
+            activeOption === item.alt
               ? "text-blue-600"
               : "text-gray-600 active:text-gray-900 hover:text-gray-800"
           }`}
         >
           <div
             className={`p-1.5 rounded-full transition-colors ${
-              activeOption === img.alt
+              activeOption === item.alt
                 ? "bg-blue-100"
                 : "hover:bg-gray-100 active:bg-gray-200"
             }`}
           >
-            <Image
-              src={img.src}
-              alt={img.alt}
-              width={20}
-              height={20}
-              className="flex-shrink-0"
-            />
+            <Icon className="h-5 w-5 flex-shrink-0" aria-hidden />
           </div>
           <span
             className={`text-xs mt-1 text-center truncate w-full leading-tight ${
-              activeOption === img.alt ? "font-semibold" : "font-normal"
+              activeOption === item.alt ? "font-semibold" : "font-normal"
             }`}
           >
-            {img.label}
+            {item.label}
           </span>
         </Link>
-      ))}
+        );
+      })}
     </div>
   </div>
 );

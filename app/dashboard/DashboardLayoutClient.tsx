@@ -13,6 +13,15 @@ import {
   getStoredAuthToken,
   getStoredUser,
 } from "@/services/users";
+import {
+  MdAssignment,
+  MdCategory,
+  MdGroups,
+  MdInventory2,
+  MdLogout,
+  MdManageSearch,
+  MdViewCarousel,
+} from "react-icons/md";
 
 const isAdminRole = (role?: string | null): boolean =>
   role?.trim().toLowerCase() === "administrador";
@@ -42,46 +51,46 @@ function DashboardLayoutContent({
 
   const sidebarItems: SidebarItem[] = [
     {
-      src: "/dashboard/productos.png",
       alt: "products",
       label: "Productos",
       href: "/dashboard/products",
+      Icon: MdInventory2,
     },
     {
-      src: "/dashboard/productos.png",
       alt: "categories",
       label: "Categorias",
       href: "/dashboard/categories",
+      Icon: MdCategory,
     },
     {
-      src: "/dashboard/clientes.png",
       alt: "clients",
       label: "Clientes",
       href: "/dashboard/clients",
+      Icon: MdGroups,
     },
     {
-      src: "/dashboard/finanzas.png",
       alt: "orders",
       label: "Ordenes",
       href: "/dashboard/orders",
+      Icon: MdAssignment,
     },
     {
-      src: "/dashboard/productos.png",
       alt: "banners",
       label: "Carrusel",
       href: "/dashboard/banners",
+      Icon: MdViewCarousel,
     },
     {
-      src: "/dashboard/finanzas.png",
       alt: "audit",
       label: "Auditorias",
       href: "/dashboard/audit",
+      Icon: MdManageSearch,
     },
     {
-      src: "/dashboard/salir.png",
       alt: "exit",
       label: "Salir",
       href: "/",
+      Icon: MdLogout,
     },
   ];
 

@@ -1,4 +1,5 @@
 import type { Product } from "@/types/domain/products";
+import type { IconType } from "react-icons";
 
 type ProductActionHandler = (id: string) => void;
 
@@ -46,10 +47,10 @@ export interface ProductDetailClientProps {
 }
 
 export interface SidebarItem {
-  src: string;
   alt: string;
   label: string;
   href: string;
+  Icon: IconType;
 }
 
 export interface SidebarDesktopProps {

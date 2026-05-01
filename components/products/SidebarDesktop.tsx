@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import React from "react";
 import type { SidebarDesktopProps, SidebarItem } from "@/types/ui/products";
 
@@ -11,30 +10,28 @@ const SidebarDesktop: React.FC<SidebarDesktopProps> = ({
 }) => (
   <aside className="hidden w-full max-w-xs min-w-[240px] border-r border-gray-200 bg-white p-4 lg:block xl:p-6">
     <div className="flex flex-col items-center justify-start w-full h-full gap-4 lg:gap-6 pt-4">
-      {items.map((img, idx) => (
+      {items.map((item, idx) => {
+        const Icon = item.Icon;
+
+        return (
         <Link
           key={idx}
-          href={img.href}
+          href={item.href}
           className={`flex flex-col items-center w-full p-2 lg:p-3 rounded-lg transition-all duration-200 ${
-            activeOption === img.alt
+            activeOption === item.alt
               ? "bg-blue-100 text-blue-600 font-semibold shadow-sm"
               : "hover:bg-gray-100 text-gray-700 hover:shadow-sm"
           }`}
         >
           <div className="flex flex-col items-center">
-            <Image
-              src={img.src}
-              alt={img.alt}
-              width={32}
-              height={32}
-              className="lg:w-10 lg:h-10 mb-1 lg:mb-2"
-            />
+            <Icon className="mb-1 h-8 w-8 lg:mb-2 lg:h-10 lg:w-10" aria-hidden />
             <span className="text-xs lg:text-sm text-center leading-tight">
-              {img.label}
+              {item.label}
             </span>
           </div>
         </Link>
-      ))}
+        );
+      })}
     </div>
   </aside>
 );
