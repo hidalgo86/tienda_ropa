@@ -5,6 +5,7 @@ import Pagination from "@/components/Pagination";
 import {
   getStoredAuthToken,
   listAdminUsers,
+  updateAdminUserRole,
   updateAdminUserStatus,
   type PaginatedResult,
 } from "@/services/users";
@@ -17,6 +18,11 @@ const USER_STATUS_OPTIONS = [
   { value: "inactivo", label: "Inactivo" },
   { value: "suspendido", label: "Suspendido" },
   { value: "eliminado", label: "Eliminado" },
+];
+
+const USER_ROLE_OPTIONS = [
+  { value: "cliente", label: "Cliente" },
+  { value: "administrador", label: "Administrador" },
 ];
 
 const statusBadgeClass = (status: string): string => {
@@ -143,6 +149,28 @@ export default function DashboardClientsPage() {
     }
   };
 
+  const handleRoleUpdate = async (userId: string, nextRole: string) => {
+    setUpdatingId(userId);
+
+    try {
+      const updatedUser = await updateAdminUserRole(userId, nextRole);
+      setUsersPage((current) => ({
+        ...current,
+        items: (Array.isArray(current.items) ? current.items : []).map((user) =>
+          user.id === userId ? updatedUser : user,
+        ),
+      }));
+    } catch (updateError) {
+      window.alert(
+        updateError instanceof Error
+          ? updateError.message
+          : "No se pudo actualizar el rol del cliente",
+      );
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
   return (
     <section className="space-y-6">
       <div className="flex flex-col gap-4">
@@ -217,6 +245,7 @@ export default function DashboardClientsPage() {
                     <th className="px-4 py-3">Estado</th>
                     <th className="px-4 py-3">Rol</th>
                     <th className="px-4 py-3">Cambiar estado</th>
+                    <th className="px-4 py-3">Cambiar rol</th>
                     <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
@@ -253,6 +282,22 @@ export default function DashboardClientsPage() {
                             className="w-full min-w-[150px] rounded-xl border border-slate-300 px-3 py-2 text-sm disabled:opacity-60"
                           >
                             {USER_STATUS_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="px-4 py-4">
+                          <select
+                            value={user.role}
+                            disabled={isBusy}
+                            onChange={(event) =>
+                              void handleRoleUpdate(user.id, event.target.value)
+                            }
+                            className="w-full min-w-[170px] rounded-xl border border-slate-300 px-3 py-2 text-sm disabled:opacity-60"
+                          >
+                            {USER_ROLE_OPTIONS.map((option) => (
                               <option key={option.value} value={option.value}>
                                 {option.label}
                               </option>
@@ -318,6 +363,21 @@ export default function DashboardClientsPage() {
                       className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm disabled:opacity-60"
                     >
                       {USER_STATUS_OPTIONS.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+
+                    <select
+                      value={user.role}
+                      disabled={isBusy}
+                      onChange={(event) =>
+                        void handleRoleUpdate(user.id, event.target.value)
+                      }
+                      className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm disabled:opacity-60"
+                    >
+                      {USER_ROLE_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
                           {option.label}
                         </option>

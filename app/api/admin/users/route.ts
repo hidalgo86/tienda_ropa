@@ -44,6 +44,24 @@ const updateUserStatusMutation = `
   }
 `;
 
+const updateUserRoleMutation = `
+  mutation UpdateUserRole($userId: String!, $role: UserRole!) {
+    updateUserRole(userId: $userId, role: $role) {
+      id
+      username
+      email
+      isEmailVerified
+      status
+      role
+      name
+      phone
+      address
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
 const parseBooleanParam = (value: string | null): boolean | undefined => {
   if (value === null) return undefined;
   const normalized = value.trim().toLowerCase();
@@ -147,7 +165,28 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const body = (await req.json()) as { userId?: string; status?: string };
+    const body = (await req.json()) as {
+      userId?: string;
+      status?: string;
+      role?: string;
+    };
+
+    if (body.role) {
+      const data = await executeUsersGraphql<
+        { updateUserRole: Record<string, unknown> },
+        { userId: string; role: string }
+      >({
+        query: updateUserRoleMutation,
+        variables: {
+          userId: String(body.userId ?? ""),
+          role: toGraphqlUserRole(body.role) ?? "",
+        },
+        request: req,
+      });
+
+      return NextResponse.json(data.updateUserRole);
+    }
+
     const data = await executeUsersGraphql<
       { updateUserStatus: Record<string, unknown> },
       { userId: string; status: string }

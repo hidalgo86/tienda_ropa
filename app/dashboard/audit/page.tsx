@@ -46,9 +46,24 @@ const shouldShowEntityId = (log: AuditLog): boolean => {
   return log.entityId !== log.actorUserId;
 };
 
-const actorRoleLabel = (log: AuditLog): string => {
+const entityLabel = (log: AuditLog): string => {
+  return log.entityLabel?.trim() || moduleLabel(log);
+};
+
+const entityContextLabel = (log: AuditLog): string | null => {
+  const context = moduleLabel(log);
+  const label = log.entityLabel?.trim();
+  return label && context !== label ? context : null;
+};
+
+const actorRoleLabel = (log: AuditLog): string | null => {
   if (log.actorRole) return log.actorRole;
-  return log.actorUserId ? "Usuario identificado" : "Sin autenticar";
+  if (log.actorLabel?.trim()) return null;
+  return log.actorUserId ? null : "Sin autenticar";
+};
+
+const actorLabel = (log: AuditLog): string => {
+  return log.actorLabel?.trim() || compactId(log.actorUserId);
 };
 
 const ipLabel = (value?: string | null): string => {
@@ -69,6 +84,19 @@ const ipLabel = (value?: string | null): string => {
 
 const actionLabel = (action: string): string => {
   const labels: Record<string, string> = {
+    login_success: "Inicio de sesion",
+    login_failed: "Intento fallido",
+    logout: "Cierre de sesion",
+    user_created: "Cuenta creada",
+    password_changed: "Cambio de contrasena",
+    user_role_changed: "Cambio de rol",
+    user_status_changed: "Cambio de estado",
+    order_created: "Pedido creado",
+    order_paid: "Pedido pagado",
+    order_cancelled: "Pedido cancelado",
+    product_created: "Producto creado",
+    product_price_changed: "Precio modificado",
+    product_stock_changed: "Stock modificado",
     login: "Inicio de sesion",
     refreshToken: "Renovacion de sesion",
     register: "Registro",
@@ -99,6 +127,19 @@ const actionLabel = (action: string): string => {
 
 const moduleLabel = (log: AuditLog): string => {
   const modules: Record<string, string> = {
+    login_success: "Autenticacion",
+    login_failed: "Autenticacion",
+    logout: "Autenticacion",
+    user_created: "Usuarios",
+    password_changed: "Usuarios",
+    user_role_changed: "Usuarios",
+    user_status_changed: "Usuarios",
+    order_created: "Pedidos",
+    order_paid: "Pedidos",
+    order_cancelled: "Pedidos",
+    product_created: "Productos",
+    product_price_changed: "Productos",
+    product_stock_changed: "Productos",
     login: "Autenticacion",
     refreshToken: "Autenticacion",
     register: "Usuarios",
@@ -115,6 +156,7 @@ const moduleLabel = (log: AuditLog): string => {
     User: "Usuarios",
     Order: "Pedidos",
     Product: "Productos",
+    Auth: "Autenticacion",
     Category: "Categorias",
     Banner: "Banners",
   };
@@ -129,15 +171,28 @@ const badgeClass = (action: string): string => {
     return "bg-red-50 text-red-700";
   }
 
+  if (normalizedAction.includes("failed")) {
+    return "bg-red-50 text-red-700";
+  }
+
   if (normalizedAction.includes("create") || normalizedAction.includes("register")) {
     return "bg-emerald-50 text-emerald-700";
   }
 
-  if (normalizedAction.includes("update") || normalizedAction.includes("pay")) {
+  if (
+    normalizedAction.includes("update") ||
+    normalizedAction.includes("pay") ||
+    normalizedAction.includes("paid") ||
+    normalizedAction.includes("changed")
+  ) {
     return "bg-blue-50 text-blue-700";
   }
 
-  if (normalizedAction.includes("login") || normalizedAction.includes("token")) {
+  if (
+    normalizedAction.includes("login") ||
+    normalizedAction.includes("logout") ||
+    normalizedAction.includes("token")
+  ) {
     return "bg-violet-50 text-violet-700";
   }
 
@@ -277,16 +332,16 @@ export default function DashboardAuditPage() {
               <input
                 value={filters.action ?? ""}
                 onChange={(event) => updateFilter("action", event.target.value)}
-                placeholder="create, update..."
+                placeholder="login_success, order_paid..."
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal outline-none transition focus:border-slate-500"
               />
             </label>
             <label className="space-y-1 text-sm font-medium text-slate-700">
-              Modulo
+              Tipo
               <input
                 value={filters.entityType ?? ""}
                 onChange={(event) => updateFilter("entityType", event.target.value)}
-                placeholder="Product, Order..."
+                placeholder="Product, Order, User..."
                 className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-normal outline-none transition focus:border-slate-500"
               />
             </label>
@@ -348,7 +403,7 @@ export default function DashboardAuditPage() {
                   <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                     <th className="px-4 py-3">Fecha</th>
                     <th className="px-4 py-3">Accion</th>
-                    <th className="px-4 py-3">Modulo</th>
+                    <th className="px-4 py-3">Afectado</th>
                     <th className="px-4 py-3">Usuario</th>
                     <th className="px-4 py-3">IP</th>
                   </tr>
@@ -368,8 +423,13 @@ export default function DashboardAuditPage() {
                       </td>
                       <td className="px-4 py-4">
                         <div className="font-medium text-slate-900">
-                          {moduleLabel(log)}
+                          {entityLabel(log)}
                         </div>
+                        {entityContextLabel(log) && (
+                          <div className="mt-1 text-xs text-slate-500">
+                            {entityContextLabel(log)}
+                          </div>
+                        )}
                         {shouldShowEntityId(log) && (
                           <div className="mt-1 font-mono text-xs text-slate-500">
                             {compactId(log.entityId)}
@@ -377,12 +437,14 @@ export default function DashboardAuditPage() {
                         )}
                       </td>
                       <td className="px-4 py-4">
-                        <div className="font-mono text-xs text-slate-700">
-                          {compactId(log.actorUserId)}
+                        <div className="font-medium text-slate-900">
+                          {actorLabel(log)}
                         </div>
-                        <div className="mt-1 text-xs text-slate-500">
-                          {actorRoleLabel(log)}
-                        </div>
+                        {actorRoleLabel(log) && (
+                          <div className="mt-1 text-xs text-slate-500">
+                            {actorRoleLabel(log)}
+                          </div>
+                        )}
                       </td>
                       <td className="px-4 py-4 text-slate-600">
                         {ipLabel(log.ip)}
@@ -399,8 +461,13 @@ export default function DashboardAuditPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="font-medium text-slate-900">
-                        {moduleLabel(log)}
+                        {entityLabel(log)}
                       </p>
+                      {entityContextLabel(log) && (
+                        <p className="mt-1 text-xs text-slate-500">
+                          {entityContextLabel(log)}
+                        </p>
+                      )}
                       {shouldShowEntityId(log) && (
                         <p className="mt-1 font-mono text-xs text-slate-500">
                           {compactId(log.entityId)}
@@ -425,12 +492,14 @@ export default function DashboardAuditPage() {
                       <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                         Usuario
                       </p>
-                      <p className="mt-1 font-mono text-xs">
-                        {compactId(log.actorUserId)}
+                      <p className="mt-1 font-medium text-slate-800">
+                        {actorLabel(log)}
                       </p>
-                      <p className="mt-1 text-xs text-slate-500">
-                        {actorRoleLabel(log)}
-                      </p>
+                      {actorRoleLabel(log) && (
+                        <p className="mt-1 text-xs text-slate-500">
+                          {actorRoleLabel(log)}
+                        </p>
+                      )}
                     </div>
                     <div>
                       <p className="text-xs font-medium uppercase tracking-wide text-slate-500">

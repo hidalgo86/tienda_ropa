@@ -613,6 +613,29 @@ export const updateAdminUserStatus = async (
   }, "Error al actualizar el estado del usuario", options);
 };
 
+export const updateAdminUserRole = async (
+  userId: string,
+  role: string,
+  options: ApiOptions = {},
+): Promise<User> => {
+  return fetchWithAuthRetry(async (token) => {
+    const response = await fetch(
+      buildApiUrl("/api/admin/users", options.baseUrl),
+      {
+        method: "PATCH",
+        headers: buildHeaders({ ...options, token }, true),
+        body: JSON.stringify({ userId, role }),
+        signal: options.signal,
+      },
+    );
+
+    return parseResponseOrThrow<User>(
+      response,
+      "Error al actualizar el rol del usuario",
+    );
+  }, "Error al actualizar el rol del usuario", options);
+};
+
 export const refreshSession = async (
   options: ApiOptions = {},
 ): Promise<RefreshTokenApiResponse> => {

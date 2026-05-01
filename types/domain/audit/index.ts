@@ -3,9 +3,11 @@ export interface AuditLog {
   requestId?: string | null;
   actorUserId?: string | null;
   actorRole?: string | null;
+  actorLabel?: string | null;
   action: string;
   entityType: string;
   entityId?: string | null;
+  entityLabel?: string | null;
   ip?: string | null;
   createdAt: string;
 }

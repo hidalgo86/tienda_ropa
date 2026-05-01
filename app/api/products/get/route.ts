@@ -48,6 +48,7 @@ const buildProductsQueryInput = (
       maxPrice: filters.maxPrice,
       state: toGraphqlState(filters.state),
       availability: toGraphqlAvailability(filters.availability),
+      includeDeleted: filters.includeDeleted,
     },
     pagination: {
       ...pagination,
@@ -115,6 +116,7 @@ export async function GET(req: Request) {
     const state = parseProductState(searchParams.get("state")) ?? undefined;
     const availability =
       parseProductAvailability(searchParams.get("availability")) ?? undefined;
+    const includeDeleted = searchParams.get("includeDeleted") === "true";
     const sizes = searchParams
       .getAll("size")
       .map((size) => String(size).trim().toUpperCase())
@@ -141,6 +143,7 @@ export async function GET(req: Request) {
           : undefined,
         state,
         availability,
+        includeDeleted,
         minPrice,
         maxPrice,
       },

@@ -11,9 +11,11 @@ const auditLogsQuery = `
         requestId
         actorUserId
         actorRole
+        actorLabel
         action
         entityType
         entityId
+        entityLabel
         ip
         createdAt
       }

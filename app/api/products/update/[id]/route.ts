@@ -34,7 +34,7 @@ export async function PATCH(
   } catch (error: unknown) {
     if (error instanceof UpdateProductRouteError) {
       return NextResponse.json(
-        { error: "No se pudo completar la solicitud" },
+        { error: error.message || "No se pudo completar la solicitud" },
         { status: error.status },
       );
     }

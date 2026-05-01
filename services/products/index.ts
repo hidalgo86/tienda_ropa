@@ -185,6 +185,7 @@ export const listProducts = async (
   if (params.genre) query.set("genre", String(params.genre));
   if (params.state) query.set("state", params.state);
   if (params.availability) query.set("availability", params.availability);
+  if (params.includeDeleted) query.set("includeDeleted", "true");
   if (params.sortBy) query.set("sortBy", params.sortBy);
   if (typeof params.minPrice === "number") {
     query.set("minPrice", String(params.minPrice));

@@ -75,6 +75,7 @@ export interface ProductFiltersModel {
   maxPrice?: number;
   state?: ProductState;
   availability?: ProductAvailability;
+  includeDeleted?: boolean;
   category?: string;
   sizes?: Size[];
 }
@@ -102,6 +103,7 @@ export interface ProductSearchFilters {
   maxPrice?: number;
   state?: ProductState;
   availability?: ProductAvailability;
+  includeDeleted?: boolean;
   category?: string;
   sizes?: Size[];
 }

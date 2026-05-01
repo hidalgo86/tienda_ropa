@@ -65,6 +65,10 @@ export const useAdminProducts = ({
           filter === ProductState.ELIMINADO
             ? ProductState.ELIMINADO
             : undefined;
+        const includeDeleted =
+          filter !== ProductAvailability.DISPONIBLE &&
+          filter !== ProductAvailability.AGOTADO &&
+          filter !== ProductState.ELIMINADO;
         const availability =
           filter === ProductAvailability.DISPONIBLE ||
           filter === ProductAvailability.AGOTADO
@@ -75,6 +79,7 @@ export const useAdminProducts = ({
           {
             state,
             availability,
+            includeDeleted,
             page,
             limit,
             sortBy,

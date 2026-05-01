@@ -81,7 +81,7 @@ const EditProductContent: React.FC = () => {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    getProductById(id, { token: getStoredAuthToken() })
+    getProductById(id, { token: getStoredAuthToken(), trackView: false })
       .then((data) => {
         const inferredCategory =
           resolveCategoryOption(data.categoryId, categoryOptions)?.value ||
@@ -281,12 +281,14 @@ const EditProductContent: React.FC = () => {
       const formWithoutStatus: Partial<UploadProduct> = { ...form };
       delete formWithoutStatus.state;
       delete formWithoutStatus.status;
+      delete formWithoutStatus.thumbnail;
       const payload: Partial<UploadProduct> = {
         ...formWithoutStatus,
         name: String(form.name || "").trim(),
         description: form.description ? String(form.description) : undefined,
         categoryId: resolvedCategoryId,
         images: nextImages,
+        thumbnail: nextImages[0]?.url,
         ...(formStatus === ProductStatus.ELIMINADO
           ? { state: ProductState.ELIMINADO }
           : {}),

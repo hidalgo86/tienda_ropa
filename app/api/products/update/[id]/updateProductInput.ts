@@ -146,7 +146,7 @@ export const buildUpdateProductInput = (
   }
 
   const thumbnail = parseOptionalString(source.thumbnail);
-  if (thumbnail) {
+  if (thumbnail && !thumbnail.startsWith("/")) {
     if (!isValidUrl(thumbnail)) {
       throw new UpdateProductRouteError(
         "thumbnail debe ser una URL válida",
