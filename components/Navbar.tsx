@@ -294,6 +294,36 @@ export default function Navbar() {
             </>
           )}
 
+          {isAdmin && (
+            <Link
+              href="/dashboard/products"
+              className={`flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 transition-colors ${
+                isActivePath("/dashboard/products")
+                  ? "text-pink-600"
+                  : "text-gray-600 hover:text-pink-500"
+              }`}
+            >
+              <div
+                className={`rounded-full p-2 transition-colors ${
+                  isActivePath("/dashboard/products")
+                    ? "bg-pink-100 text-pink-600"
+                    : "hover:bg-pink-100"
+                }`}
+              >
+                <MdBarChart size={20} />
+              </div>
+              <span
+                className={`mt-1 w-full truncate text-center text-xs ${
+                  isActivePath("/dashboard/products")
+                    ? "font-semibold"
+                    : "font-normal"
+                }`}
+              >
+                Dashboard
+              </span>
+            </Link>
+          )}
+
           {isAuthenticated ? (
             <>
               <Link
@@ -373,37 +403,7 @@ export default function Navbar() {
                   isActivePath("/login") ? "font-semibold" : "font-normal"
                 }`}
               >
-                Ingresar
-              </span>
-            </Link>
-          )}
-
-          {isAdmin && (
-            <Link
-              href="/dashboard/products"
-              className={`flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 transition-colors ${
-                isActivePath("/dashboard/products")
-                  ? "text-pink-600"
-                  : "text-gray-600 hover:text-pink-500"
-              }`}
-            >
-              <div
-                className={`rounded-full p-2 transition-colors ${
-                  isActivePath("/dashboard/products")
-                    ? "bg-pink-100 text-pink-600"
-                    : "hover:bg-pink-100"
-                }`}
-              >
-                <MdBarChart size={20} />
-              </div>
-              <span
-                className={`mt-1 w-full truncate text-center text-xs ${
-                  isActivePath("/dashboard/products")
-                    ? "font-semibold"
-                    : "font-normal"
-                }`}
-              >
-                Dashboard
+              Ingresar
               </span>
             </Link>
           )}
