@@ -4,7 +4,12 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useSelector } from "react-redux";
-import { getStoredAuthToken, getStoredUser } from "@/services/users";
+import {
+  clearStoredSession,
+  getCurrentUser,
+  getStoredAuthToken,
+  getStoredUser,
+} from "@/services/users";
 import { RootState } from "@/store";
 import { PAYMENTS_ENABLED } from "@/lib/commerceConfig";
 import {
@@ -41,17 +46,42 @@ export default function Navbar() {
   const [isAdmin, setIsAdmin] = React.useState(false);
 
   React.useEffect(() => {
+    let isMounted = true;
+
     const syncAuthState = () => {
       setMounted(true);
       setIsAuthenticated(Boolean(getStoredAuthToken()));
       setIsAdmin(isAdminRole(getStoredUser()?.role));
     };
 
+    const validateStoredSession = async () => {
+      if (!getStoredAuthToken()) {
+        syncAuthState();
+        return;
+      }
+
+      try {
+        await getCurrentUser();
+        if (isMounted) {
+          syncAuthState();
+        }
+      } catch {
+        clearStoredSession();
+        if (isMounted) {
+          syncAuthState();
+        }
+      }
+    };
+
     syncAuthState();
+    void validateStoredSession();
     window.addEventListener("auth:session-changed", syncAuthState);
+    window.addEventListener("focus", validateStoredSession);
 
     return () => {
+      isMounted = false;
       window.removeEventListener("auth:session-changed", syncAuthState);
+      window.removeEventListener("focus", validateStoredSession);
     };
   }, []);
 

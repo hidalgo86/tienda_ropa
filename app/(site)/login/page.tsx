@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useSubmitCooldown } from "@/lib/useSubmitCooldown";
 import {
+  clearStoredSession,
+  getCurrentUser,
   getStoredAuthToken,
   loginUser,
   storeAuthSession,
@@ -16,11 +18,11 @@ const initialFormState: LoginFormState = {
   password: "",
 };
 
-const getSafeRedirectPath = (): string => {
+const getSafeRedirectPath = (fallbackPath = "/"): string => {
   const redirectTo = new URLSearchParams(window.location.search).get("redirect");
 
   if (!redirectTo?.startsWith("/") || redirectTo.startsWith("//")) {
-    return "/";
+    return fallbackPath;
   }
 
   return redirectTo;
@@ -36,9 +38,29 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (getStoredAuthToken()) {
-      router.replace("/account");
-    }
+    let isMounted = true;
+
+    const redirectIfSessionIsValid = async () => {
+      if (!getStoredAuthToken()) {
+        return;
+      }
+
+      try {
+        await getCurrentUser();
+
+        if (isMounted) {
+          router.replace(getSafeRedirectPath("/account"));
+        }
+      } catch {
+        clearStoredSession();
+      }
+    };
+
+    void redirectIfSessionIsValid();
+
+    return () => {
+      isMounted = false;
+    };
   }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {

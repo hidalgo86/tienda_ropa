@@ -144,11 +144,24 @@ const parseResponseOrThrow = async <T>(
       data && (data as UserApiErrorResponse).error,
       fallbackErrorMessage,
     );
-    throw new Error(message);
+    throw new ApiResponseError(message, response.status);
   }
 
   return data as T;
 };
+
+class ApiResponseError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = "ApiResponseError";
+  }
+}
+
+const isUnauthorizedError = (error: unknown): boolean =>
+  error instanceof ApiResponseError && error.status === 401;
 
 const isBrowser = (): boolean => typeof window !== "undefined";
 
@@ -428,18 +441,27 @@ const fetchWithAuthRetry = async <T>(
 
     const shouldRetry =
       !options.token &&
-      (message.includes("token") ||
+      (isUnauthorizedError(requestError) ||
+        message.includes("token") ||
         message.includes("jwt") ||
         message.includes("unauthorized") ||
         message.includes("unauthoriz") ||
+        message.includes("debes iniciar sesion") ||
         message.includes("sesion"));
 
     if (!shouldRetry) {
       throw requestError;
     }
 
-    const refreshedTokens = await refreshSession(options);
-    storeTokens();
+    let refreshedTokens: RefreshTokenApiResponse;
+
+    try {
+      refreshedTokens = await refreshSession(options);
+      storeTokens();
+    } catch (refreshError) {
+      clearStoredSession();
+      throw refreshError;
+    }
 
     return requestFactory(refreshedTokens.access_token);
   }

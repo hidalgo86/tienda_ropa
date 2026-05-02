@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { executeUsersGraphql } from "../graphqlClient";
 import { UserApiRouteError } from "../userApi.error";
+import { jsonError } from "../../_utils/security";
 
 const meQuery = `
   query Me {
@@ -30,12 +31,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(data.me);
   } catch (error) {
     if (error instanceof UserApiRouteError) {
-      return NextResponse.json({ error: "No se pudo completar la solicitud" }, { status: error.status });
+      return jsonError(error.status, "No se pudo completar la solicitud");
     }
 
-    return NextResponse.json(
-      { error: "Error interno" },
-      { status: 500 },
-    );
+    return jsonError(500);
   }
 }
