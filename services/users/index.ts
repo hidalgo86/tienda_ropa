@@ -45,6 +45,8 @@ const USER_DATA_KEY = "userData";
 const AUTH_SESSION_EVENT = "auth:session-changed";
 export const COOKIE_SESSION_MARKER = "__cookie_session__";
 
+let refreshSessionInFlight: Promise<RefreshTokenApiResponse> | null = null;
+
 const genericErrorMessages = new Set([
   "bad request exception",
   "bad request",
@@ -658,7 +660,7 @@ export const updateAdminUserRole = async (
   }, "Error al actualizar el rol del usuario", options);
 };
 
-export const refreshSession = async (
+const requestRefreshSession = async (
   options: ApiOptions = {},
 ): Promise<RefreshTokenApiResponse> => {
   const response = await fetch(
@@ -675,4 +677,18 @@ export const refreshSession = async (
     response,
     "Error al refrescar la sesion",
   );
+};
+
+export const refreshSession = async (
+  options: ApiOptions = {},
+): Promise<RefreshTokenApiResponse> => {
+  if (options.signal) {
+    return requestRefreshSession(options);
+  }
+
+  refreshSessionInFlight ??= requestRefreshSession(options).finally(() => {
+    refreshSessionInFlight = null;
+  });
+
+  return refreshSessionInFlight;
 };
