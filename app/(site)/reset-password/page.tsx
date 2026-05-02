@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useSubmitCooldown } from "@/lib/useSubmitCooldown";
+import { reportClientError } from "@/lib/errorUtils";
 import { resetPassword } from "@/services/users";
 import type { ResetPasswordFormState } from "@/types/ui/users";
 
@@ -80,7 +81,7 @@ function ResetPasswordContent() {
       setForm(initialFormState);
       setTimeout(() => router.push("/login"), 1200);
     } catch (submissionError) {
-      console.warn("[Reset Password]", submissionError);
+      reportClientError("[Reset Password]", submissionError);
       setError(safeResetError);
       toast.error(safeResetError);
       startCooldown();

@@ -10,6 +10,7 @@ import {
 import { addFavoriteProduct, listFavoriteProducts } from "@/services/favorites";
 import { clearStoredSession, getValidStoredAuthToken } from "@/services/users";
 import type { AppDispatch } from "@/store";
+import { isSessionError, reportClientError } from "@/lib/errorUtils";
 
 export default function FavoritesSyncProvider({
   children,
@@ -59,13 +60,10 @@ export default function FavoritesSyncProvider({
           dispatch(syncFavorites(remoteFavorites));
         }
       } catch (error) {
-        const message = error instanceof Error ? error.message : "";
-        const isAuthError = /unauthorized|sesion|session/i.test(message);
-
-        if (isAuthError) {
+        if (isSessionError(error)) {
           clearStoredSession();
         } else {
-          console.error("Error syncing favorites:", error);
+          reportClientError("Error syncing favorites:", error);
         }
 
         if (mounted) {

@@ -36,6 +36,7 @@ import {
   PAYMENTS_ENABLED,
   paymentsDisabledMessage,
 } from "@/lib/commerceConfig";
+import { toast } from "sonner";
 
 const sizePattern = /^(RN|M3|M6|M9|M12|M18|M24|T2|T3|T4|T5|T6|T7|T8|T9|T10|T12)$/i;
 
@@ -174,11 +175,11 @@ export default function ProductDetailClient({
 
   const handleAddToCart = () => {
     if (isRopa && !selectedSize) {
-      alert("Por favor selecciona una talla");
+      toast.error("Por favor selecciona una talla");
       return;
     }
     if (availableStock === 0) {
-      alert(
+      toast.error(
         isRopa
           ? "Esta talla no esta disponible"
           : "Este producto no esta disponible",
@@ -244,15 +245,15 @@ export default function ProductDetailClient({
 
   const handleBuyNow = () => {
     if (!PAYMENTS_ENABLED) {
-      alert(paymentsDisabledMessage);
+      toast.error(paymentsDisabledMessage);
       return;
     }
     if (isRopa && !selectedSize) {
-      alert("Por favor selecciona una talla");
+      toast.error("Por favor selecciona una talla");
       return;
     }
     if (availableStock === 0) {
-      alert(
+      toast.error(
         isRopa
           ? "Esta talla no esta disponible"
           : "Este producto no esta disponible",
@@ -260,7 +261,7 @@ export default function ProductDetailClient({
       return;
     }
 
-    alert(
+    toast.info(
       isRopa
         ? `Redirigiendo a checkout (Talla: ${selectedSize}, Cantidad: ${displayQuantity})`
         : `Redirigiendo a checkout (Cantidad: ${displayQuantity})`,
@@ -384,6 +385,9 @@ export default function ProductDetailClient({
                     onClick={handleFavoriteToggle}
                     className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     title={
+                      isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"
+                    }
+                    aria-label={
                       isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"
                     }
                   >
@@ -650,6 +654,7 @@ export default function ProductDetailClient({
                         onClick={handleDecreaseQuantity}
                         className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                         disabled={!currentCartItem && quantity <= 1}
+                        aria-label="Disminuir cantidad"
                       >
                         <MdRemove size={18} />
                       </button>
@@ -660,6 +665,7 @@ export default function ProductDetailClient({
                         onClick={handleIncreaseQuantity}
                         disabled={displayQuantity >= availableStock}
                         className="w-10 h-10 flex items-center justify-center border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                        aria-label="Aumentar cantidad"
                       >
                         <MdAdd size={18} />
                       </button>

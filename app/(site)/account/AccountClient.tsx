@@ -7,6 +7,7 @@ import { FiEye, FiEyeOff } from "react-icons/fi";
 import { toast } from "sonner";
 import { MdDeleteForever, MdLogout, MdReceiptLong } from "react-icons/md";
 import { useSubmitCooldown } from "@/lib/useSubmitCooldown";
+import { reportClientError } from "@/lib/errorUtils";
 import {
   changePassword,
   clearStoredSession,
@@ -182,7 +183,7 @@ export default function AccountClient() {
       setVerificationMessage(response.message);
       toast.success(response.message);
     } catch (resendError) {
-      console.warn("[Resend Verification]", resendError);
+      reportClientError("[Resend Verification]", resendError);
       const message =
         "No se pudo reenviar el codigo de verificacion. Intenta nuevamente mas tarde.";
       setVerificationMessage(message);

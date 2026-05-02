@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Product, findVariantBySelection } from "@/types/domain/products";
+import { reportClientError } from "@/lib/errorUtils";
 
 export interface CartItem extends Product {
   quantity: number;
@@ -44,7 +45,7 @@ export const getGuestCart = (): CartItem[] => {
     const parsedCart = savedCart ? JSON.parse(savedCart) : [];
     return Array.isArray(parsedCart) ? (parsedCart as CartItem[]) : [];
   } catch (error) {
-    console.error("Error loading guest cart from localStorage:", error);
+    reportClientError("Error loading guest cart from localStorage:", error);
     return [];
   }
 };
@@ -55,7 +56,7 @@ export const setGuestCart = (cartItems: CartItem[]): void => {
   try {
     window.localStorage.setItem(GUEST_CART_KEY, JSON.stringify(cartItems));
   } catch (error) {
-    console.error("Error saving guest cart to localStorage:", error);
+    reportClientError("Error saving guest cart to localStorage:", error);
   }
 };
 

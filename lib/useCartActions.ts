@@ -24,24 +24,12 @@ import {
   getStoredAuthToken,
   getValidStoredAuthToken,
 } from "@/services/users";
+import { getErrorMessage, isSessionError } from "@/lib/errorUtils";
 
 type CartIdentity = {
   productId: string;
   selectedSize?: string;
   selectedColor?: string;
-};
-
-const isSessionError = (error: unknown): boolean => {
-  const message = error instanceof Error ? error.message.toLowerCase() : "";
-
-  return (
-    message.includes("token") ||
-    message.includes("jwt") ||
-    message.includes("unauthorized") ||
-    message.includes("unauthoriz") ||
-    message.includes("sesion") ||
-    message.includes("session")
-  );
 };
 
 const getCartItemKey = (item: CartIdentity): string =>
@@ -230,11 +218,7 @@ export const useCartActions = () => {
           return;
         }
 
-        const message =
-          error instanceof Error
-            ? error.message
-            : "No se pudo actualizar el carrito";
-        toast.error(message);
+        toast.error(getErrorMessage(error, "No se pudo actualizar el carrito"));
       }
     },
     [dispatch, syncOptimisticCart],
@@ -305,11 +289,7 @@ export const useCartActions = () => {
           return;
         }
 
-        const message =
-          error instanceof Error
-            ? error.message
-            : "No se pudo actualizar el carrito";
-        toast.error(message);
+        toast.error(getErrorMessage(error, "No se pudo actualizar el carrito"));
       }
     },
     [dispatch, syncOptimisticCart],
@@ -351,11 +331,7 @@ export const useCartActions = () => {
           return;
         }
 
-        const message =
-          error instanceof Error
-            ? error.message
-            : "No se pudo actualizar el carrito";
-        toast.error(message);
+        toast.error(getErrorMessage(error, "No se pudo actualizar el carrito"));
       }
     },
     [dispatch, syncOptimisticCart],
@@ -374,9 +350,7 @@ export const useCartActions = () => {
       mutationVersionRef.current += 1;
       syncOptimisticCart([]);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "No se pudo limpiar el carrito";
-      toast.error(message);
+      toast.error(getErrorMessage(error, "No se pudo limpiar el carrito"));
     }
   }, [dispatch, syncOptimisticCart]);
 

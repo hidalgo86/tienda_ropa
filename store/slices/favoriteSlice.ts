@@ -1,5 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Product } from "@/types/domain/products";
+import { reportClientError } from "@/lib/errorUtils";
 
 interface FavoriteState {
   items: Product[];
@@ -21,7 +22,7 @@ export const getGuestFavorites = (): Product[] => {
     const parsedFavorites = savedFavorites ? JSON.parse(savedFavorites) : [];
     return Array.isArray(parsedFavorites) ? (parsedFavorites as Product[]) : [];
   } catch (error) {
-    console.error("Error loading guest favorites from localStorage:", error);
+    reportClientError("Error loading guest favorites from localStorage:", error);
     return [];
   }
 };
@@ -35,7 +36,7 @@ export const setGuestFavorites = (favorites: Product[]): void => {
       JSON.stringify(favorites),
     );
   } catch (error) {
-    console.error("Error saving guest favorites to localStorage:", error);
+    reportClientError("Error saving guest favorites to localStorage:", error);
   }
 };
 

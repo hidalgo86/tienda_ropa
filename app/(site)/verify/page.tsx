@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useSubmitCooldown } from "@/lib/useSubmitCooldown";
+import { reportClientError } from "@/lib/errorUtils";
 import {
   getStoredAuthToken,
   getStoredUser,
@@ -109,7 +110,7 @@ function VerifyPageContent() {
       setSuccessMessage(response.message);
       toast.success(response.message);
     } catch (resendError) {
-      console.warn("[Resend Verification]", resendError);
+      reportClientError("[Resend Verification]", resendError);
       const message =
         "No se pudo reenviar el codigo. Intenta nuevamente mas tarde.";
       setError(message);

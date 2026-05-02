@@ -11,6 +11,7 @@ import { listProducts } from "@/services/products";
 import Link from "next/link";
 import { useCartActions } from "@/lib/useCartActions";
 import { useFavoriteActions } from "@/lib/useFavoriteActions";
+import { reportClientError } from "@/lib/errorUtils";
 
 interface CardsProps {
   initialProducts?: Product[];
@@ -34,7 +35,7 @@ export default function Cards({ initialProducts = [] }: CardsProps) {
       });
       setProductos(response.items ?? []);
     } catch (err) {
-      console.error("Error cargando productos:", err);
+      reportClientError("Error cargando productos:", err);
       setError("Error al cargar los productos");
     } finally {
       setLoading(false);

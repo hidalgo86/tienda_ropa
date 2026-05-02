@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useSubmitCooldown } from "@/lib/useSubmitCooldown";
+import { reportClientError } from "@/lib/errorUtils";
 import { getStoredAuthToken, registerUser } from "@/services/users";
 import type { RegisterFormState } from "@/types/ui/users";
 
@@ -75,7 +76,7 @@ export default function RegisterPage() {
       toast.success(response.message || "Registro exitoso");
       router.push("/login");
     } catch (submissionError) {
-      console.warn("[Register]", submissionError);
+      reportClientError("[Register]", submissionError);
       const message =
         "No se pudo completar el registro. Revisa los datos o intenta mas tarde.";
       setError(message);

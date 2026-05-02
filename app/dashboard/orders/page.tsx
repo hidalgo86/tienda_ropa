@@ -14,6 +14,8 @@ import {
 } from "@/services/orders";
 import { useCallback, useEffect, useState } from "react";
 import { MdChevronRight } from "react-icons/md";
+import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 const formatCurrency = (value: number): string =>
   new Intl.NumberFormat("es-ES", {
@@ -140,10 +142,8 @@ export default function DashboardOrdersPage() {
     try {
       replaceOrder(await adminPayOrder(orderId));
     } catch (actionError) {
-      window.alert(
-        actionError instanceof Error
-          ? actionError.message
-          : "No se pudo marcar la orden como pagada",
+      toast.error(
+        getErrorMessage(actionError, "No se pudo marcar la orden como pagada"),
       );
     } finally {
       setActiveOrderId(null);
@@ -156,11 +156,7 @@ export default function DashboardOrdersPage() {
     try {
       replaceOrder(await adminCancelOrder(orderId));
     } catch (actionError) {
-      window.alert(
-        actionError instanceof Error
-          ? actionError.message
-          : "No se pudo cancelar la orden",
-      );
+      toast.error(getErrorMessage(actionError, "No se pudo cancelar la orden"));
     } finally {
       setActiveOrderId(null);
     }
@@ -179,6 +175,7 @@ export default function DashboardOrdersPage() {
           </div>
 
           <select
+            aria-label="Filtrar ordenes por estado"
             value={status}
             onChange={(event) => setStatus(event.target.value)}
             className="rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-slate-400 sm:w-56"

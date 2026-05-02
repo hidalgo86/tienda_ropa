@@ -12,6 +12,8 @@ import {
 import type { User } from "@/types/domain/users";
 import { useCallback, useEffect, useState } from "react";
 import { MdChevronRight, MdSearch } from "react-icons/md";
+import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 const USER_STATUS_OPTIONS = [
   { value: "activo", label: "Activo" },
@@ -139,10 +141,8 @@ export default function DashboardClientsPage() {
         ),
       }));
     } catch (updateError) {
-      window.alert(
-        updateError instanceof Error
-          ? updateError.message
-          : "No se pudo actualizar el estado del cliente",
+      toast.error(
+        getErrorMessage(updateError, "No se pudo actualizar el estado del cliente"),
       );
     } finally {
       setUpdatingId(null);
@@ -161,10 +161,8 @@ export default function DashboardClientsPage() {
         ),
       }));
     } catch (updateError) {
-      window.alert(
-        updateError instanceof Error
-          ? updateError.message
-          : "No se pudo actualizar el rol del cliente",
+      toast.error(
+        getErrorMessage(updateError, "No se pudo actualizar el rol del cliente"),
       );
     } finally {
       setUpdatingId(null);
@@ -194,6 +192,7 @@ export default function DashboardClientsPage() {
                 className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
               />
               <input
+                aria-label="Buscar clientes por usuario"
                 type="text"
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
@@ -202,6 +201,7 @@ export default function DashboardClientsPage() {
               />
             </div>
             <select
+              aria-label="Filtrar clientes por estado"
               value={status}
               onChange={(event) => setStatus(event.target.value)}
               className="rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-slate-400"
@@ -274,6 +274,7 @@ export default function DashboardClientsPage() {
                         <td className="px-4 py-4 text-slate-600">{user.role}</td>
                         <td className="px-4 py-4">
                           <select
+                            aria-label={`Cambiar estado de ${user.username}`}
                             value={user.status}
                             disabled={isBusy}
                             onChange={(event) =>
@@ -290,6 +291,7 @@ export default function DashboardClientsPage() {
                         </td>
                         <td className="px-4 py-4">
                           <select
+                            aria-label={`Cambiar rol de ${user.username}`}
                             value={user.role}
                             disabled={isBusy}
                             onChange={(event) =>
@@ -355,6 +357,7 @@ export default function DashboardClientsPage() {
                     </div>
 
                     <select
+                      aria-label={`Cambiar estado de ${user.username}`}
                       value={user.status}
                       disabled={isBusy}
                       onChange={(event) =>
@@ -370,6 +373,7 @@ export default function DashboardClientsPage() {
                     </select>
 
                     <select
+                      aria-label={`Cambiar rol de ${user.username}`}
                       value={user.role}
                       disabled={isBusy}
                       onChange={(event) =>

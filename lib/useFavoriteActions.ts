@@ -16,6 +16,7 @@ import {
   removeFavoriteProduct,
 } from "@/services/favorites";
 import { getStoredAuthToken } from "@/services/users";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 export const useFavoriteActions = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -39,11 +40,7 @@ export const useFavoriteActions = () => {
 
         dispatch(syncFavorites(nextFavorites));
       } catch (error) {
-        const message =
-          error instanceof Error
-            ? error.message
-            : "No se pudo actualizar favoritos";
-        toast.error(message);
+        toast.error(getErrorMessage(error, "No se pudo actualizar favoritos"));
       }
     },
     [dispatch, favoriteItems],
@@ -61,9 +58,7 @@ export const useFavoriteActions = () => {
       await clearFavoriteProducts({ token });
       dispatch(syncFavorites([]));
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "No se pudo limpiar favoritos";
-      toast.error(message);
+      toast.error(getErrorMessage(error, "No se pudo limpiar favoritos"));
     }
   }, [dispatch]);
 

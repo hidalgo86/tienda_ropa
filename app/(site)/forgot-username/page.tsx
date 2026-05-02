@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useSubmitCooldown } from "@/lib/useSubmitCooldown";
+import { reportClientError } from "@/lib/errorUtils";
 import { forgotUsername } from "@/services/users";
 import type { ForgotUsernameFormState } from "@/types/ui/users";
 
@@ -48,7 +49,7 @@ export default function Page() {
       toast.success(safeRecoveryMessage);
       setForm(initialFormState);
     } catch (submissionError) {
-      console.warn("[Forgot Username]", submissionError);
+      reportClientError("[Forgot Username]", submissionError);
       setSuccessMessage(safeRecoveryMessage);
       toast.success(safeRecoveryMessage);
     } finally {

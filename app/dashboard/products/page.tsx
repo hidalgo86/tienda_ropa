@@ -16,6 +16,8 @@ import Pagination from "@/components/Pagination";
 import { useAdminProducts } from "./useAdminProducts";
 import { updateProduct } from "@/services/products";
 import { MdAdd, MdInventory2, MdSearch } from "react-icons/md";
+import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 const FILTER_LABELS: Record<string, string> = {
   [ADMIN_PRODUCT_FILTER_ALL]: "Todos",
@@ -148,9 +150,7 @@ const ProductsContent: React.FC = () => {
       });
     } catch (err) {
       setProducts(previousProducts);
-      alert(
-        err instanceof Error ? err.message : "No se pudo eliminar el producto",
-      );
+      toast.error(getErrorMessage(err, "No se pudo eliminar el producto"));
     } finally {
       setActionLoadingId(null);
     }
@@ -173,9 +173,7 @@ const ProductsContent: React.FC = () => {
       });
     } catch (err) {
       setProducts(previousProducts);
-      alert(
-        err instanceof Error ? err.message : "No se pudo restaurar el producto",
-      );
+      toast.error(getErrorMessage(err, "No se pudo restaurar el producto"));
     } finally {
       setActionLoadingId(null);
     }
@@ -256,7 +254,9 @@ const ProductsContent: React.FC = () => {
                 className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
               />
               <input
+                id="admin-product-search"
                 type="text"
+                aria-label="Buscar productos por nombre"
                 placeholder="Buscar por nombre..."
                 value={search}
                 onChange={(e) => handleSearchChange(e.target.value)}
@@ -264,6 +264,7 @@ const ProductsContent: React.FC = () => {
               />
             </div>
             <select
+              aria-label="Filtrar productos por estado"
               value={filter}
               onChange={(e) =>
                 handleStatusChange(e.target.value as AdminProductFilter)

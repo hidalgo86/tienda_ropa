@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useSubmitCooldown } from "@/lib/useSubmitCooldown";
+import { reportClientError } from "@/lib/errorUtils";
 import {
   clearStoredSession,
   getCurrentUser,
@@ -87,7 +88,7 @@ export default function LoginPage() {
 
       router.push(getSafeRedirectPath());
     } catch (submissionError) {
-      console.warn("[Login]", submissionError);
+      reportClientError("[Login]", submissionError);
       const message = "No se pudo iniciar sesion. Intenta nuevamente.";
       setError(message);
       toast.error(message, {

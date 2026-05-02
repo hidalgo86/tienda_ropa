@@ -8,6 +8,7 @@ import { clearStoredSession, getValidStoredAuthToken } from "@/services/users";
 import type { AppDispatch, RootState } from "@/store";
 import { findVariantBySelection, getProductStock } from "@/types/domain/products";
 import { toast } from "sonner";
+import { isSessionError, reportClientError } from "@/lib/errorUtils";
 
 export default function CartSyncProvider({
   children,
@@ -123,14 +124,11 @@ export default function CartSyncProvider({
         }
         previousTokenRef.current = token;
       } catch (error) {
-        const message = error instanceof Error ? error.message : "";
-        const isAuthError = /unauthorized|sesion|session/i.test(message);
-
-        if (isAuthError) {
+        if (isSessionError(error)) {
           previousTokenRef.current = null;
           clearStoredSession();
         } else {
-          console.error("Error syncing cart:", error);
+          reportClientError("Error syncing cart:", error);
         }
 
         if (mounted) {
