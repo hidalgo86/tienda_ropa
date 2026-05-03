@@ -193,7 +193,7 @@ export default function LoginPage() {
                 ¿No estás registrado? Pincha aquí
               </button>
             </div>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-6">
               <button
                 type="submit"
                 className="w-full rounded-lg bg-green-600 px-4 py-2.5 text-white disabled:opacity-60"
@@ -204,13 +204,6 @@ export default function LoginPage() {
                   : isCoolingDown
                     ? `Espera ${remainingSeconds}s`
                     : "Iniciar sesion"}
-              </button>
-              <button
-                type="button"
-                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-700 transition hover:bg-gray-50"
-                onClick={() => router.push("/")}
-              >
-                Cancelar
               </button>
             </div>
           </form>
