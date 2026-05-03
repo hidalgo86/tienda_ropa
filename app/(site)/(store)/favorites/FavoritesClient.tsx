@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import ProductListPublic from "@/components/products/ProductListPublic";
 import { Product, getVariantName } from "@/types/domain/products";
 import { MdDeleteSweep } from "react-icons/md";
 import { useCartActions } from "@/lib/useCartActions";
 import { useFavoriteActions } from "@/lib/useFavoriteActions";
 import { getStoredAuthToken, isStoredAdminUser } from "@/services/users";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function FavoritesClient() {
   const { addProductToCart } = useCartActions();
@@ -14,6 +16,7 @@ export default function FavoritesClient() {
     useFavoriteActions();
   const isAuthenticated = Boolean(getStoredAuthToken());
   const isAdminUser = isStoredAdminUser();
+  const [showClearConfirmation, setShowClearConfirmation] = useState(false);
 
   if (isAdminUser) {
     return (
@@ -59,13 +62,24 @@ export default function FavoritesClient() {
   };
 
   const handleClearAllFavorites = () => {
-    if (confirm("Estas seguro de que quieres eliminar todos los favoritos?")) {
-      void clearAllFavorites();
-    }
+    setShowClearConfirmation(true);
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <ConfirmDialog
+        open={showClearConfirmation}
+        title="Limpiar favoritos"
+        description="Se eliminaran todos los productos guardados en tu lista de favoritos."
+        confirmLabel="Limpiar favoritos"
+        tone="danger"
+        onCancel={() => setShowClearConfirmation(false)}
+        onConfirm={() => {
+          void clearAllFavorites();
+          setShowClearConfirmation(false);
+        }}
+      />
+
       <div className="max-w-7xl mx-auto px-3 py-4 pb-24 sm:px-6 sm:py-6 sm:pb-24 lg:px-8 lg:py-8 lg:pb-8">
         <div className="mb-6 sm:mb-8 lg:mb-10">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

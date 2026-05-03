@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { MdArrowBack } from "react-icons/md";
+import { MdArrowBack, MdWarningAmber } from "react-icons/md";
 import {
   adminCancelOrder,
   adminPayOrder,
@@ -47,6 +47,7 @@ export default function DashboardOrderDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [showPaymentConfirmation, setShowPaymentConfirmation] = useState(false);
 
   useEffect(() => {
     const loadOrder = async () => {
@@ -115,13 +116,8 @@ export default function DashboardOrderDetailPage() {
     );
   }
 
-  const handleConfirmPayment = async () => {
-    if (
-      !order.paymentProofUrl &&
-      !window.confirm(
-        "Esta orden no tiene comprobante cargado. Confirma que ya comprobaste el pago antes de marcarla como pagada.",
-      )
-    ) {
+  const confirmPayment = async () => {
+    if (!order) {
       return;
     }
 
@@ -130,11 +126,21 @@ export default function DashboardOrderDetailPage() {
     try {
       setOrder(await adminPayOrder(order.id));
       toast.success("Pago confirmado");
+      setShowPaymentConfirmation(false);
     } catch (actionError) {
       toast.error(getErrorMessage(actionError, "No se pudo confirmar el pago"));
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const handleConfirmPayment = async () => {
+    if (!order.paymentProofUrl) {
+      setShowPaymentConfirmation(true);
+      return;
+    }
+
+    await confirmPayment();
   };
 
   const handleCancelOrder = async () => {
@@ -152,6 +158,57 @@ export default function DashboardOrderDetailPage() {
 
   return (
     <section className="space-y-6">
+      {showPaymentConfirmation && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="payment-confirmation-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-amber-200 bg-white p-5 shadow-xl">
+            <div className="flex items-start gap-3">
+              <div className="rounded-full bg-amber-100 p-2 text-amber-700">
+                <MdWarningAmber size={24} />
+              </div>
+              <div>
+                <h2
+                  id="payment-confirmation-title"
+                  className="text-lg font-semibold text-slate-900"
+                >
+                  Confirmar pago sin comprobante
+                </h2>
+                <p className="mt-2 text-sm text-slate-600">
+                  Esta orden no tiene comprobante cargado. Marca como pagada
+                  solo si ya verificaste que el dinero entro en la cuenta.
+                </p>
+                <p className="mt-3 text-sm font-medium text-slate-900">
+                  {order.orderNumber || order.id}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setShowPaymentConfirmation(false)}
+                disabled={isUpdating}
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+              >
+                Volver
+              </button>
+              <button
+                type="button"
+                onClick={() => void confirmPayment()}
+                disabled={isUpdating}
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60"
+              >
+                {isUpdating ? "Confirmando..." : "Si, confirmar pago"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Link
         href="/dashboard/orders"
         className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-slate-900"

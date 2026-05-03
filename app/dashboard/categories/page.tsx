@@ -7,6 +7,7 @@ import {
   listCategories,
   updateCategory,
 } from "@/services/categories";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import type { Category } from "@/types/domain/products";
 import { MdAdd, MdCategory, MdDelete, MdEdit, MdSave } from "react-icons/md";
 
@@ -39,6 +40,8 @@ export default function DashboardCategoriesPage() {
   const [isSaving, setIsSaving] = React.useState(false);
   const [busyId, setBusyId] = React.useState<string | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [categoryToDelete, setCategoryToDelete] =
+    React.useState<Category | null>(null);
 
   const loadCategories = React.useCallback(async () => {
     setIsLoading(true);
@@ -137,15 +140,7 @@ export default function DashboardCategoriesPage() {
     }
   };
 
-  const handleDelete = async (category: Category) => {
-    if (
-      !window.confirm(
-        `Quieres eliminar la categoria "${category.name}"? Si tiene productos asociados, el backend puede rechazar la accion.`,
-      )
-    ) {
-      return;
-    }
-
+  const deleteSelectedCategory = async (category: Category) => {
     setBusyId(category.id);
     setError(null);
 
@@ -162,11 +157,33 @@ export default function DashboardCategoriesPage() {
       );
     } finally {
       setBusyId(null);
+      setCategoryToDelete(null);
     }
+  };
+
+  const handleDelete = (category: Category) => {
+    setCategoryToDelete(category);
   };
 
   return (
     <section className="space-y-6">
+      <ConfirmDialog
+        open={Boolean(categoryToDelete)}
+        title="Eliminar categoria"
+        description="Si esta categoria tiene productos asociados, el backend puede rechazar la accion."
+        details={categoryToDelete?.name}
+        confirmLabel="Eliminar categoria"
+        busyLabel="Eliminando..."
+        tone="danger"
+        isBusy={Boolean(categoryToDelete && busyId === categoryToDelete.id)}
+        onCancel={() => setCategoryToDelete(null)}
+        onConfirm={() => {
+          if (categoryToDelete) {
+            void deleteSelectedCategory(categoryToDelete);
+          }
+        }}
+      />
+
       <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">

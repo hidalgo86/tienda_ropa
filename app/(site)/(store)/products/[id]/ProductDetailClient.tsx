@@ -233,11 +233,12 @@ export default function ProductDetailClient({
       if (typeof navigator !== "undefined" && navigator.clipboard) {
         await navigator.clipboard.writeText(shareUrl);
         setShowShareCopied(true);
+        toast.success("Enlace copiado");
         setTimeout(() => setShowShareCopied(false), 2000);
         return;
       }
 
-      window.prompt("Copia el enlace del producto", shareUrl);
+      toast.error("No se pudo copiar el enlace automaticamente");
     } catch (error) {
       const name = error instanceof DOMException ? error.name : "";
       if (name === "AbortError") return;
@@ -245,9 +246,10 @@ export default function ProductDetailClient({
       try {
         await navigator.clipboard.writeText(shareUrl);
         setShowShareCopied(true);
+        toast.success("Enlace copiado");
         setTimeout(() => setShowShareCopied(false), 2000);
       } catch {
-        window.prompt("Copia el enlace del producto", shareUrl);
+        toast.error("No se pudo copiar el enlace automaticamente");
       }
     }
   };

@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import React from "react";
 import { toast } from "sonner";
 import { MdArrowBack } from "react-icons/md";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import {
   deleteBanner,
   listAdminBanners,
@@ -27,6 +28,8 @@ export default function EditBannerPage() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] =
+    React.useState(false);
 
   React.useEffect(() => {
     if (!file) {
@@ -133,10 +136,6 @@ export default function EditBannerPage() {
   const handleDelete = async () => {
     if (!hasValidBannerId || isDeleting) return;
 
-    if (!window.confirm("Quieres eliminar este banner?")) {
-      return;
-    }
-
     setIsDeleting(true);
 
     try {
@@ -150,6 +149,7 @@ export default function EditBannerPage() {
       );
     } finally {
       setIsDeleting(false);
+      setShowDeleteConfirmation(false);
     }
   };
 
@@ -163,6 +163,19 @@ export default function EditBannerPage() {
 
   return (
     <div className="space-y-6">
+      <ConfirmDialog
+        open={showDeleteConfirmation}
+        title="Eliminar banner"
+        description="Este banner dejara de mostrarse en el carrusel."
+        details={values.title}
+        confirmLabel="Eliminar banner"
+        busyLabel="Eliminando..."
+        tone="danger"
+        isBusy={isDeleting}
+        onCancel={() => setShowDeleteConfirmation(false)}
+        onConfirm={() => void handleDelete()}
+      />
+
       <Link
         href="/dashboard/banners"
         className="inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-slate-900"
@@ -177,7 +190,7 @@ export default function EditBannerPage() {
 
           <button
             type="button"
-            onClick={() => void handleDelete()}
+            onClick={() => setShowDeleteConfirmation(true)}
             disabled={isSubmitting || isDeleting}
             className="inline-flex items-center justify-center rounded-xl border border-red-200 px-4 py-2.5 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
           >

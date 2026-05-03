@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { toast } from "sonner";
 import { MdDeleteForever, MdLogout, MdReceiptLong } from "react-icons/md";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { useSubmitCooldown } from "@/lib/useSubmitCooldown";
 import { reportClientError } from "@/lib/errorUtils";
 import {
@@ -83,6 +84,11 @@ export default function AccountClient() {
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showRequestDeletionConfirmation, setShowRequestDeletionConfirmation] =
+    useState(false);
+  const [showDeleteAccountConfirmation, setShowDeleteAccountConfirmation] =
+    useState(false);
+  const [showLogoutConfirmation, setShowLogoutConfirmation] = useState(false);
   const {
     isCoolingDown: isResendCoolingDown,
     remainingSeconds: resendRemainingSeconds,
@@ -262,13 +268,7 @@ export default function AccountClient() {
     }
   };
 
-  const handleRequestDeletionCode = async () => {
-    const shouldRequest = window.confirm(
-      "Vas a solicitar un codigo para eliminar tu cuenta definitivamente. Quieres continuar?",
-    );
-
-    if (!shouldRequest) return;
-
+  const requestDeletionCode = async () => {
     setDeletionError("");
     setDeletionMessage("");
     setIsRequestingDeletion(true);
@@ -286,7 +286,12 @@ export default function AccountClient() {
       toast.error(message);
     } finally {
       setIsRequestingDeletion(false);
+      setShowRequestDeletionConfirmation(false);
     }
+  };
+
+  const handleRequestDeletionCode = () => {
+    setShowRequestDeletionConfirmation(true);
   };
 
   const handleDeleteAccountSubmit = async (e: React.FormEvent) => {
@@ -299,12 +304,11 @@ export default function AccountClient() {
       return;
     }
 
-    const shouldDelete = window.confirm(
-      "Esta accion eliminara tu cuenta definitivamente y cerrara tu sesion. No podras recuperarla. Confirmas el borrado?",
-    );
+    setShowDeleteAccountConfirmation(true);
+  };
 
-    if (!shouldDelete) return;
-
+  const deleteAccount = async () => {
+    const code = deletionCode.trim();
     setIsDeletingAccount(true);
 
     try {
@@ -321,18 +325,12 @@ export default function AccountClient() {
       toast.error(message);
     } finally {
       setIsDeletingAccount(false);
+      setShowDeleteAccountConfirmation(false);
     }
   };
 
   const handleLogout = () => {
-    const shouldLogout = window.confirm("Quieres cerrar tu sesion?");
-
-    if (!shouldLogout) {
-      return;
-    }
-
-    clearStoredSession();
-    router.push("/");
+    setShowLogoutConfirmation(true);
   };
 
   if (isLoading) {
@@ -352,6 +350,43 @@ export default function AccountClient() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <ConfirmDialog
+        open={showRequestDeletionConfirmation}
+        title="Solicitar eliminacion"
+        description="Enviaremos un codigo a tu correo para confirmar la eliminacion definitiva de tu cuenta."
+        confirmLabel="Enviar codigo"
+        busyLabel="Enviando..."
+        tone="danger"
+        isBusy={isRequestingDeletion}
+        onCancel={() => setShowRequestDeletionConfirmation(false)}
+        onConfirm={() => void requestDeletionCode()}
+      />
+      <ConfirmDialog
+        open={showDeleteAccountConfirmation}
+        title="Eliminar cuenta definitivamente"
+        description="Esta accion eliminara tu cuenta y cerrara tu sesion. No podras recuperarla."
+        details={userInfo.username}
+        confirmLabel="Eliminar cuenta"
+        busyLabel="Eliminando..."
+        tone="danger"
+        isBusy={isDeletingAccount}
+        onCancel={() => setShowDeleteAccountConfirmation(false)}
+        onConfirm={() => void deleteAccount()}
+      />
+      <ConfirmDialog
+        open={showLogoutConfirmation}
+        title="Cerrar sesion"
+        description="Saldras de tu cuenta en este dispositivo."
+        confirmLabel="Cerrar sesion"
+        tone="warning"
+        onCancel={() => setShowLogoutConfirmation(false)}
+        onConfirm={() => {
+          clearStoredSession();
+          setShowLogoutConfirmation(false);
+          router.push("/");
+        }}
+      />
+
       <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

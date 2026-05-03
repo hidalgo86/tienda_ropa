@@ -13,7 +13,7 @@ import {
   type AdminOrder,
 } from "@/services/orders";
 import { useCallback, useEffect, useState } from "react";
-import { MdChevronRight } from "react-icons/md";
+import { MdChevronRight, MdWarningAmber } from "react-icons/md";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/errorUtils";
 
@@ -72,6 +72,8 @@ export default function DashboardOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
+  const [paymentConfirmationOrder, setPaymentConfirmationOrder] =
+    useState<AdminOrder | null>(null);
   const safeItems = Array.isArray(ordersPage?.items) ? ordersPage.items : [];
   const safeTotalPages = Math.max(1, Number(ordersPage?.totalPages) || 1);
   const safeTotal = Number(ordersPage?.total) || 0;
@@ -136,22 +138,14 @@ export default function DashboardOrdersPage() {
     }));
   };
 
-  const handlePay = async (order: AdminOrder) => {
-    if (
-      !order.paymentProofUrl &&
-      !window.confirm(
-        "Esta orden no tiene comprobante cargado. Confirma que ya comprobaste el pago antes de marcarla como pagada.",
-      )
-    ) {
-      return;
-    }
-
+  const confirmPayOrder = async (order: AdminOrder) => {
     const orderId = order.id;
     setActiveOrderId(orderId);
 
     try {
       replaceOrder(await adminPayOrder(orderId));
       toast.success("Orden marcada como pagada");
+      setPaymentConfirmationOrder(null);
     } catch (actionError) {
       toast.error(
         getErrorMessage(actionError, "No se pudo marcar la orden como pagada"),
@@ -159,6 +153,15 @@ export default function DashboardOrdersPage() {
     } finally {
       setActiveOrderId(null);
     }
+  };
+
+  const handlePay = async (order: AdminOrder) => {
+    if (!order.paymentProofUrl) {
+      setPaymentConfirmationOrder(order);
+      return;
+    }
+
+    await confirmPayOrder(order);
   };
 
   const handleCancel = async (orderId: string) => {
@@ -175,6 +178,60 @@ export default function DashboardOrdersPage() {
 
   return (
     <section className="space-y-6">
+      {paymentConfirmationOrder && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="payment-confirmation-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-amber-200 bg-white p-5 shadow-xl">
+            <div className="flex items-start gap-3">
+              <div className="rounded-full bg-amber-100 p-2 text-amber-700">
+                <MdWarningAmber size={24} />
+              </div>
+              <div>
+                <h2
+                  id="payment-confirmation-title"
+                  className="text-lg font-semibold text-slate-900"
+                >
+                  Confirmar pago sin comprobante
+                </h2>
+                <p className="mt-2 text-sm text-slate-600">
+                  Esta orden no tiene comprobante cargado. Marca como pagada
+                  solo si ya verificaste que el dinero entro en la cuenta.
+                </p>
+                <p className="mt-3 text-sm font-medium text-slate-900">
+                  {paymentConfirmationOrder.orderNumber ||
+                    paymentConfirmationOrder.id}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setPaymentConfirmationOrder(null)}
+                disabled={activeOrderId === paymentConfirmationOrder.id}
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+              >
+                Volver
+              </button>
+              <button
+                type="button"
+                onClick={() => void confirmPayOrder(paymentConfirmationOrder)}
+                disabled={activeOrderId === paymentConfirmationOrder.id}
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-60"
+              >
+                {activeOrderId === paymentConfirmationOrder.id
+                  ? "Confirmando..."
+                  : "Si, confirmar pago"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Ordenes</h1>

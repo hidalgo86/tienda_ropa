@@ -13,6 +13,7 @@ import {
 } from "@/types/domain/products";
 import ProductListAdmin from "@/components/products/ProductListAdmin";
 import Pagination from "@/components/Pagination";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import { useAdminProducts } from "./useAdminProducts";
 import { updateProduct } from "@/services/products";
 import { MdAdd, MdInventory2, MdSearch } from "react-icons/md";
@@ -65,6 +66,7 @@ const ProductsContent: React.FC = () => {
   const [filter, setFilter] = useState<AdminProductFilter>(initialFilter);
   const [sortBy, setSortBy] = useState<ProductSortBy>(initialSortBy);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
 
   const { products, setProducts, totalPages, loading, error, refetch } =
     useAdminProducts({
@@ -130,11 +132,8 @@ const ProductsContent: React.FC = () => {
     setDebouncedSearch((prev) => (prev === nextSearch ? prev : nextSearch));
   }, [searchParams]);
 
-  const handleDelete = async (id: string) => {
+  const deleteProduct = async (id: string) => {
     if (actionLoadingId === id) return;
-    if (!window.confirm("Estas seguro de que deseas eliminar este producto?")) {
-      return;
-    }
 
     setActionLoadingId(id);
     let previousProducts: Product[] = [];
@@ -153,7 +152,13 @@ const ProductsContent: React.FC = () => {
       toast.error(getErrorMessage(err, "No se pudo eliminar el producto"));
     } finally {
       setActionLoadingId(null);
+      setProductToDelete(null);
     }
+  };
+
+  const handleDelete = async (id: string) => {
+    const product = products.find((item) => item.id === id) ?? null;
+    setProductToDelete(product ?? ({ id, name: "este producto" } as Product));
   };
 
   const handleRestore = async (id: string) => {
@@ -212,6 +217,25 @@ const ProductsContent: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <ConfirmDialog
+        open={Boolean(productToDelete)}
+        title="Eliminar producto"
+        description="Este producto dejara de aparecer como activo en la tienda. Podras restaurarlo desde el filtro de eliminados."
+        details={productToDelete?.name || productToDelete?.id}
+        confirmLabel="Eliminar producto"
+        busyLabel="Eliminando..."
+        tone="danger"
+        isBusy={Boolean(
+          productToDelete && actionLoadingId === productToDelete.id,
+        )}
+        onCancel={() => setProductToDelete(null)}
+        onConfirm={() => {
+          if (productToDelete?.id) {
+            void deleteProduct(productToDelete.id);
+          }
+        }}
+      />
+
       <div className="space-y-4">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>

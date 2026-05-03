@@ -5,6 +5,7 @@ import Image from "next/image";
 import React from "react";
 import { toast } from "sonner";
 import { MdAdd } from "react-icons/md";
+import ConfirmDialog from "@/components/ConfirmDialog";
 import {
   deleteBanner,
   listAdminBanners,
@@ -43,6 +44,9 @@ export default function DashboardBannersPage() {
     null,
   );
   const [isReordering, setIsReordering] = React.useState(false);
+  const [bannerToDelete, setBannerToDelete] = React.useState<Banner | null>(
+    null,
+  );
 
   const loadBanners = React.useCallback(async () => {
     setIsLoading(true);
@@ -141,13 +145,10 @@ export default function DashboardBannersPage() {
     [],
   );
 
-  const handleDelete = async (id: string) => {
+  const deleteSelectedBanner = async (banner: Banner) => {
+    const id = banner.id;
     if (!hasValidBannerId(id)) {
       toast.error("Este banner no tiene un identificador valido");
-      return;
-    }
-
-    if (!window.confirm("Quieres eliminar este banner?")) {
       return;
     }
 
@@ -178,7 +179,12 @@ export default function DashboardBannersPage() {
       void loadBanners();
     } finally {
       setBusyId(null);
+      setBannerToDelete(null);
     }
+  };
+
+  const handleDelete = (banner: Banner) => {
+    setBannerToDelete(banner);
   };
 
   const handleDrop = async (targetId: string) => {
@@ -202,6 +208,23 @@ export default function DashboardBannersPage() {
 
   return (
     <div className="space-y-6">
+      <ConfirmDialog
+        open={Boolean(bannerToDelete)}
+        title="Eliminar banner"
+        description="Este banner dejara de mostrarse en el carrusel y se reorganizara el orden restante."
+        details={bannerToDelete?.title}
+        confirmLabel="Eliminar banner"
+        busyLabel="Eliminando..."
+        tone="danger"
+        isBusy={Boolean(bannerToDelete && busyId === bannerToDelete.id)}
+        onCancel={() => setBannerToDelete(null)}
+        onConfirm={() => {
+          if (bannerToDelete) {
+            void deleteSelectedBanner(bannerToDelete);
+          }
+        }}
+      />
+
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Carrusel</h1>
@@ -302,7 +325,7 @@ export default function DashboardBannersPage() {
                     </Link>
                     <button
                       type="button"
-                      onClick={() => void handleDelete(banner.id)}
+                      onClick={() => handleDelete(banner)}
                       disabled={isBusy || !hasValidId || isReordering}
                       className="rounded-lg border border-red-200 px-3 py-2 text-xs font-medium text-red-700 transition hover:bg-red-50 disabled:opacity-60"
                     >
