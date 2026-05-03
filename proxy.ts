@@ -4,6 +4,20 @@ const ACCESS_COOKIE_NAME = "access_token";
 const REFRESH_COOKIE_NAME = "refresh_token";
 const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 const isProduction = process.env.NODE_ENV === "production";
+const NO_STORE_PATH_PREFIXES = [
+  "/account",
+  "/cart",
+  "/checkout",
+  "/dashboard",
+  "/favorites",
+  "/forgot-password",
+  "/forgot-username",
+  "/login",
+  "/orders",
+  "/register",
+  "/reset-password",
+  "/verify",
+];
 
 const createNonce = (): string => btoa(crypto.randomUUID());
 
@@ -48,6 +62,21 @@ const applySecurityHeaders = (
   return response;
 };
 
+const shouldDisableCache = (pathname: string): boolean =>
+  NO_STORE_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+
+const applyNoStoreHeaders = (response: NextResponse): NextResponse => {
+  response.headers.set(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, proxy-revalidate",
+  );
+  response.headers.set("Pragma", "no-cache");
+  response.headers.set("Expires", "0");
+  return response;
+};
+
 const normalizeOrigin = (value?: string | null): string | null => {
   if (!value) return null;
 
@@ -88,15 +117,17 @@ const isAllowedOrigin = (req: NextRequest): boolean => {
 
 export function proxy(req: NextRequest) {
   const nonce = createNonce();
+  const noStore = shouldDisableCache(req.nextUrl.pathname);
 
   if (
     req.nextUrl.pathname.startsWith("/api/") &&
     MUTATING_METHODS.has(req.method) &&
     !isAllowedOrigin(req)
   ) {
-    return applySecurityHeaders(
+    const response = applySecurityHeaders(
       NextResponse.json({ error: "Origen no permitido" }, { status: 403 }),
     );
+    return noStore ? applyNoStoreHeaders(response) : response;
   }
 
   const isDashboard = req.nextUrl.pathname.startsWith("/dashboard");
@@ -109,14 +140,16 @@ export function proxy(req: NextRequest) {
     const loginUrl = req.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.search = `?redirect=${encodeURIComponent(req.nextUrl.pathname)}`;
-    return applySecurityHeaders(NextResponse.redirect(loginUrl));
+    return applyNoStoreHeaders(
+      applySecurityHeaders(NextResponse.redirect(loginUrl)),
+    );
   }
 
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("Content-Security-Policy", buildSecurityHeaders(nonce)["Content-Security-Policy"]);
 
-  return applySecurityHeaders(
+  const response = applySecurityHeaders(
     NextResponse.next({
       request: {
         headers: requestHeaders,
@@ -124,6 +157,8 @@ export function proxy(req: NextRequest) {
     }),
     nonce,
   );
+
+  return noStore ? applyNoStoreHeaders(response) : response;
 }
 
 export const config = {
