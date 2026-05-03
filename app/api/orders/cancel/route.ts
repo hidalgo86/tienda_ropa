@@ -6,6 +6,7 @@ const cancelOrderMutation = `
   mutation CancelMyOrder($orderId: String!) {
     cancelMyOrder(orderId: $orderId) {
       id
+      orderNumber
       userId
       items {
         productId
@@ -22,6 +23,7 @@ const cancelOrderMutation = `
         name
         phone
       }
+      deliveryMethod
       status
       paymentMethod
       paymentReference

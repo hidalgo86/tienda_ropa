@@ -215,7 +215,7 @@ export default function OrdersClient() {
                     <div>
                       <p className="text-sm text-gray-500">Pedido</p>
                       <p className="font-semibold text-gray-900 break-all">
-                        {order.id}
+                        {order.orderNumber || order.id}
                       </p>
                       <p className="mt-1 text-sm text-gray-500">
                         Creado el {formatDate(order.createdAt)}

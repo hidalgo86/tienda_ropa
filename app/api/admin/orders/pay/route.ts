@@ -6,6 +6,7 @@ const adminPayOrderMutation = `
   mutation AdminPayOrder($orderId: String!) {
     adminPayOrder(orderId: $orderId) {
       id
+      orderNumber
       userId
       user {
         id
@@ -35,6 +36,7 @@ const adminPayOrderMutation = `
         name
         phone
       }
+      deliveryMethod
       status
       paymentMethod
       paymentReference

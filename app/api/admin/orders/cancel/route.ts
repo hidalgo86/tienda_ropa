@@ -6,6 +6,7 @@ const adminCancelOrderMutation = `
   mutation AdminCancelOrder($orderId: String!) {
     adminCancelOrder(orderId: $orderId) {
       id
+      orderNumber
       userId
       user {
         id
@@ -35,6 +36,7 @@ const adminCancelOrderMutation = `
         name
         phone
       }
+      deliveryMethod
       status
       paymentMethod
       paymentReference

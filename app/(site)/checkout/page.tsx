@@ -16,6 +16,7 @@ import {
 import {
   PAYMENTS_ENABLED,
   checkoutDisabledMessage,
+  deliveryDisabledMessage,
   manualPaymentInstructions,
   pickupMessage,
 } from "@/lib/commerceConfig";
@@ -45,6 +46,9 @@ export default function CheckoutPage() {
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
   const [paymentReceiptNumber, setPaymentReceiptNumber] = useState("");
   const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null);
+  const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "delivery">(
+    "pickup",
+  );
   const { isCoolingDown, remainingSeconds, startCooldown } =
     useSubmitCooldown(5);
 
@@ -80,7 +84,15 @@ export default function CheckoutPage() {
     void loadUser();
   }, [router]);
 
-  const canCheckout = cart.items.length > 0;
+  const hasVerifiedEmail = Boolean(user?.isEmailVerified);
+  const hasCompleteShippingProfile = Boolean(
+    user?.name?.trim() && user?.phone?.trim() && user?.address?.trim(),
+  );
+  const needsShippingProfile = deliveryMethod === "delivery";
+  const canCheckout =
+    cart.items.length > 0 &&
+    hasVerifiedEmail &&
+    (!needsShippingProfile || hasCompleteShippingProfile);
 
   const orderSummary = useMemo(
     () =>
@@ -113,7 +125,7 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
 
     try {
-      const order = await checkoutCart();
+      const order = await checkoutCart({ deliveryMethod });
       setCreatedOrder(order);
       dispatch(syncCart([]));
       toast.success("Compra completada");
@@ -224,12 +236,14 @@ export default function CheckoutPage() {
 
             <div className="mt-8 rounded-xl bg-gray-50 p-5 text-left">
               <p className="text-sm text-gray-500">Numero de orden</p>
-              <p className="font-semibold text-gray-900">{createdOrder.id}</p>
+              <p className="font-semibold text-gray-900">
+                {createdOrder.orderNumber || createdOrder.id}
+              </p>
               <p className="mt-4 text-sm text-gray-500">Total</p>
               <p className="font-semibold text-gray-900">
                 {formatCurrency(createdOrder.totalAmount)}
               </p>
-              <p className="mt-4 text-sm text-gray-500">Envio a</p>
+              <p className="mt-4 text-sm text-gray-500">Entrega</p>
               <p className="font-semibold text-gray-900">
                 {createdOrder.shippingAddress.address}
               </p>
@@ -243,7 +257,7 @@ export default function CheckoutPage() {
                 ))}
               </ul>
               <p className="mt-3 text-sm font-medium text-amber-950">
-                Numero de pedido: {createdOrder.id}
+                Numero de pedido: {createdOrder.orderNumber || createdOrder.id}
               </p>
             </div>
 
@@ -309,13 +323,23 @@ export default function CheckoutPage() {
     );
   }
 
+  const checkoutButtonLabel = isSubmitting
+    ? "Procesando compra..."
+    : isCoolingDown
+      ? `Espera ${remainingSeconds}s`
+      : !hasVerifiedEmail
+        ? "Verifica tu correo"
+        : needsShippingProfile && !hasCompleteShippingProfile
+          ? "Completa tus datos"
+          : "Confirmar compra";
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Checkout</h1>
           <p className="mt-2 text-gray-600">
-            Revisa tu pedido y confirma la informacion de envio.
+            Revisa tu pedido y confirma el metodo de entrega.
           </p>
         </div>
 
@@ -325,11 +349,68 @@ export default function CheckoutPage() {
               <div className="flex items-center gap-3 mb-4">
                 <MdLocationOn className="text-pink-500" size={24} />
                 <h2 className="text-xl font-semibold text-gray-900">
-                  Datos de envio
+                  Metodo de entrega
                 </h2>
               </div>
 
-              <div className="space-y-2 text-sm sm:text-base">
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="rounded-xl border border-pink-300 bg-pink-50 p-4 text-sm text-pink-950">
+                  <input
+                    type="radio"
+                    name="deliveryMethod"
+                    value="pickup"
+                    checked={deliveryMethod === "pickup"}
+                    onChange={() => setDeliveryMethod("pickup")}
+                    className="mr-2"
+                  />
+                  <span className="font-semibold">Retiro en tienda</span>
+                  <p className="mt-2 text-pink-800">{pickupMessage}</p>
+                </label>
+                <label className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
+                  <input
+                    type="radio"
+                    name="deliveryMethod"
+                    value="delivery"
+                    checked={deliveryMethod === "delivery"}
+                    onChange={() => setDeliveryMethod("delivery")}
+                    disabled
+                    className="mr-2"
+                  />
+                  <span className="font-semibold">Envio a domicilio</span>
+                  <p className="mt-2">{deliveryDisabledMessage}</p>
+                </label>
+              </div>
+
+              {!hasVerifiedEmail && (
+                <div className="mt-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                  Debes verificar tu correo antes de comprar.
+                  <div className="mt-3">
+                    <Link
+                      href={`/verify?userId=${user?.id ?? ""}`}
+                      className="inline-flex rounded-lg bg-red-600 px-4 py-2 text-white hover:bg-red-700"
+                    >
+                      Verificar correo
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              {needsShippingProfile && !hasCompleteShippingProfile && (
+                <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                  Para envio a domicilio debes completar nombre, telefono y
+                  direccion.
+                  <div className="mt-3">
+                    <Link
+                      href="/account"
+                      className="inline-flex rounded-lg bg-amber-600 px-4 py-2 text-white hover:bg-amber-700"
+                    >
+                      Completar datos
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-5 space-y-2 text-sm sm:text-base">
                 <p>
                   <span className="font-medium text-gray-900">Nombre:</span>{" "}
                   {user?.name?.trim() || "No registrado"}
@@ -339,13 +420,9 @@ export default function CheckoutPage() {
                   {user?.phone?.trim() || "No registrado"}
                 </p>
                 <p>
-                  <span className="font-medium text-gray-900">Entrega:</span>{" "}
-                  Retiro en tienda
+                  <span className="font-medium text-gray-900">Direccion:</span>{" "}
+                  {user?.address?.trim() || "No registrada"}
                 </p>
-              </div>
-
-              <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                {pickupMessage}
               </div>
             </div>
 
@@ -428,11 +505,7 @@ export default function CheckoutPage() {
                 disabled={!canCheckout || isSubmitting || isCoolingDown}
                 className="mt-6 w-full px-6 py-3 rounded-xl bg-gray-900 text-white font-medium hover:bg-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting
-                  ? "Procesando compra..."
-                  : isCoolingDown
-                    ? `Espera ${remainingSeconds}s`
-                    : "Confirmar compra"}
+                {checkoutButtonLabel}
               </button>
 
               <div className="mt-4 flex flex-col gap-3">

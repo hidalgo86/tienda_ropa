@@ -8,6 +8,7 @@ const adminOrdersQuery = `
     adminOrders(input: $input) {
       items {
         id
+        orderNumber
         userId
         user {
           id
@@ -37,6 +38,7 @@ const adminOrdersQuery = `
           name
           phone
         }
+        deliveryMethod
         status
         paymentMethod
         paymentReference

@@ -155,8 +155,11 @@ export default function DashboardOrderDetailPage() {
         <div className="flex flex-col gap-3 border-b border-slate-100 pb-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="break-all text-2xl font-bold text-slate-900">
-              {order.id}
+              {order.orderNumber || order.id}
             </h1>
+            <p className="mt-1 break-all text-xs text-slate-400">
+              ID interno: {order.id}
+            </p>
             <p className="mt-1 text-sm text-slate-600">
               {order.user?.name?.trim() || order.user?.username || order.userId}
             </p>

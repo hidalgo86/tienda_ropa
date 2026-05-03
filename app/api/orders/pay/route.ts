@@ -6,6 +6,7 @@ const payOrderMutation = `
   mutation PayMyOrder($orderId: String!) {
     payMyOrder(orderId: $orderId) {
       id
+      orderNumber
       userId
       items {
         productId
@@ -22,6 +23,7 @@ const payOrderMutation = `
         name
         phone
       }
+      deliveryMethod
       status
       paymentMethod
       paymentReference

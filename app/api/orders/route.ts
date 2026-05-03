@@ -6,6 +6,7 @@ const myOrdersQuery = `
   query MyOrders {
     myOrders {
       id
+      orderNumber
       userId
       items {
         productId
@@ -22,6 +23,7 @@ const myOrdersQuery = `
         name
         phone
       }
+      deliveryMethod
       status
       paymentMethod
       paymentReference

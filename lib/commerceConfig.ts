@@ -9,6 +9,9 @@ export const checkoutDisabledMessage =
 export const pickupMessage =
   "Disponible solo para retirar en tienda. No se realizan envios por el momento.";
 
+export const deliveryDisabledMessage =
+  "El envio a domicilio estara disponible proximamente.";
+
 export const manualPaymentInstructions = [
   "Realiza el pago por transferencia o deposito a la cuenta indicada por la tienda.",
   "Luego carga el comprobante y el numero de operacion en tu pedido.",

@@ -16,6 +16,7 @@ export interface ShippingAddress {
 
 export interface Order {
   id: string;
+  orderNumber: string;
   userId: string;
   user?: {
     id: string;
@@ -33,6 +34,7 @@ export interface Order {
   items: OrderItem[];
   totalAmount: number;
   shippingAddress: ShippingAddress;
+  deliveryMethod?: string | null;
   status: string;
   paymentMethod: string;
   paymentReference?: string | null;

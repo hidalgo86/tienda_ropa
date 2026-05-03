@@ -230,7 +230,7 @@ export default function DashboardOrdersPage() {
                             href={`/dashboard/orders/${order.id}`}
                             className="line-clamp-1 font-semibold text-slate-900 transition hover:text-pink-600"
                           >
-                            {order.id}
+                            {order.orderNumber || order.id}
                           </Link>
                         </td>
                         <td className="px-4 py-4">
@@ -332,7 +332,7 @@ export default function DashboardOrdersPage() {
                           href={`/dashboard/orders/${order.id}`}
                           className="block truncate font-semibold text-slate-900 transition hover:text-pink-600"
                         >
-                          {order.id}
+                          {order.orderNumber || order.id}
                         </Link>
                         <p className="mt-1 text-sm text-slate-600">
                           {order.user?.name?.trim() ||

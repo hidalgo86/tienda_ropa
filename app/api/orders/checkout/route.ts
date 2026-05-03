@@ -4,9 +4,10 @@ import { UserApiRouteError } from "../../users/userApi.error";
 import { PAYMENTS_ENABLED, paymentsDisabledMessage } from "@/lib/commerceConfig";
 
 const checkoutMutation = `
-  mutation CheckoutMyCart {
-    checkoutMyCart {
+  mutation CheckoutMyCart($input: CheckoutInput) {
+    checkoutMyCart(input: $input) {
       id
+      orderNumber
       userId
       items {
         productId
@@ -23,6 +24,7 @@ const checkoutMutation = `
         name
         phone
       }
+      deliveryMethod
       status
       paymentMethod
       paymentReference
@@ -47,10 +49,19 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const data = await executeUsersGraphql<{
-      checkoutMyCart: Record<string, unknown>;
-    }>({
+    const body = (await req.json().catch(() => null)) as {
+      deliveryMethod?: string;
+    } | null;
+    const deliveryMethod =
+      body?.deliveryMethod === "delivery" ? "DELIVERY" : "PICKUP";
+    const data = await executeUsersGraphql<
+      {
+        checkoutMyCart: Record<string, unknown>;
+      },
+      { input: { deliveryMethod: string } }
+    >({
       query: checkoutMutation,
+      variables: { input: { deliveryMethod } },
       request: req,
     });
 

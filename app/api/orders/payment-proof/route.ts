@@ -6,6 +6,7 @@ const submitPaymentProofMutation = `
   mutation SubmitPaymentProof($input: SubmitPaymentProofInput!) {
     submitPaymentProof(input: $input) {
       id
+      orderNumber
       userId
       items {
         productId
@@ -22,6 +23,7 @@ const submitPaymentProofMutation = `
         name
         phone
       }
+      deliveryMethod
       status
       paymentMethod
       paymentReference

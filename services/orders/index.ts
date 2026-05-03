@@ -11,6 +11,8 @@ interface OrderApiOptions {
   signal?: AbortSignal;
 }
 
+export type DeliveryMethod = "pickup" | "delivery";
+
 const PAYMENT_PROOF_TARGET_SIZE_BYTES = 2 * 1024 * 1024;
 const PAYMENT_PROOF_MAX_DIMENSION = 1600;
 
@@ -180,17 +182,38 @@ const normalizeShippingAddress = (value: unknown): ShippingAddress => {
   };
 };
 
+const normalizeEnumValue = (value: unknown): string =>
+  typeof value === "string" ? value.trim().toLowerCase() : "";
+
 const normalizeOrder = (value: unknown): Order => {
   const order = asRecord(value);
+  const user = asRecord(order.user);
 
   return {
     id: String(order.id ?? ""),
+    orderNumber: String(order.orderNumber ?? order.id ?? ""),
     userId: String(order.userId ?? ""),
+    user: order.user
+      ? {
+          id: String(user.id ?? ""),
+          username: String(user.username ?? ""),
+          email: String(user.email ?? ""),
+          isEmailVerified: Boolean(user.isEmailVerified),
+          status: String(user.status ?? ""),
+          role: String(user.role ?? ""),
+          name: typeof user.name === "string" ? user.name : null,
+          phone: typeof user.phone === "string" ? user.phone : null,
+          address: typeof user.address === "string" ? user.address : null,
+          createdAt: typeof user.createdAt === "string" ? user.createdAt : null,
+          updatedAt: typeof user.updatedAt === "string" ? user.updatedAt : null,
+        }
+      : null,
     items: Array.isArray(order.items) ? order.items.map(normalizeOrderItem) : [],
     totalAmount: Number(order.totalAmount ?? 0),
     shippingAddress: normalizeShippingAddress(order.shippingAddress),
-    status: String(order.status ?? ""),
-    paymentMethod: String(order.paymentMethod ?? ""),
+    deliveryMethod: normalizeEnumValue(order.deliveryMethod) || null,
+    status: normalizeEnumValue(order.status),
+    paymentMethod: normalizeEnumValue(order.paymentMethod),
     paymentReference:
       typeof order.paymentReference === "string"
         ? order.paymentReference
@@ -254,16 +277,21 @@ const fetchWithAuthRetry = async <T>(
 };
 
 export const checkoutCart = async (
+  input: { deliveryMethod?: DeliveryMethod } = {},
   options: OrderApiOptions = {},
 ): Promise<Order> => {
   return fetchWithAuthRetry(async (token) => {
     const response = await fetch("/api/orders/checkout", {
       method: "POST",
       headers: buildHeaders(token),
+      body: JSON.stringify({
+        deliveryMethod: input.deliveryMethod ?? "pickup",
+      }),
       signal: options.signal,
     });
 
-    return parseResponseOrThrow<Order>(response);
+    const data = await parseResponseOrThrow<unknown>(response);
+    return normalizeOrder(data);
   }, options);
 };
 
@@ -294,7 +322,8 @@ export const payOrder = async (
       signal: options.signal,
     });
 
-    return parseResponseOrThrow<Order>(response);
+    const data = await parseResponseOrThrow<unknown>(response);
+    return normalizeOrder(data);
   }, options);
 };
 
@@ -352,7 +381,8 @@ export const cancelOrder = async (
       signal: options.signal,
     });
 
-    return parseResponseOrThrow<Order>(response);
+    const data = await parseResponseOrThrow<unknown>(response);
+    return normalizeOrder(data);
   }, options);
 };
 
@@ -398,7 +428,16 @@ export const listAdminOrders = async (
       signal: options.signal,
     });
 
-    return parseResponseOrThrow<PaginatedResult<AdminOrder>>(response);
+    const data = await parseResponseOrThrow<PaginatedResult<unknown>>(response);
+
+    return {
+      items: Array.isArray(data.items)
+        ? (data.items.map((item) => normalizeOrder(item)) as AdminOrder[])
+        : [],
+      total: Number(data.total ?? 0),
+      page: Number(data.page ?? 1),
+      totalPages: Number(data.totalPages ?? 1),
+    };
   }, options);
 };
 
@@ -414,7 +453,8 @@ export const adminPayOrder = async (
       signal: options.signal,
     });
 
-    return parseResponseOrThrow<AdminOrder>(response);
+    const data = await parseResponseOrThrow<unknown>(response);
+    return normalizeOrder(data) as AdminOrder;
   }, options);
 };
 
@@ -430,6 +470,7 @@ export const adminCancelOrder = async (
       signal: options.signal,
     });
 
-    return parseResponseOrThrow<AdminOrder>(response);
+    const data = await parseResponseOrThrow<unknown>(response);
+    return normalizeOrder(data) as AdminOrder;
   }, options);
 };
