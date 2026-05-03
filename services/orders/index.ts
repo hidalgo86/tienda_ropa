@@ -185,13 +185,22 @@ const normalizeShippingAddress = (value: unknown): ShippingAddress => {
 const normalizeEnumValue = (value: unknown): string =>
   typeof value === "string" ? value.trim().toLowerCase() : "";
 
+const formatLegacyOrderNumber = (orderId: string): string => {
+  const shortId = orderId.slice(-6).toUpperCase();
+  return shortId ? `PED-${shortId}` : "";
+};
+
 const normalizeOrder = (value: unknown): Order => {
   const order = asRecord(value);
   const user = asRecord(order.user);
+  const id = String(order.id ?? "");
 
   return {
-    id: String(order.id ?? ""),
-    orderNumber: String(order.orderNumber ?? order.id ?? ""),
+    id,
+    orderNumber:
+      typeof order.orderNumber === "string" && order.orderNumber.trim()
+        ? order.orderNumber.trim()
+        : formatLegacyOrderNumber(id),
     userId: String(order.userId ?? ""),
     user: order.user
       ? {
@@ -307,6 +316,22 @@ export const listMyOrders = async (
 
     const data = await parseResponseOrThrow<unknown>(response);
     return normalizeOrders(data);
+  }, options);
+};
+
+export const getMyOrder = async (
+  orderId: string,
+  options: OrderApiOptions = {},
+): Promise<Order> => {
+  return fetchWithAuthRetry(async (token) => {
+    const response = await fetch(`/api/orders/${encodeURIComponent(orderId)}`, {
+      headers: buildHeaders(token),
+      cache: "no-store",
+      signal: options.signal,
+    });
+
+    const data = await parseResponseOrThrow<unknown>(response);
+    return normalizeOrder(data);
   }, options);
 };
 

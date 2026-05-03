@@ -1,26 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   MdCancel,
+  MdChevronRight,
+  MdFilterList,
   MdInventory2,
   MdReceiptLong,
-  MdUploadFile,
 } from "react-icons/md";
-import {
-  cancelOrder,
-  listMyOrders,
-  submitPaymentProof,
-  uploadPaymentProofImage,
-} from "@/services/orders";
+import { cancelOrder, listMyOrders } from "@/services/orders";
 import { getStoredAuthToken } from "@/services/users";
 import type { Order } from "@/types/domain/orders";
 import {
   PAYMENTS_ENABLED,
-  manualPaymentInstructions,
   paymentsDisabledMessage,
   pickupMessage,
 } from "@/lib/commerceConfig";
@@ -54,24 +49,34 @@ const orderStatusLabels: Record<string, string> = {
   cancelled: "Cancelada",
 };
 
+const orderStatusFilters = [
+  { value: "pending", label: "Pendientes" },
+  { value: "paid", label: "Pagadas" },
+  { value: "cancelled", label: "Canceladas" },
+  { value: "all", label: "Todas" },
+] as const;
+
+type OrderStatusFilter = (typeof orderStatusFilters)[number]["value"];
+
 export default function OrdersClient() {
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
-  const [receiptNumbers, setReceiptNumbers] = useState<Record<string, string>>({});
-  const [proofFiles, setProofFiles] = useState<Record<string, File | null>>({});
+  const [statusFilter, setStatusFilter] =
+    useState<OrderStatusFilter>("pending");
 
   const loadOrders = useCallback(async () => {
     const token = getStoredAuthToken();
 
     if (!token) {
+      setIsLoading(false);
       router.replace("/login?redirect=%2Forders");
       return;
     }
 
     try {
-      const orderList = await listMyOrders({ token });
+      const orderList = await listMyOrders();
       setOrders(Array.isArray(orderList) ? orderList : []);
     } catch (error) {
       const message =
@@ -88,46 +93,6 @@ export default function OrdersClient() {
     void loadOrders();
   }, [loadOrders]);
 
-  const handleSubmitProof = async (orderId: string) => {
-    if (!PAYMENTS_ENABLED) {
-      toast.error(paymentsDisabledMessage);
-      return;
-    }
-
-    const receiptNumber = receiptNumbers[orderId]?.trim() ?? "";
-    const proofFile = proofFiles[orderId];
-    if (!receiptNumber || !proofFile) {
-      toast.error("Carga el comprobante e indica el numero de operacion");
-      return;
-    }
-
-    setActiveOrderId(orderId);
-
-    try {
-      const uploadedProof = await uploadPaymentProofImage(orderId, proofFile);
-      const updatedOrder = await submitPaymentProof({
-        orderId,
-        paymentReceiptNumber: receiptNumber,
-        paymentProofUrl: uploadedProof.url,
-        paymentProofPublicId: uploadedProof.publicId,
-      });
-      setOrders((current) =>
-        current.map((order) => (order.id === orderId ? updatedOrder : order)),
-      );
-      setReceiptNumbers((current) => ({ ...current, [orderId]: "" }));
-      setProofFiles((current) => ({ ...current, [orderId]: null }));
-      toast.success("Comprobante cargado. Queda en espera de confirmacion.");
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "No se pudo cargar el comprobante";
-      toast.error(message);
-    } finally {
-      setActiveOrderId(null);
-    }
-  };
-
   const handleCancelOrder = async (orderId: string) => {
     setActiveOrderId(orderId);
 
@@ -139,14 +104,30 @@ export default function OrdersClient() {
       toast.success("Pedido cancelado");
     } catch (error) {
       const message =
-        error instanceof Error
-          ? error.message
-          : "No se pudo cancelar el pedido";
+        error instanceof Error ? error.message : "No se pudo cancelar el pedido";
       toast.error(message);
     } finally {
       setActiveOrderId(null);
     }
   };
+
+  const orderCounts = useMemo(
+    () => ({
+      all: orders.length,
+      pending: orders.filter((order) => order.status === "pending").length,
+      paid: orders.filter((order) => order.status === "paid").length,
+      cancelled: orders.filter((order) => order.status === "cancelled").length,
+    }),
+    [orders],
+  );
+
+  const filteredOrders = useMemo(
+    () =>
+      statusFilter === "all"
+        ? orders
+        : orders.filter((order) => order.status === statusFilter),
+    [orders, statusFilter],
+  );
 
   if (isLoading) {
     return (
@@ -169,18 +150,39 @@ export default function OrdersClient() {
               Mis Pedidos
             </h1>
             <p className="mt-2 text-gray-600">
-              Revisa el estado de tus compras y administra tus pedidos
-              pendientes.
+              Primero veras los pendientes de pago. Usa los filtros para revisar
+              pagados o cancelados.
             </p>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => void loadOrders()}
-              className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Actualizar
-            </button>
+          <button
+            type="button"
+            onClick={() => void loadOrders()}
+            className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            Actualizar
+          </button>
+        </div>
+
+        <div className="mb-6 rounded-lg border border-gray-200 bg-white p-3 shadow-sm">
+          <div className="mb-3 flex items-center gap-2 text-sm font-medium text-gray-700">
+            <MdFilterList size={18} />
+            Filtrar por estado
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+            {orderStatusFilters.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setStatusFilter(option.value)}
+                className={`rounded-md px-3 py-2 text-sm font-medium transition ${
+                  statusFilter === option.value
+                    ? "bg-gray-900 text-white"
+                    : "border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                {option.label} ({orderCounts[option.value]})
+              </button>
+            ))}
           </div>
         </div>
 
@@ -200,155 +202,94 @@ export default function OrdersClient() {
               Explorar productos
             </Link>
           </div>
+        ) : filteredOrders.length === 0 ? (
+          <div className="rounded-lg bg-white border border-gray-200 p-10 text-center shadow-sm">
+            <MdInventory2 className="mx-auto text-gray-400" size={48} />
+            <p className="mt-4 text-lg font-medium text-gray-900">
+              No hay pedidos en este estado
+            </p>
+            <p className="mt-2 text-gray-600">
+              Cambia el filtro para ver otros pedidos registrados.
+            </p>
+          </div>
         ) : (
-          <div className="space-y-6">
-            {orders.map((order) => {
+          <div className="space-y-4">
+            {filteredOrders.map((order) => {
               const isPending = order.status === "pending";
               const isBusy = activeOrderId === order.id;
+              const productCount = Array.isArray(order.items)
+                ? order.items.reduce((total, item) => total + item.quantity, 0)
+                : 0;
 
               return (
                 <article
                   key={order.id}
-                  className="rounded-2xl border border-gray-200 bg-white shadow-sm p-6"
+                  className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
                 >
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <p className="text-sm text-gray-500">Pedido</p>
-                      <p className="font-semibold text-gray-900 break-all">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                      <p className="text-xs text-gray-500">Pedido</p>
+                      <p className="truncate font-semibold text-gray-900">
                         {order.orderNumber || order.id}
                       </p>
-                      <p className="mt-1 text-sm text-gray-500">
+                      <p className="mt-1 text-xs text-gray-500">
                         Creado el {formatDate(order.createdAt)}
                       </p>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          orderStatusStyles[order.status] ??
-                          "bg-gray-100 text-gray-700"
-                        }`}
-                      >
-                        {orderStatusLabels[order.status] ?? order.status}
-                      </span>
-                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
-                        {order.paymentMethod}
-                      </span>
-                    </div>
+                    <span
+                      className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${
+                        orderStatusStyles[order.status] ??
+                        "bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {orderStatusLabels[order.status] ?? order.status}
+                    </span>
                   </div>
 
-                  <div className="mt-5 grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
+                  <div className="mt-4 grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
                     <div>
-                      <p className="text-gray-500">Envio</p>
-                      <p className="text-gray-900 font-medium">
+                      <p className="text-gray-500">Entrega</p>
+                      <p className="font-medium text-gray-900">
                         {order.shippingAddress.address}
                       </p>
-                      <p className="break-words text-gray-600">
-                        {order.shippingAddress.name || "Sin nombre"}
-                        {order.shippingAddress.phone
-                          ? ` • ${order.shippingAddress.phone}`
-                          : ""}
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Productos</p>
+                      <p className="font-semibold text-gray-900">
+                        {productCount}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500">Comprobante</p>
+                      <p className="font-medium text-gray-900">
+                        {order.paymentProofUrl ? "Cargado" : "Pendiente"}
                       </p>
                     </div>
                     <div>
                       <p className="text-gray-500">Total</p>
-                      <p className="text-2xl font-bold text-blue-600">
+                      <p className="text-lg font-bold text-blue-600">
                         {formatCurrency(order.totalAmount)}
                       </p>
-                      {order.paymentReference && (
-                        <p className="text-gray-600">
-                          Ref: {order.paymentReference}
-                        </p>
-                      )}
-                      {order.paymentReceiptNumber && (
-                        <p className="text-gray-600">
-                          Operacion: {order.paymentReceiptNumber}
-                        </p>
-                      )}
                     </div>
                   </div>
 
-                  <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                    <p className="font-semibold">{pickupMessage}</p>
-                    {isPending && (
-                      <ul className="mt-2 list-disc space-y-1 pl-5">
-                        {manualPaymentInstructions.map((instruction) => (
-                          <li key={instruction}>{instruction}</li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-
-                  <div className="mt-5 space-y-3">
-                    {(Array.isArray(order.items) ? order.items : []).map((item, index) => (
-                      <div
-                        key={`${order.id}-${item.productId}-${index}`}
-                        className="flex flex-col gap-2 rounded-lg bg-gray-50 px-4 py-3 min-[440px]:flex-row min-[440px]:items-center min-[440px]:justify-between"
+                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                    <Link
+                      href={`/orders/${order.id}`}
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-black sm:w-auto"
+                    >
+                      Ver detalle
+                      <MdChevronRight size={18} />
+                    </Link>
+                    {isPending && !order.paymentProofUrl && PAYMENTS_ENABLED && (
+                      <Link
+                        href={`/orders/${order.id}`}
+                        className="inline-flex w-full items-center justify-center rounded-md border border-green-300 bg-white px-4 py-2 text-sm font-medium text-green-700 hover:bg-green-50 sm:w-auto"
                       >
-                        <div className="min-w-0">
-                          <p className="font-medium text-gray-900">
-                            {item.productName}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            Cantidad: {item.quantity}
-                            {item.variantName
-                              ? ` • Variante: ${item.variantName}`
-                              : ""}
-                          </p>
-                        </div>
-                        <p className="font-semibold text-gray-900 min-[440px]:text-right">
-                          {formatCurrency(item.lineTotal)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-
-                  {isPending && (
-                    <div className="mt-5 space-y-4">
-                      {order.paymentProofUrl ? (
-                        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
-                          Comprobante cargado. Esperando confirmacion de administracion.
-                        </div>
-                      ) : (
-                        <form
-                          onSubmit={(event) => {
-                            event.preventDefault();
-                            void handleSubmitProof(order.id);
-                          }}
-                          className="grid gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4 md:grid-cols-[1fr_1fr_auto]"
-                        >
-                          <input
-                            value={receiptNumbers[order.id] ?? ""}
-                            onChange={(event) =>
-                              setReceiptNumbers((current) => ({
-                                ...current,
-                                [order.id]: event.target.value,
-                              }))
-                            }
-                            className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                            placeholder="Numero de operacion"
-                          />
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={(event) =>
-                              setProofFiles((current) => ({
-                                ...current,
-                                [order.id]: event.target.files?.[0] ?? null,
-                              }))
-                            }
-                            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm"
-                          />
-                          <button
-                            type="submit"
-                            disabled={isBusy || !PAYMENTS_ENABLED}
-                            className="inline-flex items-center justify-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
-                          >
-                            <MdUploadFile size={18} />
-                            {isBusy ? "Cargando..." : "Subir comprobante"}
-                          </button>
-                        </form>
-                      )}
-                      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                        Subir comprobante
+                      </Link>
+                    )}
+                    {isPending && (
                       <button
                         type="button"
                         onClick={() => void handleCancelOrder(order.id)}
@@ -358,9 +299,10 @@ export default function OrdersClient() {
                         <MdCancel size={18} />
                         {isBusy ? "Procesando..." : "Cancelar pedido"}
                       </button>
-                      </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
+
+                  <p className="mt-3 text-xs text-gray-500">{pickupMessage}</p>
                   {isPending && !PAYMENTS_ENABLED && (
                     <p className="mt-3 text-sm text-amber-700">
                       {paymentsDisabledMessage}

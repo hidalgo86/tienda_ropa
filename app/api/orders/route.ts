@@ -39,14 +39,33 @@ const myOrdersQuery = `
   }
 `;
 
+const myOrdersQueryWithoutOrderNumber = myOrdersQuery.replace(
+  "\n      orderNumber",
+  "",
+);
+
 export async function GET(req: NextRequest) {
   try {
-    const data = await executeUsersGraphql<{
-      myOrders: Record<string, unknown>[];
-    }>({
-      query: myOrdersQuery,
-      request: req,
-    });
+    const executeMyOrders = (query: string) =>
+      executeUsersGraphql<{
+        myOrders: Record<string, unknown>[];
+      }>({
+        query,
+        request: req,
+      });
+
+    let data: { myOrders: Record<string, unknown>[] };
+
+    try {
+      data = await executeMyOrders(myOrdersQuery);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (!message.includes("orderNumber")) {
+        throw error;
+      }
+
+      data = await executeMyOrders(myOrdersQueryWithoutOrderNumber);
+    }
 
     return NextResponse.json(Array.isArray(data.myOrders) ? data.myOrders : []);
   } catch (error) {
