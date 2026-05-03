@@ -136,11 +136,22 @@ export default function DashboardOrdersPage() {
     }));
   };
 
-  const handlePay = async (orderId: string) => {
+  const handlePay = async (order: AdminOrder) => {
+    if (
+      !order.paymentProofUrl &&
+      !window.confirm(
+        "Esta orden no tiene comprobante cargado. Confirma que ya comprobaste el pago antes de marcarla como pagada.",
+      )
+    ) {
+      return;
+    }
+
+    const orderId = order.id;
     setActiveOrderId(orderId);
 
     try {
       replaceOrder(await adminPayOrder(orderId));
+      toast.success("Orden marcada como pagada");
     } catch (actionError) {
       toast.error(
         getErrorMessage(actionError, "No se pudo marcar la orden como pagada"),
@@ -281,8 +292,8 @@ export default function DashboardOrdersPage() {
                               <>
                                 <button
                                   type="button"
-                                  disabled={isBusy || !order.paymentProofUrl}
-                                  onClick={() => void handlePay(order.id)}
+                                  disabled={isBusy}
+                                  onClick={() => void handlePay(order)}
                                   className="rounded-lg border border-emerald-200 px-3 py-2 text-xs font-medium text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-60"
                                 >
                                   {isBusy ? "Procesando..." : "Marcar pagada"}
@@ -394,8 +405,8 @@ export default function DashboardOrdersPage() {
                         <div className="flex flex-wrap gap-2">
                           <button
                             type="button"
-                            disabled={isBusy || !order.paymentProofUrl}
-                            onClick={() => void handlePay(order.id)}
+                            disabled={isBusy}
+                            onClick={() => void handlePay(order)}
                             className="rounded-lg border border-emerald-200 px-3 py-2 text-xs font-medium text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-60"
                           >
                             {isBusy ? "Procesando..." : "Pagada"}

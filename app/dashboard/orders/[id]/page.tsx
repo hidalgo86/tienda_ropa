@@ -116,6 +116,15 @@ export default function DashboardOrderDetailPage() {
   }
 
   const handleConfirmPayment = async () => {
+    if (
+      !order.paymentProofUrl &&
+      !window.confirm(
+        "Esta orden no tiene comprobante cargado. Confirma que ya comprobaste el pago antes de marcarla como pagada.",
+      )
+    ) {
+      return;
+    }
+
     setIsUpdating(true);
 
     try {
@@ -184,7 +193,7 @@ export default function DashboardOrderDetailPage() {
             <button
               type="button"
               onClick={() => void handleConfirmPayment()}
-              disabled={isUpdating || !order.paymentProofUrl}
+              disabled={isUpdating}
               className="inline-flex justify-center rounded-lg border border-emerald-200 px-4 py-2 text-sm font-medium text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-60"
             >
               {isUpdating ? "Procesando..." : "Confirmar pago"}
