@@ -9,10 +9,6 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/products",
   },
-  robots: {
-    index: false,
-    follow: true,
-  },
   openGraph: {
     title: "Productos | Chikitoslandia",
     description:

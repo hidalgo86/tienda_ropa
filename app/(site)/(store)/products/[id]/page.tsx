@@ -52,10 +52,6 @@ export async function generateMetadata({
       alternates: {
         canonical: path,
       },
-      robots: {
-        index: false,
-        follow: true,
-      },
       openGraph: {
         title: producto.name,
         description,

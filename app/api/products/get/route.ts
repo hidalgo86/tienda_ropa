@@ -1,5 +1,5 @@
 // app/api/products/get/route.ts
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import {
   allowedSizes,
   PaginatedProducts,
@@ -17,7 +17,7 @@ import {
   toGraphqlState,
 } from "@/lib/graphqlMappers";
 import { normalizeProductsPage } from "../normalizeProduct";
-import { clampInteger } from "../../_utils/security";
+import { clampInteger, getBackendAuthorization } from "../../_utils/security";
 
 export const dynamic = "force-dynamic";
 
@@ -101,7 +101,7 @@ const query = `
   }
 `;
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
 
@@ -153,10 +153,14 @@ export async function GET(req: Request) {
       input.filters,
       input.pagination,
     );
+    const authorization = getBackendAuthorization(req);
 
     const backendRes = await fetch(`${process.env.API_URL}/graphql`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(authorization ? { Authorization: authorization } : {}),
+      },
       body: JSON.stringify({
         query,
         variables: { input: graphqlInput },

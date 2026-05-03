@@ -1,6 +1,19 @@
-export const metadata = {
-  title: "Acerca",
-  description: "Información sobre la tienda",
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Acerca de Chikitoslandia",
+  description:
+    "Conoce Chikitoslandia, tienda online de ropa, juguetes y artículos para bebés y niños.",
+  alternates: {
+    canonical: "/acerca",
+  },
+  openGraph: {
+    title: "Acerca de Chikitoslandia",
+    description:
+      "Conoce Chikitoslandia, tienda online de ropa, juguetes y artículos para bebés y niños.",
+    url: "/acerca",
+    type: "website",
+  },
 };
 
 export default function AcercaPage() {

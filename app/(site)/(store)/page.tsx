@@ -12,10 +12,6 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
-  robots: {
-    index: false,
-    follow: true,
-  },
 };
 
 export default async function Home() {
@@ -30,6 +26,10 @@ export default async function Home() {
   return (
     <div className="bg-white min-h-screen">
       <main className="mx-auto max-w-7xl px-3 pb-24 pt-4 sm:px-6 sm:pb-10 sm:pt-6 lg:px-8 lg:pb-6 lg:pt-8">
+        <h1 className="sr-only">
+          Chikitoslandia, tienda online de ropa, juguetes y artículos para
+          bebés y niños
+        </h1>
         <div className="mt-2 sm:mt-4 lg:mt-0">
           <Carrusel />
         </div>
