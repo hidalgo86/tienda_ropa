@@ -15,8 +15,12 @@ const buildSecurityHeaders = (nonce?: string): Record<string, string> => ({
     "object-src 'none'",
     "img-src 'self' data: blob: https://res.cloudinary.com",
     "font-src 'self' data:",
-    "style-src 'self'",
-    "style-src-elem 'self'",
+    isProduction && nonce
+      ? `style-src 'self' 'nonce-${nonce}'`
+      : "style-src 'self' 'unsafe-inline'",
+    isProduction && nonce
+      ? `style-src-elem 'self' 'nonce-${nonce}'`
+      : "style-src-elem 'self' 'unsafe-inline'",
     "style-src-attr 'unsafe-inline'",
     isProduction && nonce
       ? `script-src 'self' 'nonce-${nonce}'`
