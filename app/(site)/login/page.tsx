@@ -205,6 +205,13 @@ export default function LoginPage() {
                     ? `Espera ${remainingSeconds}s`
                     : "Iniciar sesion"}
               </button>
+              <button
+                type="button"
+                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-700 transition hover:bg-gray-50"
+                onClick={() => router.push("/")}
+              >
+                Cancelar
+              </button>
             </div>
           </form>
         </div>
