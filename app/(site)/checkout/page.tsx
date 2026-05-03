@@ -8,10 +8,16 @@ import { useDispatch } from "react-redux";
 import { MdCheckCircle, MdLocationOn, MdShoppingCart } from "react-icons/md";
 import { useCartActions } from "@/lib/useCartActions";
 import { useSubmitCooldown } from "@/lib/useSubmitCooldown";
-import { checkoutCart } from "@/services/orders";
+import {
+  checkoutCart,
+  submitPaymentProof,
+  uploadPaymentProofImage,
+} from "@/services/orders";
 import {
   PAYMENTS_ENABLED,
   checkoutDisabledMessage,
+  manualPaymentInstructions,
+  pickupMessage,
 } from "@/lib/commerceConfig";
 import {
   getCurrentUser,
@@ -35,7 +41,10 @@ export default function CheckoutPage() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmittingProof, setIsSubmittingProof] = useState(false);
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
+  const [paymentReceiptNumber, setPaymentReceiptNumber] = useState("");
+  const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null);
   const { isCoolingDown, remainingSeconds, startCooldown } =
     useSubmitCooldown(5);
 
@@ -71,7 +80,7 @@ export default function CheckoutPage() {
     void loadUser();
   }, [router]);
 
-  const canCheckout = Boolean(user?.address?.trim()) && cart.items.length > 0;
+  const canCheckout = cart.items.length > 0;
 
   const orderSummary = useMemo(
     () =>
@@ -117,6 +126,43 @@ export default function CheckoutPage() {
       startCooldown();
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleSubmitProof = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!createdOrder || isSubmittingProof) return;
+
+    const receiptNumber = paymentReceiptNumber.trim();
+    if (!receiptNumber || !paymentProofFile) {
+      toast.error("Carga el comprobante e indica el numero de operacion");
+      return;
+    }
+
+    setIsSubmittingProof(true);
+
+    try {
+      const uploadedProof = await uploadPaymentProofImage(
+        createdOrder.id,
+        paymentProofFile,
+      );
+      const updatedOrder = await submitPaymentProof({
+        orderId: createdOrder.id,
+        paymentReceiptNumber: receiptNumber,
+        paymentProofUrl: uploadedProof.url,
+        paymentProofPublicId: uploadedProof.publicId,
+      });
+
+      setCreatedOrder(updatedOrder);
+      setPaymentReceiptNumber("");
+      setPaymentProofFile(null);
+      toast.success("Comprobante cargado. Tu pedido queda en espera de confirmacion.");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "No se pudo cargar el comprobante";
+      toast.error(message);
+    } finally {
+      setIsSubmittingProof(false);
     }
   };
 
@@ -173,7 +219,7 @@ export default function CheckoutPage() {
               Pedido creado con exito
             </h1>
             <p className="mt-3 text-gray-600">
-              Tu orden fue registrada correctamente y queda pendiente de pago.
+              Tu orden fue registrada correctamente y queda en espera de pago.
             </p>
 
             <div className="mt-8 rounded-xl bg-gray-50 p-5 text-left">
@@ -188,6 +234,60 @@ export default function CheckoutPage() {
                 {createdOrder.shippingAddress.address}
               </p>
             </div>
+
+            <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-5 text-left">
+              <h2 className="font-semibold text-amber-950">Pago manual</h2>
+              <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-amber-900">
+                {manualPaymentInstructions.map((instruction) => (
+                  <li key={instruction}>{instruction}</li>
+                ))}
+              </ul>
+              <p className="mt-3 text-sm font-medium text-amber-950">
+                Numero de pedido: {createdOrder.id}
+              </p>
+            </div>
+
+            {createdOrder.paymentProofUrl ? (
+              <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-left text-sm text-emerald-900">
+                Comprobante recibido. Numero de operacion:{" "}
+                <span className="font-semibold">
+                  {createdOrder.paymentReceiptNumber}
+                </span>
+              </div>
+            ) : (
+              <form
+                onSubmit={handleSubmitProof}
+                className="mt-6 space-y-4 rounded-xl border border-gray-200 bg-gray-50 p-5 text-left"
+              >
+                <label className="block text-sm font-medium text-gray-700">
+                  Numero de operacion o comprobante
+                  <input
+                    value={paymentReceiptNumber}
+                    onChange={(event) => setPaymentReceiptNumber(event.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"
+                    placeholder="Ej. transferencia 123456"
+                  />
+                </label>
+                <label className="block text-sm font-medium text-gray-700">
+                  Imagen del comprobante
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) =>
+                      setPaymentProofFile(event.target.files?.[0] ?? null)
+                    }
+                    className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2"
+                  />
+                </label>
+                <button
+                  type="submit"
+                  disabled={isSubmittingProof}
+                  className="w-full rounded-lg bg-green-600 px-4 py-2.5 text-white hover:bg-green-700 disabled:opacity-60"
+                >
+                  {isSubmittingProof ? "Cargando..." : "Cargar comprobante"}
+                </button>
+              </form>
+            )}
 
             <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
               <Link
@@ -239,24 +339,14 @@ export default function CheckoutPage() {
                   {user?.phone?.trim() || "No registrado"}
                 </p>
                 <p>
-                  <span className="font-medium text-gray-900">Direccion:</span>{" "}
-                  {user?.address?.trim() || "No registrada"}
+                  <span className="font-medium text-gray-900">Entrega:</span>{" "}
+                  Retiro en tienda
                 </p>
               </div>
 
-              {!user?.address?.trim() && (
-                <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                  Necesitas completar tu direccion en tu perfil antes de finalizar la compra.
-                  <div className="mt-3">
-                    <Link
-                      href="/account"
-                      className="inline-flex px-4 py-2 rounded-lg bg-amber-600 text-white hover:bg-amber-700 transition-colors"
-                    >
-                      Completar perfil
-                    </Link>
-                  </div>
-                </div>
-              )}
+              <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                {pickupMessage}
+              </div>
             </div>
 
             <div className="bg-white rounded-2xl shadow-sm p-6">
@@ -353,8 +443,8 @@ export default function CheckoutPage() {
                   Volver al carrito
                 </Link>
                 <p className="text-xs text-gray-500 leading-relaxed">
-                  El backend generara una orden pendiente y descontara el stock
-                  disponible de los productos del carrito.
+                  Se generara una orden en espera de pago y se reservara el stock
+                  disponible hasta que administracion confirme el comprobante.
                 </p>
               </div>
             </div>

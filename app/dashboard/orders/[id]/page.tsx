@@ -4,7 +4,14 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { MdArrowBack } from "react-icons/md";
-import { listAdminOrders, type AdminOrder } from "@/services/orders";
+import {
+  adminCancelOrder,
+  adminPayOrder,
+  listAdminOrders,
+  type AdminOrder,
+} from "@/services/orders";
+import { toast } from "sonner";
+import { getErrorMessage } from "@/lib/errorUtils";
 
 const formatCurrency = (value: number): string =>
   new Intl.NumberFormat("es-ES", {
@@ -39,6 +46,7 @@ export default function DashboardOrderDetailPage() {
   const [order, setOrder] = useState<AdminOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   useEffect(() => {
     const loadOrder = async () => {
@@ -107,6 +115,32 @@ export default function DashboardOrderDetailPage() {
     );
   }
 
+  const handleConfirmPayment = async () => {
+    setIsUpdating(true);
+
+    try {
+      setOrder(await adminPayOrder(order.id));
+      toast.success("Pago confirmado");
+    } catch (actionError) {
+      toast.error(getErrorMessage(actionError, "No se pudo confirmar el pago"));
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    setIsUpdating(true);
+
+    try {
+      setOrder(await adminCancelOrder(order.id));
+      toast.success("Orden cancelada");
+    } catch (actionError) {
+      toast.error(getErrorMessage(actionError, "No se pudo cancelar la orden"));
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   return (
     <section className="space-y-6">
       <Link
@@ -141,6 +175,27 @@ export default function DashboardOrderDetailPage() {
             </span>
           </div>
         </div>
+
+        {order.status === "pending" && (
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <button
+              type="button"
+              onClick={() => void handleConfirmPayment()}
+              disabled={isUpdating || !order.paymentProofUrl}
+              className="inline-flex justify-center rounded-lg border border-emerald-200 px-4 py-2 text-sm font-medium text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-60"
+            >
+              {isUpdating ? "Procesando..." : "Confirmar pago"}
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleCancelOrder()}
+              disabled={isUpdating}
+              className="inline-flex justify-center rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:opacity-60"
+            >
+              {isUpdating ? "Procesando..." : "Cancelar orden"}
+            </button>
+          </div>
+        )}
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -224,6 +279,35 @@ export default function DashboardOrderDetailPage() {
                   Referencia de pago:
                 </span>{" "}
                 {order.paymentReference || "Sin referencia"}
+              </p>
+              <p>
+                <span className="font-medium text-slate-900">
+                  Numero de operacion:
+                </span>{" "}
+                {order.paymentReceiptNumber || "Sin comprobante"}
+              </p>
+              <p>
+                <span className="font-medium text-slate-900">
+                  Comprobante:
+                </span>{" "}
+                {order.paymentProofUrl ? (
+                  <a
+                    href={order.paymentProofUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-medium text-pink-600 hover:text-pink-700"
+                  >
+                    Ver imagen
+                  </a>
+                ) : (
+                  "No cargado"
+                )}
+              </p>
+              <p>
+                <span className="font-medium text-slate-900">
+                  Comprobante enviado:
+                </span>{" "}
+                {formatDate(order.paymentProofSubmittedAt)}
               </p>
             </div>
           </div>

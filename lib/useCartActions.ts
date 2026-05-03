@@ -23,6 +23,7 @@ import {
   clearStoredSession,
   getStoredAuthToken,
   getValidStoredAuthToken,
+  isStoredAdminUser,
 } from "@/services/users";
 import { getErrorMessage, isSessionError } from "@/lib/errorUtils";
 
@@ -163,6 +164,11 @@ export const useCartActions = () => {
       selectedSize?: string;
       selectedColor?: string;
     }) => {
+      if (isStoredAdminUser()) {
+        toast.info("Los administradores no usan carrito.");
+        return;
+      }
+
       const requestedQuantity = input.quantity ?? 1;
       const currentItems = cartRef.current.items;
       const existingItem = currentItems.find(
@@ -231,6 +237,11 @@ export const useCartActions = () => {
       selectedSize,
       selectedColor,
     }: CartIdentity & { quantity: number }) => {
+      if (isStoredAdminUser()) {
+        toast.info("Los administradores no usan carrito.");
+        return;
+      }
+
       const currentItems = cartRef.current.items;
       const existingItem = currentItems.find(
         (item) =>
@@ -297,6 +308,11 @@ export const useCartActions = () => {
 
   const removeCartItem = React.useCallback(
     async ({ productId, selectedSize, selectedColor }: CartIdentity) => {
+      if (isStoredAdminUser()) {
+        toast.info("Los administradores no usan carrito.");
+        return;
+      }
+
       const token = getValidStoredAuthToken();
       if (!token) {
         mutationVersionRef.current += 1;
@@ -338,6 +354,12 @@ export const useCartActions = () => {
   );
 
   const clearAllCart = React.useCallback(async () => {
+    if (isStoredAdminUser()) {
+      mutationVersionRef.current += 1;
+      dispatch(clearCart());
+      return;
+    }
+
     const token = getStoredAuthToken();
     if (!token) {
       mutationVersionRef.current += 1;

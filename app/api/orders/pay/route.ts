@@ -25,6 +25,10 @@ const payOrderMutation = `
       status
       paymentMethod
       paymentReference
+      paymentReceiptNumber
+      paymentProofUrl
+      paymentProofPublicId
+      paymentProofSubmittedAt
       paidAt
       cancelledAt
       createdAt

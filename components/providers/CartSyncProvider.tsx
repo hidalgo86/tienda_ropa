@@ -4,7 +4,11 @@ import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { clearGuestCart, getGuestCart, syncCart } from "@/store/slices/cartSlice";
 import { clearRemoteCart, listCartItems, upsertCartItem } from "@/services/cart";
-import { clearStoredSession, getValidStoredAuthToken } from "@/services/users";
+import {
+  clearStoredSession,
+  getValidStoredAuthToken,
+  isStoredAdminUser,
+} from "@/services/users";
 import type { AppDispatch, RootState } from "@/store";
 import { findVariantBySelection, getProductStock } from "@/types/domain/products";
 import { toast } from "sonner";
@@ -33,6 +37,14 @@ export default function CartSyncProvider({
       syncing = true;
 
       try {
+        if (isStoredAdminUser()) {
+          previousTokenRef.current = null;
+          if (mounted) {
+            dispatch(syncCart([]));
+          }
+          return;
+        }
+
         const token = getValidStoredAuthToken();
         const isLoginTransition = Boolean(token) && !previousTokenRef.current;
 

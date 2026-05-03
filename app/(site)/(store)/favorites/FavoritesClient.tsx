@@ -6,13 +6,37 @@ import { Product, getVariantName } from "@/types/domain/products";
 import { MdDeleteSweep } from "react-icons/md";
 import { useCartActions } from "@/lib/useCartActions";
 import { useFavoriteActions } from "@/lib/useFavoriteActions";
-import { getStoredAuthToken } from "@/services/users";
+import { getStoredAuthToken, isStoredAdminUser } from "@/services/users";
 
 export default function FavoritesClient() {
   const { addProductToCart } = useCartActions();
   const { favoriteItems, toggleProductFavorite, clearAllFavorites } =
     useFavoriteActions();
   const isAuthenticated = Boolean(getStoredAuthToken());
+  const isAdminUser = isStoredAdminUser();
+
+  if (isAdminUser) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="mx-auto max-w-3xl px-4 py-12">
+          <div className="rounded-xl bg-white p-8 text-center shadow-sm">
+            <h1 className="text-2xl font-bold text-gray-900">
+              Favoritos no disponible
+            </h1>
+            <p className="mt-3 text-gray-600">
+              Las cuentas administradoras no usan favoritos.
+            </p>
+            <Link
+              href="/dashboard/products"
+              className="mt-6 inline-flex rounded-lg bg-gray-900 px-5 py-3 text-white hover:bg-black"
+            >
+              Ir al dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleFavorite = (productId: string) => {
     const producto = favoriteItems.find((p) => p.id === productId);

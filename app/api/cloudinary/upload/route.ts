@@ -13,12 +13,21 @@ const ALLOWED_IMAGE_TYPES = new Set([
   "image/png",
   "image/webp",
 ]);
-const ALLOWED_FOLDERS = new Set(["products", "banners"]);
+const ALLOWED_FOLDERS = new Set(["products", "banners", "payment-proofs"]);
 
 const meQuery = `
   query Me {
     me {
       role
+    }
+  }
+`;
+
+const myOrderQuery = `
+  query MyOrder($orderId: String!) {
+    myOrder(orderId: $orderId) {
+      id
+      status
     }
   }
 `;
@@ -46,6 +55,46 @@ const assertAdminUser = async (req: NextRequest): Promise<void> => {
 
   if (!isAdminRole(data.me?.role)) {
     throw new UserApiRouteError("No tienes permisos para subir imagenes", 403);
+  }
+};
+
+const assertAuthenticatedUser = async (req: NextRequest): Promise<void> => {
+  const authorization = getBackendAuthorization(req);
+
+  if (!authorization) {
+    throw new UserApiRouteError("Debes iniciar sesion", 401);
+  }
+
+  await executeUsersGraphql<{ me: { role?: unknown } }>({
+    query: meQuery,
+    request: req,
+  });
+};
+
+const assertPendingOwnOrder = async (
+  req: NextRequest,
+  orderId: FormDataEntryValue | null,
+): Promise<void> => {
+  if (typeof orderId !== "string" || !orderId.trim()) {
+    throw new UserApiRouteError("Debes indicar el pedido del comprobante", 400);
+  }
+
+  const data = await executeUsersGraphql<
+    {
+      myOrder: { id?: unknown; status?: unknown };
+    },
+    { orderId: string }
+  >({
+    query: myOrderQuery,
+    variables: { orderId: orderId.trim() },
+    request: req,
+  });
+
+  if (String(data.myOrder?.status ?? "").toLowerCase() !== "pending") {
+    throw new UserApiRouteError(
+      "Solo puedes subir comprobantes de pedidos pendientes",
+      400,
+    );
   }
 };
 
@@ -108,11 +157,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    await assertAdminUser(req);
-
     const formData = await req.formData();
     const file = formData.get("file");
     const folder = normalizeFolder(formData.get("folder"));
+
+    if (folder === "payment-proofs") {
+      await assertAuthenticatedUser(req);
+      await assertPendingOwnOrder(req, formData.get("orderId"));
+    } else {
+      await assertAdminUser(req);
+    }
 
     if (!(file instanceof File)) {
       return NextResponse.json(

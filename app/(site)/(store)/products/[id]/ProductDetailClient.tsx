@@ -37,6 +37,8 @@ import {
   paymentsDisabledMessage,
 } from "@/lib/commerceConfig";
 import { toast } from "sonner";
+import { isStoredAdminUser } from "@/services/users";
+import { getOptimizedCloudinaryUrl } from "@/lib/cloudinaryImages";
 
 const sizePattern = /^(RN|M3|M6|M9|M12|M18|M24|T2|T3|T4|T5|T6|T7|T8|T9|T10|T12)$/i;
 
@@ -51,6 +53,7 @@ export default function ProductDetailClient({
   const [showAddedToCart, setShowAddedToCart] = useState(false);
   const [showShareCopied, setShowShareCopied] = useState(false);
   const isAdminMode = mode === "admin";
+  const isAdminUser = isAdminMode || isStoredAdminUser();
   const isRopa = hasProductVariants(producto) || Boolean(producto.genre);
   const { options } = useCategories();
   const { addProductToCart, changeCartItemQuantity } = useCartActions();
@@ -64,6 +67,12 @@ export default function ProductDetailClient({
       ? producto.images
       : [{ url: "/placeholder.webp", publicId: "placeholder" }];
   const selectedImage = images[selectedImageIndex] || images[0];
+  const selectedImageUrl =
+    getOptimizedCloudinaryUrl(selectedImage.url, {
+      width: isAdminMode ? 1000 : 1200,
+      height: isAdminMode ? 1000 : 1500,
+      crop: "limit",
+    }) || selectedImage.url;
 
   const isFavorite = useSelector((state: RootState) =>
     state.favorites.items.some((item) => item.id === producto.id),
@@ -342,7 +351,7 @@ export default function ProductDetailClient({
                 }`}
               >
                 <Image
-                  src={selectedImage.url}
+                  src={selectedImageUrl}
                   alt={producto.name || "Producto"}
                   width={900}
                   height={1125}
@@ -368,7 +377,13 @@ export default function ProductDetailClient({
                         aria-label={`Ver imagen ${idx + 1}`}
                       >
                         <Image
-                          src={img.url}
+                          src={
+                            getOptimizedCloudinaryUrl(img.url, {
+                              width: 160,
+                              height: 160,
+                              crop: "fill",
+                            }) || img.url
+                          }
                           alt={`${producto.name} miniatura ${idx + 1}`}
                           fill
                           className="object-cover"
@@ -379,7 +394,7 @@ export default function ProductDetailClient({
                 </div>
               )}
 
-              {!isAdminMode && (
+              {!isAdminUser && (
                 <div className="flex gap-2 justify-center">
                   <button
                     onClick={handleFavoriteToggle}
@@ -638,7 +653,7 @@ export default function ProductDetailClient({
                 </div>
               )}
 
-              {!isAdminMode && (
+              {!isAdminUser && (
                 <>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-3">

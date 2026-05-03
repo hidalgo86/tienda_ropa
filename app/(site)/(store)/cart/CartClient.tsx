@@ -6,11 +6,12 @@ import { MdDelete, MdDeleteSweep, MdAdd, MdRemove, MdShoppingBag } from "react-i
 import { useState } from "react";
 import { findVariantBySelection, formatVariantLabel } from "@/types/domain/products";
 import { useCartActions } from "@/lib/useCartActions";
-import { getStoredAuthToken } from "@/services/users";
+import { getStoredAuthToken, isStoredAdminUser } from "@/services/users";
 import {
   PAYMENTS_ENABLED,
   checkoutDisabledMessage,
 } from "@/lib/commerceConfig";
+import { getOptimizedCloudinaryUrl } from "@/lib/cloudinaryImages";
 
 export default function CartClient() {
   const { cart, changeCartItemQuantity, removeCartItem, clearAllCart } =
@@ -18,6 +19,30 @@ export default function CartClient() {
   const { items, totalItems, totalPrice } = cart;
   const [isClearing, setIsClearing] = useState(false);
   const isAuthenticated = Boolean(getStoredAuthToken());
+  const isAdminUser = isStoredAdminUser();
+
+  if (isAdminUser) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="container mx-auto px-4 py-12">
+          <div className="rounded-xl bg-white p-8 text-center shadow-sm">
+            <h1 className="text-2xl font-bold text-gray-900">
+              Carrito no disponible
+            </h1>
+            <p className="mt-3 text-gray-600">
+              Las cuentas administradoras no usan carrito.
+            </p>
+            <Link
+              href="/dashboard/products"
+              className="mt-6 inline-flex rounded-lg bg-gray-900 px-5 py-3 text-white hover:bg-black"
+            >
+              Ir al dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleQuantityChange = (
     productId: string,
@@ -118,7 +143,12 @@ export default function CartClient() {
                 )?.price;
                 const itemPrice = Number(variantPrice ?? item.price ?? 0);
                 const itemTotal = itemPrice * item.quantity;
-                const itemImage = item.images?.[0]?.url || "/placeholder.webp";
+                const itemImage =
+                  getOptimizedCloudinaryUrl(item.images?.[0]?.url, {
+                    width: 240,
+                    height: 240,
+                    crop: "fill",
+                  }) || "/placeholder.webp";
 
                 return (
                   <div

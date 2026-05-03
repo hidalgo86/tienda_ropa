@@ -212,6 +212,9 @@ export const getStoredUser = (): User | null => {
   }
 };
 
+export const isStoredAdminUser = (): boolean =>
+  getStoredUser()?.role?.trim().toLowerCase() === "administrador";
+
 export const storeAuthSession = (session: AuthSession): void => {
   if (!isBrowser()) return;
 

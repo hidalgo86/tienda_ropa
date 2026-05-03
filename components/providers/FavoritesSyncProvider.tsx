@@ -8,7 +8,11 @@ import {
   syncFavorites,
 } from "@/store/slices/favoriteSlice";
 import { addFavoriteProduct, listFavoriteProducts } from "@/services/favorites";
-import { clearStoredSession, getValidStoredAuthToken } from "@/services/users";
+import {
+  clearStoredSession,
+  getValidStoredAuthToken,
+  isStoredAdminUser,
+} from "@/services/users";
 import type { AppDispatch } from "@/store";
 import { isSessionError, reportClientError } from "@/lib/errorUtils";
 
@@ -28,6 +32,13 @@ export default function FavoritesSyncProvider({
       syncing = true;
 
       try {
+        if (isStoredAdminUser()) {
+          if (mounted) {
+            dispatch(syncFavorites([]));
+          }
+          return;
+        }
+
         const token = getValidStoredAuthToken();
 
         if (!token) {

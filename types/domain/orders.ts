@@ -36,6 +36,10 @@ export interface Order {
   status: string;
   paymentMethod: string;
   paymentReference?: string | null;
+  paymentReceiptNumber?: string | null;
+  paymentProofUrl?: string | null;
+  paymentProofPublicId?: string | null;
+  paymentProofSubmittedAt?: string | null;
   paidAt?: string | null;
   cancelledAt?: string | null;
   createdAt?: string | null;

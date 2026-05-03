@@ -17,6 +17,8 @@ import {
   MdShoppingCart,
 } from "react-icons/md";
 import { useCartActions } from "@/lib/useCartActions";
+import { isStoredAdminUser } from "@/services/users";
+import { getOptimizedCloudinaryUrl } from "@/lib/cloudinaryImages";
 
 const PLACEHOLDER = "/placeholder.webp";
 
@@ -62,7 +64,13 @@ const ProductCardPublic: React.FC<ProductCardPublicProps> = ({
   onFavorite,
 }) => {
   const { changeCartItemQuantity } = useCartActions();
-  const imageSrc = product.images?.[0]?.url || PLACEHOLDER;
+  const isAdminUser = isStoredAdminUser();
+  const imageSrc =
+    getOptimizedCloudinaryUrl(product.images?.[0]?.url, {
+      width: 640,
+      height: 800,
+      crop: "fill",
+    }) || PLACEHOLDER;
   const status = getProductStatusLabel(product);
   const isDeleted = status === "eliminado";
   const variantSummary = resolveVariantSummary(product);
@@ -146,7 +154,7 @@ const ProductCardPublic: React.FC<ProductCardPublicProps> = ({
               Ver
             </Link>
 
-            {onAddToCart &&
+            {!isAdminUser && onAddToCart &&
               (isInCart ? (
                 <div className="flex h-9 items-center overflow-hidden rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-800">
                   <button
@@ -186,7 +194,7 @@ const ProductCardPublic: React.FC<ProductCardPublicProps> = ({
                 </button>
               ))}
 
-            {onFavorite && (
+            {!isAdminUser && onFavorite && (
               <button
                 type="button"
                 onClick={() => onFavorite(product.id)}

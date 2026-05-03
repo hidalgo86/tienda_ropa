@@ -11,6 +11,105 @@ interface OrderApiOptions {
   signal?: AbortSignal;
 }
 
+const PAYMENT_PROOF_TARGET_SIZE_BYTES = 2 * 1024 * 1024;
+const PAYMENT_PROOF_MAX_DIMENSION = 1600;
+
+const getCompressedFileName = (fileName: string): string => {
+  const baseName = fileName.replace(/\.[^.]+$/, "") || "comprobante";
+  return `${baseName}.jpg`;
+};
+
+const loadImageFromFile = async (file: File): Promise<HTMLImageElement> =>
+  new Promise((resolve, reject) => {
+    const image = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    image.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve(image);
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("No se pudo procesar la imagen"));
+    };
+    image.src = objectUrl;
+  });
+
+const canvasToBlob = async (
+  canvas: HTMLCanvasElement,
+  quality: number,
+): Promise<Blob> =>
+  new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          reject(new Error("No se pudo comprimir la imagen"));
+          return;
+        }
+
+        resolve(blob);
+      },
+      "image/jpeg",
+      quality,
+    );
+  });
+
+const compressPaymentProofImage = async (file: File): Promise<File> => {
+  if (
+    typeof window === "undefined" ||
+    !file.type.startsWith("image/") ||
+    file.size <= PAYMENT_PROOF_TARGET_SIZE_BYTES
+  ) {
+    return file;
+  }
+
+  try {
+    const image = await loadImageFromFile(file);
+    const originalWidth = image.naturalWidth || image.width;
+    const originalHeight = image.naturalHeight || image.height;
+
+    if (!originalWidth || !originalHeight) return file;
+
+    const scale = Math.min(
+      1,
+      PAYMENT_PROOF_MAX_DIMENSION / Math.max(originalWidth, originalHeight),
+    );
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(originalWidth * scale));
+    canvas.height = Math.max(1, Math.round(originalHeight * scale));
+
+    const context = canvas.getContext("2d");
+    if (!context) return file;
+
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    const qualityLevels = [0.82, 0.72, 0.62, 0.52];
+    let smallestBlob: Blob | null = null;
+
+    for (const quality of qualityLevels) {
+      const blob = await canvasToBlob(canvas, quality);
+      if (!smallestBlob || blob.size < smallestBlob.size) {
+        smallestBlob = blob;
+      }
+      if (blob.size <= PAYMENT_PROOF_TARGET_SIZE_BYTES) {
+        return new File([blob], getCompressedFileName(file.name), {
+          type: "image/jpeg",
+          lastModified: Date.now(),
+        });
+      }
+    }
+
+    return smallestBlob
+      ? new File([smallestBlob], getCompressedFileName(file.name), {
+          type: "image/jpeg",
+          lastModified: Date.now(),
+        })
+      : file;
+  } catch {
+    return file;
+  }
+};
+
 const buildHeaders = (token?: string | null): HeadersInit => {
   const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -95,6 +194,20 @@ const normalizeOrder = (value: unknown): Order => {
     paymentReference:
       typeof order.paymentReference === "string"
         ? order.paymentReference
+        : null,
+    paymentReceiptNumber:
+      typeof order.paymentReceiptNumber === "string"
+        ? order.paymentReceiptNumber
+        : null,
+    paymentProofUrl:
+      typeof order.paymentProofUrl === "string" ? order.paymentProofUrl : null,
+    paymentProofPublicId:
+      typeof order.paymentProofPublicId === "string"
+        ? order.paymentProofPublicId
+        : null,
+    paymentProofSubmittedAt:
+      typeof order.paymentProofSubmittedAt === "string"
+        ? order.paymentProofSubmittedAt
         : null,
     paidAt: typeof order.paidAt === "string" ? order.paidAt : null,
     cancelledAt:
@@ -182,6 +295,48 @@ export const payOrder = async (
     });
 
     return parseResponseOrThrow<Order>(response);
+  }, options);
+};
+
+export const uploadPaymentProofImage = async (
+  orderId: string,
+  file: File,
+  options: OrderApiOptions = {},
+): Promise<{ url: string; publicId: string }> => {
+  const uploadFile = await compressPaymentProofImage(file);
+  const formData = new FormData();
+  formData.append("file", uploadFile);
+  formData.append("folder", "payment-proofs");
+  formData.append("orderId", orderId);
+
+  const response = await fetch("/api/cloudinary/upload", {
+    method: "POST",
+    body: formData,
+    signal: options.signal,
+  });
+
+  return parseResponseOrThrow<{ url: string; publicId: string }>(response);
+};
+
+export const submitPaymentProof = async (
+  input: {
+    orderId: string;
+    paymentReceiptNumber: string;
+    paymentProofUrl: string;
+    paymentProofPublicId: string;
+  },
+  options: OrderApiOptions = {},
+): Promise<Order> => {
+  return fetchWithAuthRetry(async (token) => {
+    const response = await fetch("/api/orders/payment-proof", {
+      method: "POST",
+      headers: buildHeaders(token),
+      body: JSON.stringify(input),
+      signal: options.signal,
+    });
+
+    const data = await parseResponseOrThrow<unknown>(response);
+    return normalizeOrder(data);
   }, options);
 };
 

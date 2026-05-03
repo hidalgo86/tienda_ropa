@@ -15,7 +15,7 @@ import {
   clearFavoriteProducts,
   removeFavoriteProduct,
 } from "@/services/favorites";
-import { getStoredAuthToken } from "@/services/users";
+import { getStoredAuthToken, isStoredAdminUser } from "@/services/users";
 import { getErrorMessage } from "@/lib/errorUtils";
 
 export const useFavoriteActions = () => {
@@ -24,6 +24,11 @@ export const useFavoriteActions = () => {
 
   const toggleProductFavorite = React.useCallback(
     async (product: Product) => {
+      if (isStoredAdminUser()) {
+        toast.info("Los administradores no usan favoritos.");
+        return;
+      }
+
       const token = getStoredAuthToken();
 
       if (!token) {
@@ -47,6 +52,11 @@ export const useFavoriteActions = () => {
   );
 
   const clearAllFavorites = React.useCallback(async () => {
+    if (isStoredAdminUser()) {
+      dispatch(clearFavorites());
+      return;
+    }
+
     const token = getStoredAuthToken();
 
     if (!token) {

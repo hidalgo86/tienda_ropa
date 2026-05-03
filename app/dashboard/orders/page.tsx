@@ -253,7 +253,21 @@ export default function DashboardOrdersPage() {
                           </span>
                         </td>
                         <td className="px-4 py-4 text-slate-600">
-                          {order.paymentMethod}
+                          <div>{order.paymentMethod}</div>
+                          {order.paymentProofUrl ? (
+                            <a
+                              href={order.paymentProofUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="mt-1 inline-flex text-xs font-medium text-pink-600 hover:text-pink-700"
+                            >
+                              Ver comprobante
+                            </a>
+                          ) : (
+                            <div className="mt-1 text-xs text-slate-400">
+                              Sin comprobante
+                            </div>
+                          )}
                         </td>
                         <td className="px-4 py-4 font-semibold text-slate-900">
                           {formatCurrency(order.totalAmount)}
@@ -267,7 +281,7 @@ export default function DashboardOrdersPage() {
                               <>
                                 <button
                                   type="button"
-                                  disabled={isBusy}
+                                  disabled={isBusy || !order.paymentProofUrl}
                                   onClick={() => void handlePay(order.id)}
                                   className="rounded-lg border border-emerald-200 px-3 py-2 text-xs font-medium text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-60"
                                 >
@@ -342,6 +356,20 @@ export default function DashboardOrdersPage() {
                           Pago
                         </p>
                         <p className="mt-1">{order.paymentMethod}</p>
+                        {order.paymentProofUrl ? (
+                          <a
+                            href={order.paymentProofUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mt-1 inline-flex text-xs font-medium text-pink-600"
+                          >
+                            Ver comprobante
+                          </a>
+                        ) : (
+                          <p className="mt-1 text-xs text-slate-400">
+                            Sin comprobante
+                          </p>
+                        )}
                       </div>
                       <div>
                         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
@@ -366,7 +394,7 @@ export default function DashboardOrdersPage() {
                         <div className="flex flex-wrap gap-2">
                           <button
                             type="button"
-                            disabled={isBusy}
+                            disabled={isBusy || !order.paymentProofUrl}
                             onClick={() => void handlePay(order.id)}
                             className="rounded-lg border border-emerald-200 px-3 py-2 text-xs font-medium text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-60"
                           >

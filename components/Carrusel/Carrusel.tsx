@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { listPublicBanners } from "@/services/banners";
 import type { Banner } from "@/types/domain/banners";
+import { getOptimizedCloudinaryUrl } from "@/lib/cloudinaryImages";
 
 export default function Carrusel() {
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -32,7 +33,12 @@ export default function Carrusel() {
   }, []);
 
   const imagenes = banners.map((banner) => ({
-    src: banner.imageUrl,
+    src:
+      getOptimizedCloudinaryUrl(banner.imageUrl, {
+        width: 1400,
+        height: 560,
+        crop: "fill",
+      }) || banner.imageUrl,
     alt: banner.altText || banner.title,
     title: banner.title,
     subtitle: banner.subtitle,
