@@ -25,6 +25,7 @@ import {
   paymentsDisabledMessage,
   pickupMessage,
 } from "@/lib/commerceConfig";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 const formatCurrency = (value: number): string =>
   new Intl.NumberFormat("es-MX", {
@@ -62,6 +63,7 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const [paymentReceiptNumber, setPaymentReceiptNumber] = useState("");
   const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null);
 
@@ -140,6 +142,7 @@ export default function OrderDetailPage() {
 
     try {
       setOrder(await cancelOrder(order.id));
+      setShowCancelConfirmation(false);
       toast.success("Pedido cancelado");
     } catch (error) {
       const message =
@@ -187,6 +190,19 @@ export default function OrderDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <ConfirmDialog
+        open={showCancelConfirmation}
+        title="Cancelar pedido"
+        description="Esta accion cancelara el pedido y no podras continuar con el pago desde esta orden."
+        details={`Pedido ${order.orderNumber || order.id}`}
+        confirmLabel="Si, cancelar pedido"
+        cancelLabel="Conservar pedido"
+        tone="danger"
+        isBusy={isUpdating}
+        busyLabel="Cancelando..."
+        onCancel={() => setShowCancelConfirmation(false)}
+        onConfirm={() => void handleCancelOrder()}
+      />
       <div className="max-w-5xl mx-auto px-4 py-6 pb-24 sm:py-8 sm:pb-24 lg:pb-8">
         <Link
           href="/orders"
@@ -303,7 +319,7 @@ export default function OrderDetailPage() {
           <div className="mt-5">
             <button
               type="button"
-              onClick={() => void handleCancelOrder()}
+              onClick={() => setShowCancelConfirmation(true)}
               disabled={isUpdating}
               className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-60 sm:w-auto"
             >

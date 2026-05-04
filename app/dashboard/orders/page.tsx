@@ -9,6 +9,7 @@ import {
 import {
   adminCancelOrder,
   adminPayOrder,
+  adminUnpayOrder,
   listAdminOrders,
   type AdminOrder,
 } from "@/services/orders";
@@ -16,6 +17,7 @@ import { useCallback, useEffect, useState } from "react";
 import { MdChevronRight, MdWarningAmber } from "react-icons/md";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/errorUtils";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 const formatCurrency = (value: number): string =>
   new Intl.NumberFormat("es-ES", {
@@ -73,6 +75,8 @@ export default function DashboardOrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
   const [paymentConfirmationOrder, setPaymentConfirmationOrder] =
+    useState<AdminOrder | null>(null);
+  const [paymentReversalOrder, setPaymentReversalOrder] =
     useState<AdminOrder | null>(null);
   const safeItems = Array.isArray(ordersPage?.items) ? ordersPage.items : [];
   const safeTotalPages = Math.max(1, Number(ordersPage?.totalPages) || 1);
@@ -176,8 +180,44 @@ export default function DashboardOrdersPage() {
     }
   };
 
+  const handleUnpay = async (order: AdminOrder) => {
+    setActiveOrderId(order.id);
+
+    try {
+      replaceOrder(await adminUnpayOrder(order.id));
+      toast.success("Pago revertido. La orden vuelve a pendiente.");
+      setPaymentReversalOrder(null);
+    } catch (actionError) {
+      toast.error(getErrorMessage(actionError, "No se pudo revertir el pago"));
+    } finally {
+      setActiveOrderId(null);
+    }
+  };
+
   return (
     <section className="space-y-6">
+      <ConfirmDialog
+        open={Boolean(paymentReversalOrder)}
+        title="Revertir pago"
+        description="La orden volvera a pendiente. No se devolvera stock, pero se descontara esta venta de las estadisticas."
+        details={
+          paymentReversalOrder
+            ? paymentReversalOrder.orderNumber || paymentReversalOrder.id
+            : undefined
+        }
+        confirmLabel="Si, revertir pago"
+        cancelLabel="Conservar pagada"
+        tone="warning"
+        isBusy={Boolean(
+          paymentReversalOrder && activeOrderId === paymentReversalOrder.id,
+        )}
+        busyLabel="Revirtiendo..."
+        onCancel={() => setPaymentReversalOrder(null)}
+        onConfirm={() => {
+          if (!paymentReversalOrder) return;
+          void handleUnpay(paymentReversalOrder);
+        }}
+      />
       {paymentConfirmationOrder && (
         <div
           role="dialog"
@@ -364,6 +404,15 @@ export default function DashboardOrdersPage() {
                                   {isBusy ? "Procesando..." : "Cancelar"}
                                 </button>
                               </>
+                            ) : order.status === "paid" ? (
+                              <button
+                                type="button"
+                                disabled={isBusy}
+                                onClick={() => setPaymentReversalOrder(order)}
+                                className="rounded-lg border border-amber-200 px-3 py-2 text-xs font-medium text-amber-700 transition hover:bg-amber-50 disabled:opacity-60"
+                              >
+                                {isBusy ? "Procesando..." : "Revertir pago"}
+                              </button>
                             ) : (
                               <span className="text-xs text-slate-400">
                                 Sin acciones
@@ -477,6 +526,15 @@ export default function DashboardOrdersPage() {
                             {isBusy ? "Procesando..." : "Cancelar"}
                           </button>
                         </div>
+                      ) : order.status === "paid" ? (
+                        <button
+                          type="button"
+                          disabled={isBusy}
+                          onClick={() => setPaymentReversalOrder(order)}
+                          className="rounded-lg border border-amber-200 px-3 py-2 text-xs font-medium text-amber-700 transition hover:bg-amber-50 disabled:opacity-60"
+                        >
+                          {isBusy ? "Procesando..." : "Revertir pago"}
+                        </button>
                       ) : null}
                     </div>
                   </article>

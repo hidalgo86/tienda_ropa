@@ -483,6 +483,23 @@ export const adminPayOrder = async (
   }, options);
 };
 
+export const adminUnpayOrder = async (
+  orderId: string,
+  options: OrderApiOptions = {},
+): Promise<AdminOrder> => {
+  return fetchWithAuthRetry(async (token) => {
+    const response = await fetch("/api/admin/orders/unpay", {
+      method: "POST",
+      headers: buildHeaders(token),
+      body: JSON.stringify({ orderId }),
+      signal: options.signal,
+    });
+
+    const data = await parseResponseOrThrow<unknown>(response);
+    return normalizeOrder(data) as AdminOrder;
+  }, options);
+};
+
 export const adminCancelOrder = async (
   orderId: string,
   options: OrderApiOptions = {},

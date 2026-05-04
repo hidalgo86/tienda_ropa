@@ -7,11 +7,13 @@ import { MdArrowBack, MdWarningAmber } from "react-icons/md";
 import {
   adminCancelOrder,
   adminPayOrder,
+  adminUnpayOrder,
   listAdminOrders,
   type AdminOrder,
 } from "@/services/orders";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/errorUtils";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 const formatCurrency = (value: number): string =>
   new Intl.NumberFormat("es-ES", {
@@ -48,6 +50,7 @@ export default function DashboardOrderDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [showPaymentConfirmation, setShowPaymentConfirmation] = useState(false);
+  const [showPaymentReversal, setShowPaymentReversal] = useState(false);
 
   useEffect(() => {
     const loadOrder = async () => {
@@ -156,8 +159,35 @@ export default function DashboardOrderDetailPage() {
     }
   };
 
+  const handleUnpayOrder = async () => {
+    setIsUpdating(true);
+
+    try {
+      setOrder(await adminUnpayOrder(order.id));
+      toast.success("Pago revertido. La orden vuelve a pendiente.");
+      setShowPaymentReversal(false);
+    } catch (actionError) {
+      toast.error(getErrorMessage(actionError, "No se pudo revertir el pago"));
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   return (
     <section className="space-y-6">
+      <ConfirmDialog
+        open={showPaymentReversal}
+        title="Revertir pago"
+        description="La orden volvera a pendiente. No se devolvera stock, pero se descontara esta venta de las estadisticas."
+        details={order.orderNumber || order.id}
+        confirmLabel="Si, revertir pago"
+        cancelLabel="Conservar pagada"
+        tone="warning"
+        isBusy={isUpdating}
+        busyLabel="Revirtiendo..."
+        onCancel={() => setShowPaymentReversal(false)}
+        onConfirm={() => void handleUnpayOrder()}
+      />
       {showPaymentConfirmation && (
         <div
           role="dialog"
@@ -262,6 +292,19 @@ export default function DashboardOrderDetailPage() {
               className="inline-flex justify-center rounded-lg border border-red-200 px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:opacity-60"
             >
               {isUpdating ? "Procesando..." : "Cancelar orden"}
+            </button>
+          </div>
+        )}
+
+        {order.status === "paid" && (
+          <div className="mt-5">
+            <button
+              type="button"
+              onClick={() => setShowPaymentReversal(true)}
+              disabled={isUpdating}
+              className="inline-flex justify-center rounded-lg border border-amber-200 px-4 py-2 text-sm font-medium text-amber-700 transition hover:bg-amber-50 disabled:opacity-60"
+            >
+              {isUpdating ? "Procesando..." : "Revertir pago"}
             </button>
           </div>
         )}

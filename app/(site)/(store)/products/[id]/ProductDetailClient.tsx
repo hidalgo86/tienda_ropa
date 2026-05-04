@@ -50,6 +50,7 @@ export default function ProductDetailClient({
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [isBuyingNow, setIsBuyingNow] = useState(false);
   const [showAddedToCart, setShowAddedToCart] = useState(false);
   const [showShareCopied, setShowShareCopied] = useState(false);
   const isAdminMode = mode === "admin";
@@ -254,7 +255,8 @@ export default function ProductDetailClient({
     }
   };
 
-  const handleBuyNow = () => {
+  const handleBuyNow = async () => {
+    if (isBuyingNow) return;
     if (!PAYMENTS_ENABLED) {
       toast.error(paymentsDisabledMessage);
       return;
@@ -272,11 +274,21 @@ export default function ProductDetailClient({
       return;
     }
 
-    toast.info(
-      isRopa
-        ? `Redirigiendo a checkout (Talla: ${selectedSize}, Cantidad: ${displayQuantity})`
-        : `Redirigiendo a checkout (Cantidad: ${displayQuantity})`,
-    );
+    setIsBuyingNow(true);
+
+    try {
+      if (!currentCartItem) {
+        await addProductToCart({
+          product: producto,
+          quantity: displayQuantity,
+          selectedSize: isRopa ? selectedSize : undefined,
+        });
+      }
+
+      router.push("/checkout");
+    } finally {
+      setIsBuyingNow(false);
+    }
   };
 
   const handleDecreaseQuantity = () => {
@@ -693,13 +705,18 @@ export default function ProductDetailClient({
                     <button
                       onClick={handleBuyNow}
                       disabled={
+                        isBuyingNow ||
                         !PAYMENTS_ENABLED ||
                         (isRopa && !selectedSize) ||
                         availableStock === 0
                       }
                       className="w-full bg-gray-900 text-white py-3 px-6 rounded-lg font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {PAYMENTS_ENABLED ? "Comprar ahora" : "Compra no disponible"}
+                      {!PAYMENTS_ENABLED
+                        ? "Compra no disponible"
+                        : isBuyingNow
+                          ? "Preparando compra..."
+                          : "Comprar ahora"}
                     </button>
                     {!PAYMENTS_ENABLED && (
                       <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">

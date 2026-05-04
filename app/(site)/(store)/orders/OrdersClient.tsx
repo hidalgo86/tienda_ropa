@@ -19,6 +19,7 @@ import {
   paymentsDisabledMessage,
   pickupMessage,
 } from "@/lib/commerceConfig";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 const formatCurrency = (value: number): string =>
   new Intl.NumberFormat("es-MX", {
@@ -63,6 +64,7 @@ export default function OrdersClient() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
+  const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
   const [statusFilter, setStatusFilter] =
     useState<OrderStatusFilter>("pending");
 
@@ -101,6 +103,7 @@ export default function OrdersClient() {
       setOrders((current) =>
         current.map((order) => (order.id === orderId ? updatedOrder : order)),
       );
+      setOrderToCancel(null);
       toast.success("Pedido cancelado");
     } catch (error) {
       const message =
@@ -142,6 +145,26 @@ export default function OrdersClient() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <ConfirmDialog
+        open={Boolean(orderToCancel)}
+        title="Cancelar pedido"
+        description="Esta accion cancelara el pedido y no podras continuar con el pago desde esta orden."
+        details={
+          orderToCancel
+            ? `Pedido ${orderToCancel.orderNumber || orderToCancel.id}`
+            : undefined
+        }
+        confirmLabel="Si, cancelar pedido"
+        cancelLabel="Conservar pedido"
+        tone="danger"
+        isBusy={Boolean(orderToCancel && activeOrderId === orderToCancel.id)}
+        busyLabel="Cancelando..."
+        onCancel={() => setOrderToCancel(null)}
+        onConfirm={() => {
+          if (!orderToCancel) return;
+          void handleCancelOrder(orderToCancel.id);
+        }}
+      />
       <div className="max-w-6xl mx-auto px-4 py-6 pb-24 sm:py-8 sm:pb-24 lg:pb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
@@ -292,7 +315,7 @@ export default function OrdersClient() {
                     {isPending && (
                       <button
                         type="button"
-                        onClick={() => void handleCancelOrder(order.id)}
+                        onClick={() => setOrderToCancel(order)}
                         disabled={isBusy}
                         className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-60 sm:w-auto"
                       >

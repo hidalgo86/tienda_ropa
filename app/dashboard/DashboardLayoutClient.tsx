@@ -8,10 +8,12 @@ import SidebarDesktop, {
 } from "../../components/products/SidebarDesktop";
 import SidebarMobile from "../../components/products/SidebarMobile";
 import {
+  COOKIE_SESSION_MARKER,
   clearStoredSession,
   getCurrentUser,
   getStoredAuthToken,
   getStoredUser,
+  updateStoredUser,
 } from "@/services/users";
 import {
   MdAssignment,
@@ -127,12 +129,33 @@ function DashboardLayoutContent({
     };
 
     const validateSession = async (showToastOnExpire: boolean) => {
+      const restoreCookieSession = async () => {
+        const currentUser = await getCurrentUser({
+          token: COOKIE_SESSION_MARKER,
+        });
+
+        if (!isMounted) return;
+
+        if (!isAdminRole(currentUser?.role)) {
+          redirectToLogin(false);
+          return;
+        }
+
+        updateStoredUser(currentUser);
+        hasShownSessionExpiredRef.current = false;
+        setIsAllowed(true);
+      };
+
       const token = getStoredAuthToken();
       const user = getStoredUser();
       const isAdmin = Boolean(token) && isAdminRole(user?.role);
 
       if (!isAdmin) {
-        redirectToLogin(false);
+        try {
+          await restoreCookieSession();
+        } catch {
+          redirectToLogin(false);
+        }
         return;
       }
 
@@ -185,7 +208,16 @@ function DashboardLayoutContent({
   }, [pathname, router]);
 
   if (isAllowed !== true) {
-    return null;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+        <div className="text-center">
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-pink-500" />
+          <p className="mt-4 text-sm font-medium text-gray-600">
+            Preparando dashboard...
+          </p>
+        </div>
+      </div>
+    );
   }
 
   return (
