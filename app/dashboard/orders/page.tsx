@@ -14,7 +14,7 @@ import {
   type AdminOrder,
 } from "@/services/orders";
 import { useCallback, useEffect, useState } from "react";
-import { MdChevronRight, MdWarningAmber } from "react-icons/md";
+import { MdChevronRight, MdFilterList, MdWarningAmber } from "react-icons/md";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/errorUtils";
 import ConfirmDialog from "@/components/ConfirmDialog";
@@ -36,11 +36,20 @@ const formatDate = (value?: string | null): string => {
 };
 
 const ORDER_STATUS_OPTIONS = [
-  { value: "pending", label: "Pendientes" },
-  { value: "paid", label: "Pagadas" },
-  { value: "cancelled", label: "Canceladas" },
-  { value: "", label: "Todas" },
-];
+  { value: "pending", label: "Pendientes", countKey: "pending" },
+  { value: "paid", label: "Pagadas", countKey: "paid" },
+  { value: "cancelled", label: "Canceladas", countKey: "cancelled" },
+  { value: "", label: "Todas", countKey: "all" },
+] as const;
+
+type OrderCountKey = (typeof ORDER_STATUS_OPTIONS)[number]["countKey"];
+
+const emptyOrderCounts: Record<OrderCountKey, number> = {
+  pending: 0,
+  paid: 0,
+  cancelled: 0,
+  all: 0,
+};
 
 const statusBadgeClass = (status: string): string => {
   switch (status) {
@@ -78,6 +87,8 @@ export default function DashboardOrdersPage() {
     useState<AdminOrder | null>(null);
   const [paymentReversalOrder, setPaymentReversalOrder] =
     useState<AdminOrder | null>(null);
+  const [orderCounts, setOrderCounts] =
+    useState<Record<OrderCountKey, number>>(emptyOrderCounts);
   const safeItems = Array.isArray(ordersPage?.items) ? ordersPage.items : [];
   const safeTotalPages = Math.max(1, Number(ordersPage?.totalPages) || 1);
   const safeTotal = Number(ordersPage?.total) || 0;
@@ -113,10 +124,40 @@ export default function DashboardOrdersPage() {
     void loadOrders();
   }, [loadOrders]);
 
+  const loadOrderCounts = useCallback(async () => {
+    if (!getStoredAuthToken()) {
+      setOrderCounts(emptyOrderCounts);
+      return;
+    }
+
+    try {
+      const [pending, paid, cancelled, all] = await Promise.all([
+        listAdminOrders({ page: 1, limit: 1, status: "pending" }),
+        listAdminOrders({ page: 1, limit: 1, status: "paid" }),
+        listAdminOrders({ page: 1, limit: 1, status: "cancelled" }),
+        listAdminOrders({ page: 1, limit: 1 }),
+      ]);
+
+      setOrderCounts({
+        pending: Number(pending.total) || 0,
+        paid: Number(paid.total) || 0,
+        cancelled: Number(cancelled.total) || 0,
+        all: Number(all.total) || 0,
+      });
+    } catch {
+      setOrderCounts(emptyOrderCounts);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadOrderCounts();
+  }, [loadOrderCounts]);
+
   useEffect(() => {
     const handleSessionChanged = () => {
       if (!getStoredAuthToken()) {
         setOrdersPage(normalizeOrdersPage(null));
+        setOrderCounts(emptyOrderCounts);
         setLoading(false);
         setError(null);
       }
@@ -152,6 +193,7 @@ export default function DashboardOrdersPage() {
 
     try {
       replaceOrder(await adminPayOrder(orderId));
+      void loadOrderCounts();
       toast.success("Orden marcada como pagada");
       setPaymentConfirmationOrder(null);
     } catch (actionError) {
@@ -172,6 +214,7 @@ export default function DashboardOrdersPage() {
 
     try {
       replaceOrder(await adminCancelOrder(orderId));
+      void loadOrderCounts();
     } catch (actionError) {
       toast.error(getErrorMessage(actionError, "No se pudo cancelar la orden"));
     } finally {
@@ -184,6 +227,7 @@ export default function DashboardOrdersPage() {
 
     try {
       replaceOrder(await adminUnpayOrder(order.id));
+      void loadOrderCounts();
       toast.success("Pago revertido. La orden vuelve a pendiente.");
       setPaymentReversalOrder(null);
     } catch (actionError) {
@@ -279,23 +323,46 @@ export default function DashboardOrdersPage() {
           <h1 className="text-2xl font-bold text-slate-900">Ordenes</h1>
         </div>
 
-        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
-          <div className="rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
-            {safeTotal} ordenes
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="inline-flex w-fit rounded-full bg-slate-100 px-3 py-1 text-sm font-medium text-slate-700">
+              {safeTotal} ordenes en este filtro
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                void loadOrders();
+                void loadOrderCounts();
+              }}
+              className="inline-flex w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 sm:w-auto"
+            >
+              Actualizar
+            </button>
           </div>
 
-          <select
-            aria-label="Filtrar ordenes por estado"
-            value={status}
-            onChange={(event) => setStatus(event.target.value)}
-            className="rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-slate-400 sm:w-56"
-          >
-            {ORDER_STATUS_OPTIONS.map((option) => (
-              <option key={option.value || "all"} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          <div className="mt-4 border-t border-slate-100 pt-4">
+            <div className="mb-3 flex items-center gap-2 text-sm font-medium text-slate-700">
+              <MdFilterList size={18} />
+              Filtrar por estado
+            </div>
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+              {ORDER_STATUS_OPTIONS.map((option) => (
+                <button
+                  key={option.countKey}
+                  type="button"
+                  onClick={() => setStatus(option.value)}
+                  className={`rounded-xl px-3 py-2 text-sm font-medium transition ${
+                    status === option.value
+                      ? "bg-slate-900 text-white"
+                      : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  {option.label} ({orderCounts[option.countKey]})
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
