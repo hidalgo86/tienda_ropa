@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import "./globals.css";
 import ReduxProvider from "../components/ReduxProvider";
 import { Toaster } from "sonner";
@@ -42,11 +43,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html
       lang="es"
@@ -55,7 +58,7 @@ export default function RootLayout({
       className="notranslate"
       suppressHydrationWarning
     >
-      <body suppressHydrationWarning>
+      <body nonce={nonce} suppressHydrationWarning>
         <ReduxProvider>{children}</ReduxProvider>
         <Toaster
           position="top-right"
