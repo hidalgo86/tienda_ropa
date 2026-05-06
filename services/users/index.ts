@@ -444,8 +444,11 @@ const fetchWithAuthRetry = async <T>(
         ? requestError.message.toLowerCase()
         : fallbackErrorMessage.toLowerCase();
 
+    const canRefreshSession =
+      !options.token || options.token === COOKIE_SESSION_MARKER;
+
     const shouldRetry =
-      !options.token &&
+      canRefreshSession &&
       (isUnauthorizedError(requestError) ||
         message.includes("token") ||
         message.includes("jwt") ||
