@@ -6,8 +6,11 @@ export const paymentsDisabledMessage =
 export const checkoutDisabledMessage =
   "Ya puedes explorar la tienda, guardar favoritos y usar el carrito. La compra estara disponible cuando activemos los pagos.";
 
+export const storePickupAddress =
+  "Calle Pagallos, Guiria, Estado Sucre, frente a los chinos Fabiola.";
+
 export const pickupMessage =
-  "Disponible solo para retirar en tienda. No se realizan envios por el momento.";
+  `Retiro en tienda: ${storePickupAddress} No se realizan envios por el momento.`;
 
 export const deliveryDisabledMessage =
   "El envio a domicilio estara disponible proximamente.";

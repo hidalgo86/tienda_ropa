@@ -19,6 +19,7 @@ import {
   deliveryDisabledMessage,
   manualPaymentInstructions,
   pickupMessage,
+  storePickupAddress,
 } from "@/lib/commerceConfig";
 import {
   getCurrentUser,
@@ -245,8 +246,15 @@ export default function CheckoutPage() {
               </p>
               <p className="mt-4 text-sm text-gray-500">Entrega</p>
               <p className="font-semibold text-gray-900">
-                {createdOrder.shippingAddress.address}
+                {createdOrder.deliveryMethod === "pickup"
+                  ? "Retiro en tienda"
+                  : createdOrder.shippingAddress.address}
               </p>
+              {createdOrder.deliveryMethod === "pickup" && (
+                <p className="mt-1 text-sm text-gray-700">
+                  {storePickupAddress}
+                </p>
+              )}
             </div>
 
             <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-5 text-left">

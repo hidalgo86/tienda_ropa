@@ -10,6 +10,7 @@ import {
   getStoredAuthToken,
   getStoredUser,
 } from "@/services/users";
+import { listAdminOrders } from "@/services/orders";
 import { RootState } from "@/store";
 import { PAYMENTS_ENABLED } from "@/lib/commerceConfig";
 import {
@@ -44,6 +45,7 @@ export default function Navbar() {
   const [mounted, setMounted] = React.useState(false);
   const [isAuthenticated, setIsAuthenticated] = React.useState(false);
   const [isAdmin, setIsAdmin] = React.useState(false);
+  const [pendingOrdersCount, setPendingOrdersCount] = React.useState(0);
 
   React.useEffect(() => {
     let isMounted = true;
@@ -85,8 +87,46 @@ export default function Navbar() {
     };
   }, []);
 
+  React.useEffect(() => {
+    let isMounted = true;
+
+    const loadPendingOrdersCount = async () => {
+      if (!mounted || !isAdmin) {
+        setPendingOrdersCount(0);
+        return;
+      }
+
+      try {
+        const response = await listAdminOrders({
+          page: 1,
+          limit: 1,
+          status: "pending",
+        });
+
+        if (isMounted) {
+          setPendingOrdersCount(Number(response.total) || 0);
+        }
+      } catch {
+        if (isMounted) {
+          setPendingOrdersCount(0);
+        }
+      }
+    };
+
+    void loadPendingOrdersCount();
+    window.addEventListener("focus", loadPendingOrdersCount);
+    window.addEventListener("auth:session-changed", loadPendingOrdersCount);
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener("focus", loadPendingOrdersCount);
+      window.removeEventListener("auth:session-changed", loadPendingOrdersCount);
+    };
+  }, [mounted, isAdmin]);
+
   const displayCart = mounted ? cartCount : 0;
   const displayFav = mounted ? favoritesCount : 0;
+  const displayPendingOrders = mounted ? pendingOrdersCount : 0;
   const visibleNavLinks = navLinks.filter(
     (link) => link.href !== "/dashboard/products" || isAdmin,
   );
@@ -143,6 +183,23 @@ export default function Navbar() {
               className="h-36 w-auto max-w-[460px] object-cover object-left sm:h-14 sm:max-w-[220px] md:max-w-[260px] lg:h-32 lg:max-w-[430px] xl:h-36 xl:max-w-[500px]"
             />
           </Link>
+
+          {mounted && (
+            <Link
+              href={isAuthenticated ? "/account" : "/login"}
+              title={isAuthenticated ? "Mi cuenta" : "Login"}
+              className={`absolute right-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full transition-colors lg:hidden ${
+                isActivePath(isAuthenticated ? "/account" : "/login")
+                  ? "bg-pink-100 text-pink-600"
+                  : "text-gray-600 hover:bg-pink-100 hover:text-pink-600"
+              }`}
+            >
+              {isAuthenticated ? <MdPerson size={24} /> : <MdLogin size={24} />}
+              <span className="sr-only">
+                {isAuthenticated ? "Mi cuenta" : "Login"}
+              </span>
+            </Link>
+          )}
 
           <div className="hidden min-w-0 items-center justify-center gap-2 overflow-hidden border-r border-pink-200 pr-6 lg:flex xl:gap-4 xl:pr-8">
             {[...visibleNavLinks, ...accountNavLinks].map((link) => (
@@ -325,115 +382,94 @@ export default function Navbar() {
           )}
 
           {isAdmin && (
-            <Link
-              href="/dashboard/products"
-              className={`flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 transition-colors ${
-                isActivePath("/dashboard/products")
-                  ? "text-pink-600"
-                  : "text-gray-600 hover:text-pink-500"
-              }`}
-            >
-              <div
-                className={`rounded-full p-2 transition-colors ${
-                  isActivePath("/dashboard/products")
-                    ? "bg-pink-100 text-pink-600"
-                    : "hover:bg-pink-100"
-                }`}
-              >
-                <MdBarChart size={20} />
-              </div>
-              <span
-                className={`mt-1 w-full truncate text-center text-xs ${
-                  isActivePath("/dashboard/products")
-                    ? "font-semibold"
-                    : "font-normal"
-                }`}
-              >
-                Dashboard
-              </span>
-            </Link>
-          )}
-
-          {isAuthenticated ? (
             <>
               <Link
-                href="/account"
+                href="/dashboard/orders"
+                className={`relative flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 transition-colors ${
+                  isActivePath("/dashboard/orders")
+                    ? "text-pink-600"
+                    : "text-gray-600 hover:text-pink-500"
+                }`}
+              >
+                <div
+                  className={`relative rounded-full p-2 transition-colors ${
+                    isActivePath("/dashboard/orders")
+                      ? "bg-pink-100 text-pink-600"
+                      : "hover:bg-pink-100"
+                  }`}
+                >
+                  <MdReceiptLong size={20} />
+                  {displayPendingOrders > 0 && (
+                    <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-semibold text-white">
+                      {displayPendingOrders > 9 ? "9+" : displayPendingOrders}
+                    </span>
+                  )}
+                </div>
+                <span
+                  className={`mt-1 w-full truncate text-center text-xs ${
+                    isActivePath("/dashboard/orders")
+                      ? "font-semibold"
+                      : "font-normal"
+                  }`}
+                >
+                  Ordenes
+                </span>
+              </Link>
+
+              <Link
+                href="/dashboard/products"
                 className={`flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 transition-colors ${
-                  isActivePath("/account")
+                  isActivePath("/dashboard/products")
                     ? "text-pink-600"
                     : "text-gray-600 hover:text-pink-500"
                 }`}
               >
                 <div
                   className={`rounded-full p-2 transition-colors ${
-                    isActivePath("/account")
+                    isActivePath("/dashboard/products")
                       ? "bg-pink-100 text-pink-600"
                       : "hover:bg-pink-100"
                   }`}
                 >
-                  <MdPerson size={20} />
+                  <MdBarChart size={20} />
                 </div>
                 <span
                   className={`mt-1 w-full truncate text-center text-xs ${
-                    isActivePath("/account") ? "font-semibold" : "font-normal"
+                    isActivePath("/dashboard/products")
+                      ? "font-semibold"
+                      : "font-normal"
                   }`}
                 >
-                  Cuenta
+                  Dashboard
                 </span>
               </Link>
-
-              {!isAdmin && PAYMENTS_ENABLED && (
-                <Link
-                  href="/orders"
-                  className={`flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 transition-colors ${
-                    isActivePath("/orders")
-                      ? "text-pink-600"
-                      : "text-gray-600 hover:text-pink-500"
-                  }`}
-                >
-                  <div
-                    className={`rounded-full p-2 transition-colors ${
-                      isActivePath("/orders")
-                        ? "bg-pink-100 text-pink-600"
-                        : "hover:bg-pink-100"
-                    }`}
-                  >
-                    <MdReceiptLong size={20} />
-                  </div>
-                  <span
-                    className={`mt-1 w-full truncate text-center text-xs ${
-                      isActivePath("/orders") ? "font-semibold" : "font-normal"
-                    }`}
-                  >
-                    Pedidos
-                  </span>
-                </Link>
-              )}
             </>
-          ) : (
+          )}
+
+          {isAuthenticated && !isAdmin && PAYMENTS_ENABLED && (
             <Link
-              href="/login"
+              href="/orders"
               className={`flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 transition-colors ${
-                isActivePath("/login")
+                isActivePath("/orders")
                   ? "text-pink-600"
                   : "text-gray-600 hover:text-pink-500"
               }`}
             >
               <div
                 className={`rounded-full p-2 transition-colors ${
-                  isActivePath("/login")
+                  isActivePath("/orders")
                     ? "bg-pink-100 text-pink-600"
                     : "hover:bg-pink-100"
                 }`}
               >
-                <MdLogin size={20} />
+                <MdReceiptLong size={20} />
               </div>
               <span
                 className={`mt-1 w-full truncate text-center text-xs ${
-                  isActivePath("/login") ? "font-semibold" : "font-normal"
+                  isActivePath("/orders") ? "font-semibold" : "font-normal"
                 }`}
               >
-              Ingresar
+                Pedidos
               </span>
             </Link>
           )}

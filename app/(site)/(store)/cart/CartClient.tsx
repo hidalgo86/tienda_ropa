@@ -12,12 +12,14 @@ import {
   checkoutDisabledMessage,
 } from "@/lib/commerceConfig";
 import { getOptimizedCloudinaryUrl } from "@/lib/cloudinaryImages";
+import ConfirmDialog from "@/components/ConfirmDialog";
 
 export default function CartClient() {
   const { cart, changeCartItemQuantity, removeCartItem, clearAllCart } =
     useCartActions();
   const { items, totalItems, totalPrice } = cart;
   const [isClearing, setIsClearing] = useState(false);
+  const [showClearConfirmation, setShowClearConfirmation] = useState(false);
   const isAuthenticated = Boolean(getStoredAuthToken());
   const isAdminUser = isStoredAdminUser();
 
@@ -66,11 +68,16 @@ export default function CartClient() {
     void removeCartItem({ productId, selectedSize, selectedColor });
   };
 
-  const handleClearCart = async () => {
+  const handleClearCart = () => {
+    setShowClearConfirmation(true);
+  };
+
+  const confirmClearCart = async () => {
     setIsClearing(true);
-    setTimeout(() => {
-      void clearAllCart().finally(() => setIsClearing(false));
-    }, 300);
+    await clearAllCart().finally(() => {
+      setIsClearing(false);
+      setShowClearConfirmation(false);
+    });
   };
 
   const formatPrice = (price: number) =>
@@ -81,6 +88,18 @@ export default function CartClient() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <ConfirmDialog
+        open={showClearConfirmation}
+        title="Limpiar carrito"
+        description="Se eliminaran todos los productos guardados en tu carrito."
+        confirmLabel="Limpiar carrito"
+        tone="danger"
+        isBusy={isClearing}
+        busyLabel="Limpiando..."
+        onCancel={() => setShowClearConfirmation(false)}
+        onConfirm={() => void confirmClearCart()}
+      />
+
       <div className="container mx-auto px-4 py-6 pb-24 sm:py-8 sm:pb-24 lg:pb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>

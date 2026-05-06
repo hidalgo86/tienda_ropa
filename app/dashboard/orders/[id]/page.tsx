@@ -137,13 +137,8 @@ export default function DashboardOrderDetailPage() {
     }
   };
 
-  const handleConfirmPayment = async () => {
-    if (!order.paymentProofUrl) {
-      setShowPaymentConfirmation(true);
-      return;
-    }
-
-    await confirmPayment();
+  const handleConfirmPayment = () => {
+    setShowPaymentConfirmation(true);
   };
 
   const handleCancelOrder = async () => {
@@ -205,11 +200,14 @@ export default function DashboardOrderDetailPage() {
                   id="payment-confirmation-title"
                   className="text-lg font-semibold text-slate-900"
                 >
-                  Confirmar pago sin comprobante
+                  {order.paymentProofUrl
+                    ? "Confirmar pago"
+                    : "Confirmar pago sin comprobante"}
                 </h2>
                 <p className="mt-2 text-sm text-slate-600">
-                  Esta orden no tiene comprobante cargado. Marca como pagada
-                  solo si ya verificaste que el dinero entro en la cuenta.
+                  {order.paymentProofUrl
+                    ? "Esta orden tiene comprobante cargado. Confirma el pago solo si ya verificaste que el dinero entro en la cuenta."
+                    : "Esta orden no tiene comprobante cargado. Marca como pagada solo si ya verificaste que el dinero entro en la cuenta."}
                 </p>
                 <p className="mt-3 text-sm font-medium text-slate-900">
                   {order.orderNumber || order.id}
@@ -279,7 +277,7 @@ export default function DashboardOrderDetailPage() {
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <button
               type="button"
-              onClick={() => void handleConfirmPayment()}
+              onClick={handleConfirmPayment}
               disabled={isUpdating}
               className="inline-flex justify-center rounded-lg border border-emerald-200 px-4 py-2 text-sm font-medium text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-60"
             >

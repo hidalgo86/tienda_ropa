@@ -36,10 +36,10 @@ const formatDate = (value?: string | null): string => {
 };
 
 const ORDER_STATUS_OPTIONS = [
-  { value: "", label: "Todos los estados" },
   { value: "pending", label: "Pendientes" },
   { value: "paid", label: "Pagadas" },
   { value: "cancelled", label: "Canceladas" },
+  { value: "", label: "Todas" },
 ];
 
 const statusBadgeClass = (status: string): string => {
@@ -70,7 +70,7 @@ export default function DashboardOrdersPage() {
     totalPages: 1,
   });
   const [page, setPage] = useState(1);
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState("pending");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
@@ -136,9 +136,13 @@ export default function DashboardOrdersPage() {
   const replaceOrder = (updatedOrder: AdminOrder) => {
     setOrdersPage((current) => ({
       ...current,
-      items: (Array.isArray(current.items) ? current.items : []).map((order) =>
-        order.id === updatedOrder.id ? updatedOrder : order,
-      ),
+      items: (Array.isArray(current.items) ? current.items : [])
+        .map((order) => (order.id === updatedOrder.id ? updatedOrder : order))
+        .filter((order) => !status || order.status === status),
+      total:
+        status && updatedOrder.status !== status
+          ? Math.max(0, Number(current.total || 0) - 1)
+          : current.total,
     }));
   };
 
@@ -159,13 +163,8 @@ export default function DashboardOrdersPage() {
     }
   };
 
-  const handlePay = async (order: AdminOrder) => {
-    if (!order.paymentProofUrl) {
-      setPaymentConfirmationOrder(order);
-      return;
-    }
-
-    await confirmPayOrder(order);
+  const handlePay = (order: AdminOrder) => {
+    setPaymentConfirmationOrder(order);
   };
 
   const handleCancel = async (orderId: string) => {
@@ -235,11 +234,14 @@ export default function DashboardOrdersPage() {
                   id="payment-confirmation-title"
                   className="text-lg font-semibold text-slate-900"
                 >
-                  Confirmar pago sin comprobante
+                  {paymentConfirmationOrder.paymentProofUrl
+                    ? "Confirmar pago"
+                    : "Confirmar pago sin comprobante"}
                 </h2>
                 <p className="mt-2 text-sm text-slate-600">
-                  Esta orden no tiene comprobante cargado. Marca como pagada
-                  solo si ya verificaste que el dinero entro en la cuenta.
+                  {paymentConfirmationOrder.paymentProofUrl
+                    ? "Esta orden tiene comprobante cargado. Confirma el pago solo si ya verificaste que el dinero entro en la cuenta."
+                    : "Esta orden no tiene comprobante cargado. Marca como pagada solo si ya verificaste que el dinero entro en la cuenta."}
                 </p>
                 <p className="mt-3 text-sm font-medium text-slate-900">
                   {paymentConfirmationOrder.orderNumber ||
