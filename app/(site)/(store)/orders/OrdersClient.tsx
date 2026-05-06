@@ -50,6 +50,9 @@ const orderStatusLabels: Record<string, string> = {
   cancelled: "Cancelada",
 };
 
+const isCashPickupOrder = (order: Order): boolean =>
+  order.paymentReference === "cash_on_pickup" || order.paymentMethod === "cash";
+
 const orderStatusFilters = [
   { value: "pending", label: "Pendientes" },
   { value: "paid", label: "Pagadas" },
@@ -283,9 +286,13 @@ export default function OrdersClient() {
                       </p>
                     </div>
                     <div>
-                      <p className="text-gray-500">Comprobante</p>
+                      <p className="text-gray-500">Pago</p>
                       <p className="font-medium text-gray-900">
-                        {order.paymentProofUrl ? "Cargado" : "Pendiente"}
+                        {isCashPickupOrder(order)
+                          ? "Efectivo al retirar"
+                          : order.paymentProofUrl
+                            ? "Transferencia cargada"
+                            : "Transferencia pendiente"}
                       </p>
                     </div>
                     <div>
@@ -304,7 +311,10 @@ export default function OrdersClient() {
                       Ver detalle
                       <MdChevronRight size={18} />
                     </Link>
-                    {isPending && !order.paymentProofUrl && PAYMENTS_ENABLED && (
+                    {isPending &&
+                      !isCashPickupOrder(order) &&
+                      !order.paymentProofUrl &&
+                      PAYMENTS_ENABLED && (
                       <Link
                         href={`/orders/${order.id}`}
                         className="inline-flex w-full items-center justify-center rounded-md border border-green-300 bg-white px-4 py-2 text-sm font-medium text-green-700 hover:bg-green-50 sm:w-auto"

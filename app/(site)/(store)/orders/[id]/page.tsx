@@ -56,6 +56,9 @@ const orderStatusLabels: Record<string, string> = {
   cancelled: "Cancelada",
 };
 
+const isCashPickupOrder = (order: Order): boolean =>
+  order.paymentReference === "cash_on_pickup" || order.paymentMethod === "cash";
+
 export default function OrderDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
@@ -247,9 +250,13 @@ export default function OrderDetailPage() {
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-500">Comprobante</p>
+              <p className="text-sm text-gray-500">Pago</p>
               <p className="font-medium text-gray-900">
-                {order.paymentProofUrl ? "Cargado" : "Pendiente"}
+                {isCashPickupOrder(order)
+                  ? "Efectivo al retirar"
+                  : order.paymentProofUrl
+                    ? "Transferencia cargada"
+                    : "Transferencia pendiente"}
               </p>
               {order.paymentReceiptNumber && (
                 <p className="mt-1 text-sm text-gray-600">
@@ -262,19 +269,29 @@ export default function OrderDetailPage() {
 
         {isPending && (
           <section className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-5 text-amber-900">
-            <h2 className="font-semibold text-amber-950">Pago manual</h2>
-            <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
-              {manualPaymentInstructions.map((instruction) => (
-                <li key={instruction}>{instruction}</li>
-              ))}
-            </ul>
+            <h2 className="font-semibold text-amber-950">
+              {isCashPickupOrder(order)
+                ? "Pago en efectivo al retirar"
+                : "Pago por transferencia o deposito"}
+            </h2>
+            {isCashPickupOrder(order) ? (
+              <p className="mt-3 text-sm">
+                Paga en efectivo cuando retires el pedido en tienda.
+              </p>
+            ) : (
+              <ul className="mt-3 list-disc space-y-1 pl-5 text-sm">
+                {manualPaymentInstructions.map((instruction) => (
+                  <li key={instruction}>{instruction}</li>
+                ))}
+              </ul>
+            )}
             <p className="mt-3 text-sm font-medium text-amber-950">
               Numero de pedido: {order.orderNumber || order.id}
             </p>
           </section>
         )}
 
-        {isPending && !order.paymentProofUrl && (
+        {isPending && !isCashPickupOrder(order) && !order.paymentProofUrl && (
           <form
             onSubmit={handleSubmitProof}
             className="mt-5 grid gap-3 rounded-lg border border-gray-200 bg-white p-5 shadow-sm md:grid-cols-[1fr_1fr_auto]"

@@ -51,19 +51,52 @@ export async function POST(req: NextRequest) {
   try {
     const body = (await req.json().catch(() => null)) as {
       deliveryMethod?: string;
+      paymentMethod?: string;
     } | null;
     const deliveryMethod =
       body?.deliveryMethod === "delivery" ? "DELIVERY" : "PICKUP";
-    const data = await executeUsersGraphql<
-      {
-        checkoutMyCart: Record<string, unknown>;
-      },
-      { input: { deliveryMethod: string } }
-    >({
-      query: checkoutMutation,
-      variables: { input: { deliveryMethod } },
-      request: req,
-    });
+    const paymentMethod =
+      body?.paymentMethod === "cash" ? "CASH" : "TRANSFER";
+
+    const executeCheckout = (input: Record<string, string>) =>
+      executeUsersGraphql<
+        {
+          checkoutMyCart: Record<string, unknown>;
+        },
+        { input: Record<string, string> }
+      >({
+        query: checkoutMutation,
+        variables: { input },
+        request: req,
+      });
+
+    const baseInput = { deliveryMethod };
+    const extendedInput = {
+      ...baseInput,
+      paymentMethod,
+    };
+
+    let data: {
+      checkoutMyCart: Record<string, unknown>;
+    };
+
+    try {
+      data = await executeCheckout(extendedInput);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message.toLowerCase() : "";
+      const canRetryWithoutPaymentIntent =
+        message.includes("paymentmethod") ||
+        message.includes("unknown field") ||
+        message.includes("field") ||
+        message.includes("checkoutinput");
+
+      if (!canRetryWithoutPaymentIntent) {
+        throw error;
+      }
+
+      data = await executeCheckout(baseInput);
+    }
 
     return NextResponse.json(data.checkoutMyCart);
   } catch (error) {

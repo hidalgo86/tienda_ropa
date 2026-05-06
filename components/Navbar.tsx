@@ -195,6 +195,12 @@ export default function Navbar() {
               }`}
             >
               {isAuthenticated ? <MdPerson size={24} /> : <MdLogin size={24} />}
+              {isAuthenticated && (
+                <span
+                  aria-label="Sesion activa"
+                  className="absolute right-1 top-1 h-3 w-3 rounded-full border-2 border-pink-50 bg-emerald-500"
+                />
+              )}
               <span className="sr-only">
                 {isAuthenticated ? "Mi cuenta" : "Login"}
               </span>

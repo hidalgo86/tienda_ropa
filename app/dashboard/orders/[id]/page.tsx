@@ -42,6 +42,44 @@ const statusBadgeClass = (status: string): string => {
   }
 };
 
+const orderStatusLabels: Record<string, string> = {
+  pending: "Pendiente",
+  paid: "Pagada",
+  cancelled: "Cancelada",
+};
+
+const paymentMethodLabels: Record<string, string> = {
+  manual: "Pago por confirmar",
+  manual_paid: "Pago por confirmar",
+  cash: "Efectivo",
+  transfer: "Transferencia",
+  bank_transfer: "Transferencia bancaria",
+};
+
+const formatOrderStatus = (status: string): string =>
+  orderStatusLabels[status] ?? status;
+
+const formatPaymentMethod = (
+  order: Pick<
+    AdminOrder,
+    "paymentMethod" | "paymentReference" | "paymentProofUrl" | "paymentReceiptNumber"
+  >,
+): string => {
+  if (order.paymentReference === "cash_on_pickup") {
+    return "Efectivo al retirar";
+  }
+
+  if (
+    order.paymentReference === "bank_transfer" ||
+    order.paymentProofUrl ||
+    order.paymentReceiptNumber
+  ) {
+    return "Transferencia/deposito";
+  }
+
+  return paymentMethodLabels[order.paymentMethod] ?? order.paymentMethod;
+};
+
 export default function DashboardOrderDetailPage() {
   const params = useParams<{ id: string }>();
   const orderId = useMemo(() => String(params?.id ?? "").trim(), [params]);
@@ -265,10 +303,10 @@ export default function DashboardOrderDetailPage() {
             <span
               className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusBadgeClass(order.status)}`}
             >
-              {order.status}
+              {formatOrderStatus(order.status)}
             </span>
             <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-              {order.paymentMethod}
+              {formatPaymentMethod(order)}
             </span>
           </div>
         </div>

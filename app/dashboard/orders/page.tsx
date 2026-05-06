@@ -62,6 +62,44 @@ const statusBadgeClass = (status: string): string => {
   }
 };
 
+const orderStatusLabels: Record<string, string> = {
+  pending: "Pendiente",
+  paid: "Pagada",
+  cancelled: "Cancelada",
+};
+
+const paymentMethodLabels: Record<string, string> = {
+  manual: "Pago por confirmar",
+  manual_paid: "Pago por confirmar",
+  cash: "Efectivo",
+  transfer: "Transferencia",
+  bank_transfer: "Transferencia bancaria",
+};
+
+const formatOrderStatus = (status: string): string =>
+  orderStatusLabels[status] ?? status;
+
+const formatPaymentMethod = (
+  order: Pick<
+    AdminOrder,
+    "paymentMethod" | "paymentReference" | "paymentProofUrl" | "paymentReceiptNumber"
+  >,
+): string => {
+  if (order.paymentReference === "cash_on_pickup") {
+    return "Efectivo al retirar";
+  }
+
+  if (
+    order.paymentReference === "bank_transfer" ||
+    order.paymentProofUrl ||
+    order.paymentReceiptNumber
+  ) {
+    return "Transferencia/deposito";
+  }
+
+  return paymentMethodLabels[order.paymentMethod] ?? order.paymentMethod;
+};
+
 const normalizeOrdersPage = (
   response: Partial<PaginatedResult<AdminOrder>> | null | undefined,
 ): PaginatedResult<AdminOrder> => ({
@@ -426,11 +464,11 @@ export default function DashboardOrdersPage() {
                           <span
                             className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusBadgeClass(order.status)}`}
                           >
-                            {order.status}
+                            {formatOrderStatus(order.status)}
                           </span>
                         </td>
                         <td className="px-4 py-4 text-slate-600">
-                          <div>{order.paymentMethod}</div>
+                          <div>{formatPaymentMethod(order)}</div>
                           {order.paymentProofUrl ? (
                             <a
                               href={order.paymentProofUrl}
@@ -532,7 +570,7 @@ export default function DashboardOrdersPage() {
                       <span
                         className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusBadgeClass(order.status)}`}
                       >
-                        {order.status}
+                        {formatOrderStatus(order.status)}
                       </span>
                     </div>
 
@@ -541,7 +579,9 @@ export default function DashboardOrdersPage() {
                         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                           Pago
                         </p>
-                        <p className="mt-1">{order.paymentMethod}</p>
+                        <p className="mt-1">
+                          {formatPaymentMethod(order)}
+                        </p>
                         {order.paymentProofUrl ? (
                           <a
                             href={order.paymentProofUrl}

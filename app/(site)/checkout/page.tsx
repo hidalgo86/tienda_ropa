@@ -50,6 +50,9 @@ export default function CheckoutPage() {
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "delivery">(
     "pickup",
   );
+  const [paymentMethod, setPaymentMethod] = useState<"transfer" | "cash">(
+    "transfer",
+  );
   const { isCoolingDown, remainingSeconds, startCooldown } =
     useSubmitCooldown(5);
 
@@ -126,8 +129,14 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
 
     try {
-      const order = await checkoutCart({ deliveryMethod });
-      setCreatedOrder(order);
+      const order = await checkoutCart({ deliveryMethod, paymentMethod });
+      setCreatedOrder({
+        ...order,
+        paymentMethod:
+          paymentMethod === "cash" ? "cash" : order.paymentMethod,
+        paymentReference:
+          paymentMethod === "cash" ? "cash_on_pickup" : "bank_transfer",
+      });
       dispatch(syncCart([]));
       toast.success("Compra completada");
     } catch (error) {
@@ -258,18 +267,30 @@ export default function CheckoutPage() {
             </div>
 
             <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-5 text-left">
-              <h2 className="font-semibold text-amber-950">Pago manual</h2>
-              <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-amber-900">
-                {manualPaymentInstructions.map((instruction) => (
-                  <li key={instruction}>{instruction}</li>
-                ))}
-              </ul>
+              <h2 className="font-semibold text-amber-950">
+                {createdOrder.paymentReference === "cash_on_pickup"
+                  ? "Pago en efectivo al retirar"
+                  : "Pago por transferencia o deposito"}
+              </h2>
+              {createdOrder.paymentReference === "cash_on_pickup" ? (
+                <p className="mt-3 text-sm text-amber-900">
+                  Paga en efectivo cuando retires el pedido en la tienda. Tu
+                  orden quedara pendiente hasta que administracion confirme el
+                  pago.
+                </p>
+              ) : (
+                <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-amber-900">
+                  {manualPaymentInstructions.map((instruction) => (
+                    <li key={instruction}>{instruction}</li>
+                  ))}
+                </ul>
+              )}
               <p className="mt-3 text-sm font-medium text-amber-950">
                 Numero de pedido: {createdOrder.orderNumber || createdOrder.id}
               </p>
             </div>
 
-            {createdOrder.paymentProofUrl ? (
+            {createdOrder.paymentReference === "cash_on_pickup" ? null : createdOrder.paymentProofUrl ? (
               <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-left text-sm text-emerald-900">
                 Comprobante recibido. Numero de operacion:{" "}
                 <span className="font-semibold">
@@ -431,6 +452,59 @@ export default function CheckoutPage() {
                   <span className="font-medium text-gray-900">Direccion:</span>{" "}
                   {user?.address?.trim() || "No registrada"}
                 </p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <MdCheckCircle className="text-emerald-500" size={24} />
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Forma de pago
+                </h2>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label
+                  className={`rounded-xl border p-4 text-sm ${
+                    paymentMethod === "transfer"
+                      ? "border-emerald-300 bg-emerald-50 text-emerald-950"
+                      : "border-gray-200 bg-white text-gray-700"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="transfer"
+                    checked={paymentMethod === "transfer"}
+                    onChange={() => setPaymentMethod("transfer")}
+                    className="mr-2"
+                  />
+                  <span className="font-semibold">Transferencia o deposito</span>
+                  <p className="mt-2 text-emerald-800">
+                    El pedido queda pendiente hasta que subas el comprobante y
+                    administracion lo confirme.
+                  </p>
+                </label>
+                <label
+                  className={`rounded-xl border p-4 text-sm ${
+                    paymentMethod === "cash"
+                      ? "border-amber-300 bg-amber-50 text-amber-950"
+                      : "border-gray-200 bg-white text-gray-700"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="cash"
+                    checked={paymentMethod === "cash"}
+                    onChange={() => setPaymentMethod("cash")}
+                    className="mr-2"
+                  />
+                  <span className="font-semibold">Efectivo al retirar</span>
+                  <p className="mt-2 text-amber-800">
+                    El cliente paga en la tienda al retirar el pedido.
+                  </p>
+                </label>
               </div>
             </div>
 

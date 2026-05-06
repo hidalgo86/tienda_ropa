@@ -12,6 +12,7 @@ interface OrderApiOptions {
 }
 
 export type DeliveryMethod = "pickup" | "delivery";
+export type CheckoutPaymentMethod = "transfer" | "cash";
 
 const PAYMENT_PROOF_TARGET_SIZE_BYTES = 2 * 1024 * 1024;
 const PAYMENT_PROOF_MAX_DIMENSION = 1600;
@@ -286,7 +287,10 @@ const fetchWithAuthRetry = async <T>(
 };
 
 export const checkoutCart = async (
-  input: { deliveryMethod?: DeliveryMethod } = {},
+  input: {
+    deliveryMethod?: DeliveryMethod;
+    paymentMethod?: CheckoutPaymentMethod;
+  } = {},
   options: OrderApiOptions = {},
 ): Promise<Order> => {
   return fetchWithAuthRetry(async (token) => {
@@ -295,6 +299,7 @@ export const checkoutCart = async (
       headers: buildHeaders(token),
       body: JSON.stringify({
         deliveryMethod: input.deliveryMethod ?? "pickup",
+        paymentMethod: input.paymentMethod ?? "transfer",
       }),
       signal: options.signal,
     });
