@@ -335,7 +335,15 @@ export default function OrdersClient() {
                     )}
                   </div>
 
-                  <p className="mt-3 text-xs text-gray-500">{pickupMessage}</p>
+                  {isPending ? (
+                    <p className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                      {order.paymentProofUrl
+                        ? "Comprobante recibido. El pedido queda pendiente de revision de administracion."
+                        : "Recuerda pagar o subir el comprobante dentro de 48 horas para mantener la reserva."}
+                    </p>
+                  ) : (
+                    <p className="mt-3 text-xs text-gray-500">{pickupMessage}</p>
+                  )}
                   {isPending && !PAYMENTS_ENABLED && (
                     <p className="mt-3 text-sm text-amber-700">
                       {paymentsDisabledMessage}

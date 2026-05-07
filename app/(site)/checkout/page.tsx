@@ -288,6 +288,11 @@ export default function CheckoutPage() {
               <p className="mt-3 text-sm font-medium text-amber-950">
                 Numero de pedido: {createdOrder.orderNumber || createdOrder.id}
               </p>
+              <p className="mt-2 text-sm text-amber-900">
+                El stock queda reservado durante 48 horas. Si no se registra el
+                pago o comprobante en ese plazo, el pedido se cancela
+                automaticamente y el producto vuelve a estar disponible.
+              </p>
             </div>
 
             {createdOrder.paymentReference === "cash_on_pickup" ? null : createdOrder.paymentProofUrl ? (
@@ -598,8 +603,9 @@ export default function CheckoutPage() {
                   Volver al carrito
                 </Link>
                 <p className="text-xs text-gray-500 leading-relaxed">
-                  Se generara una orden en espera de pago y se reservara el stock
-                  disponible hasta que administracion confirme el comprobante.
+                  Se generara una orden en espera de pago. El stock queda
+                  reservado durante 48 horas; si no se registra pago o
+                  comprobante, el pedido se cancela automaticamente.
                 </p>
               </div>
             </div>

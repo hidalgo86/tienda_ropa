@@ -31,6 +31,18 @@ const mapLoginError = (message: string): { message: string; status: number } => 
   const normalized = message.trim().toLowerCase();
 
   if (
+    normalized.includes("bloqueado") ||
+    normalized.includes("suspendido") ||
+    normalized.includes("demasiados intentos")
+  ) {
+    return {
+      message:
+        "Usuario bloqueado por demasiados intentos fallidos. Contacta con administracion.",
+      status: 423,
+    };
+  }
+
+  if (
     normalized.includes("credenciales") ||
     normalized.includes("usuario o contrasena") ||
     normalized.includes("usuario o contraseña") ||

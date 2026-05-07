@@ -100,6 +100,18 @@ const formatPaymentMethod = (
   return paymentMethodLabels[order.paymentMethod] ?? order.paymentMethod;
 };
 
+const paymentReviewLabel = (order: AdminOrder): string => {
+  if (order.status !== "pending") {
+    return "";
+  }
+
+  if (order.paymentProofUrl || order.paymentReceiptNumber) {
+    return "Comprobante por revisar";
+  }
+
+  return "Sin comprobante: vence a las 48h";
+};
+
 const normalizeOrdersPage = (
   response: Partial<PaginatedResult<AdminOrder>> | null | undefined,
 ): PaginatedResult<AdminOrder> => ({
@@ -359,6 +371,10 @@ export default function DashboardOrdersPage() {
       <div className="space-y-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Ordenes</h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Los pedidos pendientes sin comprobante se cancelan automaticamente
+            despues de 48 horas y liberan stock.
+          </p>
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -419,8 +435,8 @@ export default function DashboardOrdersPage() {
       ) : (
         <>
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="hidden xl:block">
-              <table className="min-w-full divide-y divide-slate-200">
+            <div className="hidden overflow-x-auto lg:block">
+              <table className="min-w-[1120px] divide-y divide-slate-200">
                 <thead className="bg-slate-50">
                   <tr className="text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                     <th className="px-4 py-3">Orden</th>
@@ -483,6 +499,18 @@ export default function DashboardOrdersPage() {
                               Sin comprobante
                             </div>
                           )}
+                          {paymentReviewLabel(order) && (
+                            <div
+                              className={`mt-2 inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                                order.paymentProofUrl ||
+                                order.paymentReceiptNumber
+                                  ? "bg-emerald-50 text-emerald-700"
+                                  : "bg-amber-50 text-amber-700"
+                              }`}
+                            >
+                              {paymentReviewLabel(order)}
+                            </div>
+                          )}
                         </td>
                         <td className="px-4 py-4 font-semibold text-slate-900">
                           {formatCurrency(order.totalAmount)}
@@ -543,7 +571,7 @@ export default function DashboardOrdersPage() {
               </table>
             </div>
 
-            <div className="divide-y divide-slate-100 xl:hidden">
+            <div className="divide-y divide-slate-100 lg:hidden">
               {safeItems.map((order) => {
                 const isBusy = activeOrderId === order.id;
                 const isPending = order.status === "pending";
@@ -594,6 +622,18 @@ export default function DashboardOrdersPage() {
                         ) : (
                           <p className="mt-1 text-xs text-slate-400">
                             Sin comprobante
+                          </p>
+                        )}
+                        {paymentReviewLabel(order) && (
+                          <p
+                            className={`mt-2 rounded-md px-2 py-1 text-xs font-medium ${
+                              order.paymentProofUrl ||
+                              order.paymentReceiptNumber
+                                ? "bg-emerald-50 text-emerald-700"
+                                : "bg-amber-50 text-amber-700"
+                            }`}
+                          >
+                            {paymentReviewLabel(order)}
                           </p>
                         )}
                       </div>

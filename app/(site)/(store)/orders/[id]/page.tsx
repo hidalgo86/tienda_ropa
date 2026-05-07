@@ -288,6 +288,10 @@ export default function OrderDetailPage() {
             <p className="mt-3 text-sm font-medium text-amber-950">
               Numero de pedido: {order.orderNumber || order.id}
             </p>
+            <p className="mt-2 text-sm text-amber-900">
+              El producto queda reservado durante 48 horas. Si no se registra el
+              pago o comprobante a tiempo, el pedido se cancela automaticamente.
+            </p>
           </section>
         )}
 

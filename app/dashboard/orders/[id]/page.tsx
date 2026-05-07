@@ -332,6 +332,20 @@ export default function DashboardOrderDetailPage() {
           </div>
         )}
 
+        {order.status === "pending" && (
+          <div
+            className={`mt-5 rounded-xl border p-4 text-sm ${
+              order.paymentProofUrl || order.paymentReceiptNumber
+                ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                : "border-amber-200 bg-amber-50 text-amber-900"
+            }`}
+          >
+            {order.paymentProofUrl || order.paymentReceiptNumber
+              ? "Este pedido tiene comprobante cargado y queda pendiente de revision."
+              : "Este pedido no tiene comprobante. Si pasan 48 horas desde su creacion, se cancelara automaticamente y liberara stock."}
+          </div>
+        )}
+
         {order.status === "paid" && (
           <div className="mt-5">
             <button
