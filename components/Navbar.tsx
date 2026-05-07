@@ -28,7 +28,6 @@ import {
 const navLinks = [
   { href: "/", icon: <MdHome />, label: "Inicio" },
   { href: "/products", icon: <MdStore />, label: "Productos" },
-  { href: "/dashboard/products", icon: <MdBarChart />, label: "Dashboard" },
 ];
 
 const isAdminRole = (role?: string | null): boolean =>
@@ -127,32 +126,38 @@ export default function Navbar() {
   const displayCart = mounted ? cartCount : 0;
   const displayFav = mounted ? favoritesCount : 0;
   const displayPendingOrders = mounted ? pendingOrdersCount : 0;
-  const visibleNavLinks = navLinks.filter(
-    (link) => link.href !== "/dashboard/products" || isAdmin,
-  );
-  const accountNavLinks = isAuthenticated
-    ? [
-        {
-          href: "/account",
-          icon: <MdPerson />,
-          label: "Mi Cuenta",
-        },
-        ...(!isAdmin && PAYMENTS_ENABLED
-          ? [
-              {
-                href: "/orders",
-                icon: <MdReceiptLong />,
-                label: "Pedidos",
-              },
-            ]
-          : []),
-        {
-          href: "/acerca",
-          icon: <MdInfo />,
-          label: "Acerca",
-        },
-      ]
-    : [];
+  const hasDesktopActions = !isAdmin || !isAuthenticated;
+  const desktopNavLinks = [
+    ...navLinks,
+    ...(isAuthenticated && !isAdmin && PAYMENTS_ENABLED
+      ? [
+          {
+            href: "/orders",
+            icon: <MdReceiptLong />,
+            label: "Pedidos",
+          },
+        ]
+      : []),
+    ...(isAuthenticated
+      ? [
+          {
+            href: "/account",
+            icon: <MdPerson />,
+            label: "Mi Cuenta",
+          },
+        ]
+      : []),
+    ...(isAdmin
+      ? [
+          {
+            href: "/dashboard/products",
+            icon: <MdBarChart />,
+            label: "Dashboard",
+          },
+        ]
+      : []),
+    { href: "/acerca", icon: <MdInfo />, label: "Acerca" },
+  ];
 
   const isActivePath = React.useCallback(
     (href: string) => {
@@ -168,7 +173,7 @@ export default function Navbar() {
   return (
     <>
       <nav className="sticky top-0 z-40 border-b border-pink-200 bg-pink-50/95 shadow-md backdrop-blur supports-[backdrop-filter]:bg-pink-50/90">
-        <div className="relative mx-auto flex h-20 max-w-7xl items-center justify-center overflow-hidden px-4 sm:h-20 sm:justify-between sm:px-5 lg:grid lg:h-28 lg:grid-cols-[minmax(300px,430px)_minmax(0,1fr)_auto] lg:gap-8 lg:px-8 xl:grid-cols-[minmax(360px,500px)_minmax(0,1fr)_auto] xl:gap-10">
+        <div className="relative flex h-20 w-full items-center justify-center overflow-hidden px-4 sm:h-20 sm:justify-between sm:px-5 lg:grid lg:h-20 lg:grid-cols-[minmax(240px,320px)_minmax(0,1fr)_auto] lg:gap-5 lg:px-6 xl:h-24 xl:grid-cols-[minmax(260px,350px)_minmax(0,1fr)_auto] xl:gap-7 xl:px-8">
           <Link
             href="/"
             className="flex min-w-0 flex-1 items-center justify-start overflow-hidden pr-14 sm:pr-0 lg:flex-none"
@@ -180,7 +185,7 @@ export default function Navbar() {
               height={260}
               priority
               unoptimized
-              className="h-36 w-auto max-w-[460px] object-cover object-left sm:h-14 sm:max-w-[220px] md:max-w-[260px] lg:h-32 lg:max-w-[430px] xl:h-36 xl:max-w-[500px]"
+              className="h-20 w-[300px] max-w-full object-cover object-center sm:w-[320px] md:w-[360px] lg:h-16 lg:w-[310px] xl:h-18 xl:w-[340px]"
             />
           </Link>
 
@@ -207,47 +212,67 @@ export default function Navbar() {
             </Link>
           )}
 
-          <div className="hidden min-w-0 items-center justify-center gap-2 overflow-hidden border-r border-pink-200 pr-6 lg:flex xl:gap-4 xl:pr-8">
-            {[...visibleNavLinks, ...accountNavLinks].map((link) => (
+          <div
+            className={`hidden min-w-0 items-center justify-center gap-2 overflow-hidden pr-4 lg:flex xl:gap-3 xl:pr-6 ${
+              hasDesktopActions ? "border-r border-pink-200" : ""
+            }`}
+          >
+            {desktopNavLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="flex min-w-0 items-center gap-1.5 whitespace-nowrap text-sm font-medium text-gray-700 transition-colors hover:text-pink-500 xl:gap-2"
+                className={`flex min-w-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-2 text-sm font-semibold transition-colors xl:gap-2 xl:px-3 xl:text-base ${
+                  isActivePath(link.href)
+                    ? "bg-pink-100 text-pink-700"
+                    : "text-gray-700 hover:bg-pink-100 hover:text-pink-600"
+                }`}
               >
                 <span className="shrink-0 text-lg xl:text-xl">{link.icon}</span>
-                <span
-                  className={`truncate ${
-                    link.href === "/acerca" ? "hidden 2xl:inline" : ""
-                  }`}
-                >
-                  {link.label}
-                </span>
+                <span className="truncate">{link.label}</span>
               </Link>
             ))}
           </div>
 
-          <div className="hidden shrink-0 items-center justify-end gap-4 lg:flex xl:gap-5">
+          <div className="hidden shrink-0 items-center justify-end gap-2 lg:flex">
             {!isAdmin && (
               <>
-                <Link href="/favorites" title="Favoritos" className="relative group">
+                <Link
+                  href="/favorites"
+                  title="Favoritos"
+                  className={`relative inline-flex h-9 items-center gap-1.5 rounded-lg border px-2.5 text-sm font-medium transition-colors ${
+                    isActivePath("/favorites")
+                      ? "border-pink-200 bg-pink-100 text-pink-700"
+                      : "border-pink-200 bg-white/70 text-gray-700 hover:bg-pink-100 hover:text-pink-700"
+                  }`}
+                >
                   <MdFavorite
-                    size={26}
-                    className="text-pink-400 transition-colors hover:text-pink-600 xl:h-7 xl:w-7"
+                    size={20}
+                    className="shrink-0 text-pink-500"
                   />
+                  <span>Favoritos</span>
                   {displayFav > 0 && (
-                    <span className="absolute -right-2 -top-2 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs text-white xl:h-6 xl:min-w-[24px]">
+                    <span className="absolute -right-2 -top-2 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs text-white">
                       {displayFav}
                     </span>
                   )}
                 </Link>
 
-                <Link href="/cart" title="Carrito" className="relative group">
+                <Link
+                  href="/cart"
+                  title="Carrito"
+                  className={`relative inline-flex h-9 items-center gap-1.5 rounded-lg border px-2.5 text-sm font-medium transition-colors ${
+                    isActivePath("/cart")
+                      ? "border-sky-200 bg-sky-100 text-sky-700"
+                      : "border-sky-200 bg-white/70 text-gray-700 hover:bg-sky-100 hover:text-sky-700"
+                  }`}
+                >
                   <MdShoppingCart
-                    size={26}
-                    className="text-sky-400 transition-colors hover:text-sky-600 xl:h-7 xl:w-7"
+                    size={20}
+                    className="shrink-0 text-sky-500"
                   />
+                  <span>Carrito</span>
                   {displayCart > 0 && (
-                    <span className="absolute -right-2 -top-2 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-pink-500 px-1.5 text-xs text-white xl:h-6 xl:min-w-[24px]">
+                    <span className="absolute -right-2 -top-2 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-pink-500 px-1.5 text-xs text-white">
                       {displayCart}
                     </span>
                   )}
@@ -256,11 +281,20 @@ export default function Navbar() {
             )}
 
             {!isAuthenticated && (
-              <Link href="/login" title="Login" className="group">
+              <Link
+                href="/login"
+                title="Login"
+                className={`inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 text-sm font-medium transition-colors ${
+                  isActivePath("/login")
+                    ? "bg-slate-100 text-slate-900"
+                    : "bg-white/70 text-gray-700 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
                 <MdLogin
-                  size={26}
-                  className="text-gray-500 transition-colors hover:text-gray-700 xl:h-7 xl:w-7"
+                  size={20}
+                  className="shrink-0"
                 />
+                <span>Login</span>
               </Link>
             )}
           </div>
@@ -340,7 +374,7 @@ export default function Navbar() {
                 >
                   <MdFavorite size={20} />
                   {displayFav > 0 && (
-                    <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">
+                    <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
                       {displayFav > 9 ? "9+" : displayFav}
                     </span>
                   )}
@@ -371,7 +405,7 @@ export default function Navbar() {
                 >
                   <MdShoppingCart size={20} />
                   {displayCart > 0 && (
-                    <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-pink-500 text-[10px] text-white">
+                    <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-pink-500 text-xs text-white">
                       {displayCart > 9 ? "9+" : displayCart}
                     </span>
                   )}
@@ -406,7 +440,7 @@ export default function Navbar() {
                 >
                   <MdReceiptLong size={20} />
                   {displayPendingOrders > 0 && (
-                    <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-[10px] font-semibold text-white">
+                    <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-amber-500 text-xs font-semibold text-white">
                       {displayPendingOrders > 9 ? "9+" : displayPendingOrders}
                     </span>
                   )}

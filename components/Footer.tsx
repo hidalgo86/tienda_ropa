@@ -55,10 +55,10 @@ export default function Footer() {
           <Image
             src="/chikitoslandia.png"
             alt="Logo ChikitosLandia"
-            width={520}
-            height={150}
+            width={600}
+            height={180}
             unoptimized
-            className="mb-3 h-28 w-auto max-w-[320px] object-cover object-left sm:mb-4 sm:h-32 sm:max-w-[380px] lg:h-36 lg:max-w-[430px]"
+            className="mb-3 h-20 w-[240px] max-w-full object-cover object-center sm:mb-4 sm:h-24 sm:w-[280px] lg:h-26 lg:w-[320px]"
           />
           <p
             className="max-w-xs text-center text-xs text-gray-600 

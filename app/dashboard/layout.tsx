@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Navbar from "@/components/Navbar";
 import DashboardLayoutClient from "./DashboardLayoutClient";
 
 export const metadata: Metadata = {
@@ -13,5 +14,12 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <DashboardLayoutClient>{children}</DashboardLayoutClient>;
+  return (
+    <>
+      <div className="hidden lg:block">
+        <Navbar />
+      </div>
+      <DashboardLayoutClient>{children}</DashboardLayoutClient>
+    </>
+  );
 }

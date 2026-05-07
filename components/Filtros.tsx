@@ -181,7 +181,7 @@ export default function Filtros({ onFilterApply }: ProductFiltersProps) {
               }}
               className={fieldClassName}
             >
-              <option value="">Todas las categorias</option>
+              <option value="">Todas</option>
               {categoryOptions.map((option) => (
                 <option
                   key={option.categoryId || option.value}
@@ -208,7 +208,7 @@ export default function Filtros({ onFilterApply }: ProductFiltersProps) {
                 disabled={!isClothingFilter}
                 className={fieldClassName}
               >
-                <option value="">Todos los generos</option>
+                <option value="">Todas</option>
                 <option value={Genre.NINO}>Nino</option>
                 <option value={Genre.NINA}>Nina</option>
                 <option value={Genre.UNISEX}>Unisex</option>
@@ -229,7 +229,7 @@ export default function Filtros({ onFilterApply }: ProductFiltersProps) {
                 onChange={(e) => setSize(e.target.value)}
                 className={fieldClassName}
               >
-                <option value="">Todas las tallas</option>
+                <option value="">Todas</option>
                 {Object.values(Size).map((option) => (
                   <option key={option} value={option}>
                     {formatSizeLabel(option)}

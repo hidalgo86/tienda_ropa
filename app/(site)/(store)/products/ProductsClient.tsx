@@ -2,7 +2,6 @@ import PublicListWrapper from "./PublicListWrapper";
 import Pagination from "./Pagination";
 import Filtros from "../../../../components/Filtros";
 import { notFound } from "next/navigation";
-import { headers } from "next/headers";
 import { MdTune } from "react-icons/md";
 import {
   ProductAvailability,
@@ -14,6 +13,7 @@ import {
 import FiltrosMobileButton from "./FiltrosMobileButton";
 import { listProducts } from "@/services/products";
 import ProductSearchBar from "./ProductSearchBar";
+import { getRequestBaseUrl } from "@/lib/requestBaseUrl";
 
 const readSingleParam = (
   params: Record<string, string> | undefined,
@@ -56,17 +56,7 @@ export default async function ProductsClient({
       )
     : undefined;
 
-  const reqHeaders = await headers();
-  const host = reqHeaders.get("x-forwarded-host") ?? reqHeaders.get("host");
-  const protocol = reqHeaders.get("x-forwarded-proto") ?? "https";
-
-  const baseUrl = host
-    ? `${protocol}://${host}`
-    : process.env.NEXT_PUBLIC_SITE_URL
-      ? process.env.NEXT_PUBLIC_SITE_URL
-      : process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : "http://localhost:3000";
+  const baseUrl = await getRequestBaseUrl();
 
   let data;
   try {
@@ -106,7 +96,7 @@ export default async function ProductsClient({
     <div className="min-h-screen bg-slate-50">
       <FiltrosMobileButton activeCount={activeFiltersCount} />
 
-      <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-1">
+      <div className="flex w-full min-w-0 flex-1">
         <aside
           className="hidden w-full max-w-[320px] min-w-[280px] border-r border-slate-200 bg-white lg:block"
           aria-label="Filtros de productos"

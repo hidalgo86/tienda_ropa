@@ -254,7 +254,7 @@ const ProductListAdmin: React.FC<ProductListAdminProps> = ({
                       {product.name}
                     </Link>
                     <span
-                      className={`inline-flex rounded-full px-3 py-1 text-[11px] font-semibold ${statusBadgeClass(status)}`}
+                      className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusBadgeClass(status)}`}
                     >
                       {status}
                     </span>

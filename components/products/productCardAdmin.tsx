@@ -187,10 +187,10 @@ const ProductCardAdmin: React.FC<ProductCardAdminProps> = ({
           )}
         </div>
         <div className="flex flex-wrap gap-2 mb-3">
-          <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700">
+          <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
             {productMode.label}
           </span>
-          <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-medium text-amber-700">
+          <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
             {productMode.detail}
           </span>
         </div>

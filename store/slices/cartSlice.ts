@@ -70,13 +70,10 @@ const persistGuestCart = (items: CartItem[]): void => {
   setGuestCart(items);
 };
 
-const initialCartItems = getGuestCart();
-const initialTotals = calculateCartTotals(initialCartItems);
-
 const initialState: CartState = {
-  items: initialCartItems,
-  totalItems: initialTotals.totalItems,
-  totalPrice: initialTotals.totalPrice,
+  items: [],
+  totalItems: 0,
+  totalPrice: 0,
 };
 
 const cartSlice = createSlice({

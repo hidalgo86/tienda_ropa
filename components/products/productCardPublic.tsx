@@ -64,7 +64,12 @@ const ProductCardPublic: React.FC<ProductCardPublicProps> = ({
   onFavorite,
 }) => {
   const { changeCartItemQuantity } = useCartActions();
-  const isAdminUser = isStoredAdminUser();
+  const [hasMounted, setHasMounted] = React.useState(false);
+  React.useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  const isAdminUser = hasMounted ? isStoredAdminUser() : false;
   const imageSrc =
     getOptimizedCloudinaryUrl(product.images?.[0]?.url, {
       width: 640,
@@ -130,7 +135,7 @@ const ProductCardPublic: React.FC<ProductCardPublicProps> = ({
             {product.name}
           </Link>
 
-          <p className="mt-1 line-clamp-1 text-[11px] text-slate-500 sm:text-xs">
+          <p className="mt-1 line-clamp-1 text-xs text-slate-500">
             {product.description?.trim() || "Sin descripcion"}
           </p>
         </div>

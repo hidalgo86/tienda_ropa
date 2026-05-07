@@ -3,7 +3,7 @@ import Carrusel from "../../../components/Carrusel/Carrusel";
 import ClientCards from "../../../components/ClientCards";
 import { listProducts } from "@/services/products";
 import { ProductAvailability } from "@/types/domain/products";
-import { siteUrl } from "@/lib/seo";
+import { getRequestBaseUrl } from "@/lib/requestBaseUrl";
 
 export const metadata: Metadata = {
   title: "Ropa, juguetes y articulos para bebes y ninos",
@@ -15,11 +15,12 @@ export const metadata: Metadata = {
 };
 
 export default async function Home() {
+  const baseUrl = await getRequestBaseUrl();
   const featuredProducts = await listProducts({
     page: 1,
     limit: 4,
     availability: ProductAvailability.DISPONIBLE,
-  }, { baseUrl: siteUrl, cache: "no-store" })
+  }, { baseUrl, cache: "no-store" })
     .then((response) => response.items ?? [])
     .catch(() => []);
 

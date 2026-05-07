@@ -51,7 +51,7 @@ const persistGuestFavorites = (favorites: Product[]): void => {
 };
 
 const initialState: FavoriteState = {
-  items: getGuestFavorites(),
+  items: [],
 };
 
 const favoriteSlice = createSlice({
