@@ -127,6 +127,7 @@ export default function Navbar() {
   const displayFav = mounted ? favoritesCount : 0;
   const displayPendingOrders = mounted ? pendingOrdersCount : 0;
   const hasDesktopActions = !isAdmin || !isAuthenticated;
+  const isDashboardPath = pathname.startsWith("/dashboard");
   const desktopNavLinks = [
     ...navLinks,
     ...(isAuthenticated && !isAdmin && PAYMENTS_ENABLED
@@ -301,33 +302,34 @@ export default function Navbar() {
         </div>
       </nav>
 
-      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-pink-200 bg-white shadow-lg lg:hidden">
-        <div className="flex justify-around items-center py-2 px-2">
-          <Link
-            href="/"
-            className={`flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 transition-colors ${
-              isActivePath("/")
-                ? "text-pink-600"
-                : "text-gray-600 hover:text-pink-500"
-            }`}
-          >
-            <div
-              className={`rounded-full p-2 transition-colors ${
+      {!isDashboardPath && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-pink-200 bg-white shadow-lg lg:hidden">
+          <div className="flex justify-around items-center py-2 px-2">
+            <Link
+              href="/"
+              className={`flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 transition-colors ${
                 isActivePath("/")
-                  ? "bg-pink-100 text-pink-600"
-                  : "hover:bg-pink-100"
+                  ? "text-pink-600"
+                  : "text-gray-600 hover:text-pink-500"
               }`}
             >
-              <MdHome size={20} />
-            </div>
-            <span
-              className={`mt-1 w-full truncate text-center text-xs ${
-                isActivePath("/") ? "font-semibold" : "font-normal"
-              }`}
-            >
-              Inicio
-            </span>
-          </Link>
+              <div
+                className={`rounded-full p-2 transition-colors ${
+                  isActivePath("/")
+                    ? "bg-pink-100 text-pink-600"
+                    : "hover:bg-pink-100"
+                }`}
+              >
+                <MdHome size={20} />
+              </div>
+              <span
+                className={`mt-1 w-full truncate text-center text-xs ${
+                  isActivePath("/") ? "font-semibold" : "font-normal"
+                }`}
+              >
+                Inicio
+              </span>
+            </Link>
 
           <Link
             href="/products"
@@ -513,8 +515,9 @@ export default function Navbar() {
               </span>
             </Link>
           )}
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 }

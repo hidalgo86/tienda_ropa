@@ -16,9 +16,7 @@ export default function DashboardLayout({
 }) {
   return (
     <>
-      <div className="hidden lg:block">
-        <Navbar />
-      </div>
+      <Navbar />
       <DashboardLayoutClient>{children}</DashboardLayoutClient>
     </>
   );

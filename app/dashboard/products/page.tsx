@@ -16,7 +16,7 @@ import Pagination from "@/components/Pagination";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import { useAdminProducts } from "./useAdminProducts";
 import { updateProduct } from "@/services/products";
-import { MdAdd, MdInventory2, MdSearch } from "react-icons/md";
+import { MdAdd, MdSearch } from "react-icons/md";
 import { toast } from "sonner";
 import { getErrorMessage } from "@/lib/errorUtils";
 
@@ -239,11 +239,7 @@ const ProductsContent: React.FC = () => {
       <div className="space-y-4">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
-              <MdInventory2 size={16} />
-              Catalogo
-            </div>
-            <h1 className="mt-3 text-2xl font-bold text-slate-900">Productos</h1>
+            <h1 className="text-2xl font-bold text-slate-900">Productos</h1>
           </div>
 
           <button

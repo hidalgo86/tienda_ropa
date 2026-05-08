@@ -9,7 +9,7 @@ import {
 } from "@/services/categories";
 import ConfirmDialog from "@/components/ConfirmDialog";
 import type { Category } from "@/types/domain/products";
-import { MdAdd, MdCategory, MdDelete, MdEdit, MdSave } from "react-icons/md";
+import { MdAdd, MdDelete, MdEdit, MdSave } from "react-icons/md";
 
 interface CategoryFormState {
   name: string;
@@ -186,13 +186,7 @@ export default function DashboardCategoriesPage() {
 
       <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-slate-700">
-            <MdCategory size={16} />
-            Catalogo
-          </div>
-          <h1 className="mt-3 text-2xl font-bold text-slate-900">
-            Categorias
-          </h1>
+          <h1 className="text-2xl font-bold text-slate-900">Categorias</h1>
           <p className="mt-1 text-sm text-slate-600">
             Administra las categorias disponibles para crear y editar productos.
           </p>
