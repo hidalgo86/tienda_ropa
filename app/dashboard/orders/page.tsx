@@ -459,7 +459,7 @@ export default function DashboardOrdersPage() {
                         <td className="px-4 py-4">
                           <Link
                             href={`/dashboard/orders/${order.id}`}
-                            className="line-clamp-1 font-semibold text-slate-900 transition hover:text-pink-600"
+                            className="line-clamp-1 font-semibold text-slate-900 transition hover:text-brand-700"
                           >
                             {order.orderNumber || order.id}
                           </Link>
@@ -490,7 +490,7 @@ export default function DashboardOrdersPage() {
                               href={order.paymentProofUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="mt-1 inline-flex text-xs font-medium text-pink-600 hover:text-pink-700"
+                              className="mt-1 inline-flex text-xs font-medium text-brand-700 hover:text-brand-800"
                             >
                               Ver comprobante
                             </a>
@@ -582,7 +582,7 @@ export default function DashboardOrdersPage() {
                       <div className="min-w-0">
                         <Link
                           href={`/dashboard/orders/${order.id}`}
-                          className="block truncate font-semibold text-slate-900 transition hover:text-pink-600"
+                          className="block truncate font-semibold text-slate-900 transition hover:text-brand-700"
                         >
                           {order.orderNumber || order.id}
                         </Link>
@@ -615,7 +615,7 @@ export default function DashboardOrdersPage() {
                             href={order.paymentProofUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="mt-1 inline-flex text-xs font-medium text-pink-600"
+                            className="mt-1 inline-flex text-xs font-medium text-brand-700"
                           >
                             Ver comprobante
                           </a>

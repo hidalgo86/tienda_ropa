@@ -6,9 +6,9 @@ import { ProductAvailability } from "@/types/domain/products";
 import { getRequestBaseUrl } from "@/lib/requestBaseUrl";
 
 export const metadata: Metadata = {
-  title: "Ropa, juguetes y articulos para bebes y ninos",
+  title: "Ropa, juguetes y artículos para bebés y niños",
   description:
-    "Compra ropa, juguetes y articulos para bebes y ninos en Chikitoslandia.",
+    "Compra ropa, juguetes y artículos para bebés y niños en Chikitoslandia.",
   alternates: {
     canonical: "/",
   },

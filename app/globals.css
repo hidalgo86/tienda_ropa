@@ -8,6 +8,17 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-brand-50: #fdf2f8;
+  --color-brand-100: #fce7f3;
+  --color-brand-200: #fbcfe8;
+  --color-brand-300: #f9a8d4;
+  --color-brand-400: #f472b6;
+  --color-brand-500: #ec4899;
+  --color-brand-600: #db2777;
+  --color-brand-700: #be185d;
+  --color-brand-800: #9d174d;
+  --color-brand-900: #831843;
+  --color-brand-950: #500724;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -117,7 +128,7 @@ body {
   }
 }
 
-/* Mejores estilos para botones de acción en toasts */
+/* Mejores estilos para botones de accion en toasts */
 [data-sonner-toaster] [data-sonner-toast] button {
   padding: 8px 16px !important;
   font-size: 14px !important;
@@ -133,7 +144,7 @@ body {
   }
 }
 
-/* Solución para iconos de cierre y toast icons */
+/* Solucion para iconos de cierre y toast icons */
 [data-sonner-toaster] [data-close-button] {
   position: absolute !important;
   top: 8px !important;
@@ -177,26 +188,26 @@ body {
 }
 
 [data-sonner-toaster] [data-sonner-toast][data-type="error"]::before {
-  content: "❌" !important;
+  content: "!" !important;
   margin-right: 8px !important;
   font-size: 16px !important;
 }
 
 [data-sonner-toaster] [data-sonner-toast][data-type="info"]::before {
-  content: "ℹ️" !important;
+  content: "i" !important;
   margin-right: 8px !important;
   font-size: 16px !important;
 }
 
 [data-sonner-toaster] [data-sonner-toast][data-type="warning"]::before {
-  content: "⚠️" !important;
+  content: "!" !important;
   margin-right: 8px !important;
   font-size: 16px !important;
 }
 
-/* Botón de cierre personalizado con texto */
+/* Boton de cierre personalizado con texto */
 [data-sonner-toaster] [data-close-button]::after {
-  content: "×" !important;
+  content: "x" !important;
   font-size: 18px !important;
   line-height: 1 !important;
   color: #666 !important;

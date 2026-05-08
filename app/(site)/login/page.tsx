@@ -172,21 +172,21 @@ export default function LoginPage() {
             )}
             <div className="flex flex-col items-start mt-2 space-y-1">
               <button
-                className="text-blue-600 text-sm hover:underline"
+                className="text-brand-600 text-sm hover:underline"
                 type="button"
                 onClick={() => router.push("/forgot-password")}
               >
                 Olvide mi contrasena
               </button>
               <button
-                className="text-blue-600 text-sm hover:underline"
+                className="text-brand-600 text-sm hover:underline"
                 type="button"
                 onClick={() => router.push("/forgot-username")}
               >
                 Olvide mi usuario
               </button>
               <button
-                className="text-blue-600 text-sm hover:underline"
+                className="text-brand-600 text-sm hover:underline"
                 type="button"
                 onClick={() => router.push("/register")}
               >

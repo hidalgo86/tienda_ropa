@@ -192,7 +192,7 @@ export default function CheckoutPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto" />
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500 mx-auto" />
           <p className="mt-4 text-gray-600">Preparando checkout...</p>
         </div>
       </div>
@@ -214,7 +214,7 @@ export default function CheckoutPage() {
             <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
               <Link
                 href="/cart"
-                className="px-6 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                className="px-6 py-3 rounded-lg bg-brand-600 text-white hover:bg-brand-700 transition-colors"
               >
                 Volver al carrito
               </Link>
@@ -340,7 +340,7 @@ export default function CheckoutPage() {
             <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
               <Link
                 href="/products"
-                className="px-6 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                className="px-6 py-3 rounded-lg bg-brand-600 text-white hover:bg-brand-700 transition-colors"
               >
                 Seguir comprando
               </Link>
@@ -381,14 +381,14 @@ export default function CheckoutPage() {
           <section className="space-y-6">
             <div className="bg-white rounded-2xl shadow-sm p-6">
               <div className="flex items-center gap-3 mb-4">
-                <MdLocationOn className="text-pink-500" size={24} />
+                <MdLocationOn className="text-brand-600" size={24} />
                 <h2 className="text-xl font-semibold text-gray-900">
                   Metodo de entrega
                 </h2>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
-                <label className="rounded-xl border border-pink-300 bg-pink-50 p-4 text-sm text-pink-950">
+                <label className="rounded-xl border border-brand-300 bg-brand-50 p-4 text-sm text-brand-950">
                   <input
                     type="radio"
                     name="deliveryMethod"
@@ -398,7 +398,7 @@ export default function CheckoutPage() {
                     className="mr-2"
                   />
                   <span className="font-semibold">Retiro en tienda</span>
-                  <p className="mt-2 text-pink-800">{pickupMessage}</p>
+                  <p className="mt-2 text-brand-800">{pickupMessage}</p>
                 </label>
                 <label className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-500">
                   <input
@@ -515,7 +515,7 @@ export default function CheckoutPage() {
 
             <div className="bg-white rounded-2xl shadow-sm p-6">
               <div className="flex items-center gap-3 mb-4">
-                <MdShoppingCart className="text-blue-500" size={24} />
+                <MdShoppingCart className="text-brand-500" size={24} />
                 <h2 className="text-xl font-semibold text-gray-900">
                   Productos
                 </h2>
@@ -527,7 +527,7 @@ export default function CheckoutPage() {
                   <div className="mt-3">
                     <Link
                       href="/products"
-                      className="inline-flex px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                      className="inline-flex px-4 py-2 rounded-lg bg-brand-600 text-white hover:bg-brand-700 transition-colors"
                     >
                       Ir a productos
                     </Link>
@@ -580,7 +580,7 @@ export default function CheckoutPage() {
                   <span className="text-base font-semibold text-gray-900">
                     Total
                   </span>
-                  <span className="text-2xl font-bold text-blue-600">
+                  <span className="text-2xl font-bold text-brand-600">
                     {formatCurrency(cart.totalPrice)}
                   </span>
                 </div>

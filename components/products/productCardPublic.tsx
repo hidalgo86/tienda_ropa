@@ -130,7 +130,7 @@ const ProductCardPublic: React.FC<ProductCardPublicProps> = ({
         <div className="min-w-0">
           <Link
             href={`/products/${product.id}`}
-            className="line-clamp-2 text-sm font-semibold leading-snug text-slate-900 transition hover:text-pink-600 sm:text-base"
+            className="line-clamp-2 text-sm font-semibold leading-snug text-slate-900 transition hover:text-brand-700 sm:text-base"
           >
             {product.name}
           </Link>
@@ -205,7 +205,7 @@ const ProductCardPublic: React.FC<ProductCardPublicProps> = ({
                 onClick={() => onFavorite(product.id)}
                 className={`inline-flex h-9 w-9 items-center justify-center rounded-lg transition ${
                   isFavorite
-                    ? "border border-pink-200 bg-pink-50 text-pink-700 hover:bg-pink-100"
+                    ? "border border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100"
                     : "border border-slate-300 text-slate-700 hover:bg-slate-50"
                 }`}
                 title={isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"}

@@ -457,7 +457,7 @@ export default function DashboardOrderDetailPage() {
                     href={order.paymentProofUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="font-medium text-pink-600 hover:text-pink-700"
+                    className="font-medium text-brand-700 hover:text-brand-800"
                   >
                     Ver imagen
                   </a>

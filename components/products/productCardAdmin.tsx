@@ -148,7 +148,7 @@ const ProductCardAdmin: React.FC<ProductCardAdminProps> = ({
           <button
             onClick={() => onRestore(product.id)}
             disabled={isActionLoading}
-            className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full shadow disabled:opacity-60 disabled:cursor-not-allowed"
+            className="bg-brand-600 hover:bg-brand-700 text-white p-2 rounded-full shadow disabled:opacity-60 disabled:cursor-not-allowed"
             title="Restablecer producto"
             aria-label="Restablecer producto"
           >

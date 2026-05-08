@@ -208,7 +208,7 @@ export default function DashboardCategoriesPage() {
           <input
             value={form.name}
             onChange={(event) => handleNameChange(event.target.value)}
-            placeholder="Ej. Ropa bebe"
+            placeholder="Ej. Ropa bebé"
             className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm outline-none transition focus:border-slate-400"
           />
         </label>

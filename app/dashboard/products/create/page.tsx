@@ -437,7 +437,7 @@ const CreateProductPage: React.FC = () => {
       <button
         type="button"
         onClick={() => router.push("/dashboard/products")}
-        className="flex items-center gap-2 text-gray-600 hover:text-pink-500 transition-colors mb-4"
+        className="flex items-center gap-2 text-gray-600 hover:text-brand-600 transition-colors mb-4"
       >
         <span aria-hidden="true">&lt;</span>
         <span className="text-sm font-medium">Volver</span>
@@ -520,7 +520,7 @@ const CreateProductPage: React.FC = () => {
                 type="button"
                 aria-label="Tomar foto"
                 title="Tomar foto"
-                className="group relative bg-white/90 hover:bg-white text-blue-600 hover:text-blue-700 rounded-full p-2 shadow backdrop-blur"
+                className="group relative bg-white/90 hover:bg-white text-brand-600 hover:text-brand-700 rounded-full p-2 shadow backdrop-blur"
                 onClick={openCamera}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
@@ -891,7 +891,7 @@ const CreateProductPage: React.FC = () => {
         )}
         <button
           type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          className="bg-brand-600 text-white px-4 py-2 rounded hover:bg-brand-700"
           disabled={loading}
         >
           {loading ? "Creando..." : "Crear Producto"}

@@ -55,7 +55,7 @@ export default function ProductSearchBar({
           role="searchbox"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-24 text-sm text-slate-800 outline-none transition focus:border-pink-300 focus:ring-4 focus:ring-pink-100"
+          className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-11 pr-24 text-sm text-slate-800 outline-none transition focus:border-brand-300 focus:ring-4 focus:ring-brand-100"
           placeholder="Buscar productos"
         />
         <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">

@@ -20,14 +20,14 @@ const SidebarMobile: React.FC<SidebarMobileProps> = ({
           href={item.href}
           className={`flex flex-col items-center py-2 px-1 rounded-lg transition-all duration-200 ${
             activeOption === item.alt
-              ? "text-blue-600"
+              ? "text-brand-700"
               : "text-gray-600 active:text-gray-900 hover:text-gray-800"
           }`}
         >
           <div
             className={`p-1.5 rounded-full transition-colors ${
               activeOption === item.alt
-                ? "bg-blue-100"
+                ? "bg-brand-100"
                 : "hover:bg-gray-100 active:bg-gray-200"
             }`}
           >

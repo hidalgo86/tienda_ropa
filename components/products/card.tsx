@@ -110,7 +110,7 @@ function Card({
           {onAddToCart && (
             <button
               onClick={() => onAddToCart(product.id)}
-              className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-full shadow focus:outline-none"
+              className="bg-brand-500 hover:bg-brand-600 text-white p-2 rounded-full shadow focus:outline-none"
               title="Agregar al carrito"
               aria-label="Agregar al carrito"
             >
@@ -120,7 +120,7 @@ function Card({
           {onFavorite && (
             <button
               onClick={() => onFavorite(product.id)}
-              className="bg-pink-500 hover:bg-pink-600 text-white p-2 rounded-full shadow focus:outline-none"
+              className="bg-brand-500 hover:bg-brand-600 text-white p-2 rounded-full shadow focus:outline-none"
               title="Agregar a favoritos"
               aria-label="Agregar a favoritos"
             >
@@ -141,7 +141,7 @@ function Card({
       {isEliminado && onRestore && (
         <button
           onClick={() => onRestore(product.id)}
-          className="absolute bottom-2 right-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded shadow text-xs font-medium"
+          className="absolute bottom-2 right-2 bg-brand-600 hover:bg-brand-700 text-white px-3 py-1 rounded shadow text-xs font-medium"
           title="Restablecer producto"
           aria-label="Restablecer producto"
         >

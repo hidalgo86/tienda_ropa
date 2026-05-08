@@ -139,7 +139,7 @@ export default function OrdersClient() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500 mx-auto"></div>
           <p className="mt-4 text-gray-600">Cargando tus pedidos...</p>
         </div>
       </div>
@@ -172,7 +172,7 @@ export default function OrdersClient() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <MdReceiptLong className="text-pink-600" />
+              <MdReceiptLong className="text-brand-700" />
               Mis Pedidos
             </h1>
             <p className="mt-2 text-gray-600">
@@ -223,7 +223,7 @@ export default function OrdersClient() {
             </p>
             <Link
               href="/products"
-              className="mt-6 inline-flex px-5 py-3 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+              className="mt-6 inline-flex px-5 py-3 rounded-lg bg-brand-600 text-white hover:bg-brand-700 transition-colors"
             >
               Explorar productos
             </Link>
@@ -297,7 +297,7 @@ export default function OrdersClient() {
                     </div>
                     <div>
                       <p className="text-gray-500">Total</p>
-                      <p className="text-lg font-bold text-blue-600">
+                      <p className="text-lg font-bold text-brand-600">
                         {formatCurrency(order.totalAmount)}
                       </p>
                     </div>

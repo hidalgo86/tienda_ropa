@@ -104,7 +104,7 @@ export default function CartClient() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <MdShoppingBag className="text-blue-500" />
+              <MdShoppingBag className="text-brand-500" />
               Mi Carrito
             </h1>
             <p className="text-gray-600 mt-1">
@@ -127,7 +127,7 @@ export default function CartClient() {
         </div>
 
         {items.length > 0 && (
-          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+          <div className="mb-6 bg-brand-50 border border-brand-200 rounded-lg p-4 text-sm text-brand-800">
             {isAuthenticated
               ? "Tu carrito esta vinculado a tu cuenta."
               : "Tu carrito se guarda en este dispositivo. Al iniciar sesion se sincronizara con tu cuenta."}
@@ -146,7 +146,7 @@ export default function CartClient() {
               </p>
               <Link
                 href="/products"
-                className="inline-block px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+                className="inline-block px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors font-medium"
               >
                 Explorar productos
               </Link>
@@ -205,7 +205,7 @@ export default function CartClient() {
                               )}
                             </div>
 
-                            <p className="text-blue-600 font-semibold mt-2">
+                            <p className="text-brand-600 font-semibold mt-2">
                               {formatPrice(itemPrice)} c/u
                             </p>
                           </div>
@@ -295,7 +295,7 @@ export default function CartClient() {
                   <div className="border-t pt-3">
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-semibold">Total</span>
-                      <span className="text-xl font-bold text-blue-600">
+                      <span className="text-xl font-bold text-brand-600">
                         {formatPrice(totalPrice)}
                       </span>
                     </div>
@@ -306,7 +306,7 @@ export default function CartClient() {
                   {PAYMENTS_ENABLED ? (
                     <Link
                       href="/checkout"
-                      className="w-full block text-center px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
+                      className="w-full block text-center px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors font-medium"
                     >
                       Proceder al pago
                     </Link>

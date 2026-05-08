@@ -337,7 +337,7 @@ export default function AccountClient() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500 mx-auto"></div>
           <p className="mt-4 text-gray-600">Cargando tu cuenta...</p>
         </div>
       </div>
@@ -474,7 +474,7 @@ export default function AccountClient() {
             {!isAdminUser && PAYMENTS_ENABLED && (
               <div className="bg-white shadow rounded-lg">
                 <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-2">
-                  <MdReceiptLong className="text-pink-600" size={20} />
+                  <MdReceiptLong className="text-brand-700" size={20} />
                   <h3 className="text-lg font-medium text-gray-900">
                     Mis pedidos
                   </h3>
@@ -593,7 +593,7 @@ export default function AccountClient() {
 
                   <button
                     type="submit"
-                    className="inline-flex w-full items-center justify-center rounded-md bg-pink-600 px-4 py-2 text-white hover:bg-pink-700 disabled:opacity-60 sm:w-auto"
+                    className="inline-flex w-full items-center justify-center rounded-md bg-brand-600 px-4 py-2 text-white hover:bg-brand-700 disabled:opacity-60 sm:w-auto"
                     disabled={isSavingProfile}
                   >
                     {isSavingProfile ? "Guardando..." : "Guardar perfil"}

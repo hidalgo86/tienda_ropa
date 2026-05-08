@@ -258,7 +258,7 @@ export default function DashboardClientsPage() {
                         <td className="px-4 py-4">
                           <Link
                             href={`/dashboard/clients/${encodeURIComponent(user.username)}`}
-                            className="font-semibold text-slate-900 transition hover:text-pink-600"
+                            className="font-semibold text-slate-900 transition hover:text-brand-700"
                           >
                             {user.username}
                           </Link>
@@ -332,7 +332,7 @@ export default function DashboardClientsPage() {
                       <div className="min-w-0">
                         <Link
                           href={`/dashboard/clients/${encodeURIComponent(user.username)}`}
-                          className="block truncate font-semibold text-slate-900 transition hover:text-pink-600"
+                          className="block truncate font-semibold text-slate-900 transition hover:text-brand-700"
                         >
                           {user.username}
                         </Link>

@@ -173,7 +173,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="sticky top-0 z-40 border-b border-pink-200 bg-pink-50/95 shadow-md backdrop-blur supports-[backdrop-filter]:bg-pink-50/90">
+      <nav className="sticky top-0 z-40 border-b border-brand-200 bg-brand-50/95 shadow-md backdrop-blur supports-[backdrop-filter]:bg-brand-50/90">
         <div className="relative flex h-20 w-full items-center justify-center overflow-hidden px-4 sm:h-20 sm:justify-between sm:px-5 lg:grid lg:h-20 lg:grid-cols-[minmax(240px,320px)_minmax(0,1fr)_auto] lg:gap-5 lg:px-6 xl:h-24 xl:grid-cols-[minmax(260px,350px)_minmax(0,1fr)_auto] xl:gap-7 xl:px-8">
           <Link
             href="/"
@@ -196,15 +196,15 @@ export default function Navbar() {
               title={isAuthenticated ? "Mi cuenta" : "Login"}
               className={`absolute right-4 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full transition-colors lg:hidden ${
                 isActivePath(isAuthenticated ? "/account" : "/login")
-                  ? "bg-pink-100 text-pink-600"
-                  : "text-gray-600 hover:bg-pink-100 hover:text-pink-600"
+                  ? "bg-brand-100 text-brand-700"
+                  : "text-gray-600 hover:bg-brand-100 hover:text-brand-700"
               }`}
             >
               {isAuthenticated ? <MdPerson size={24} /> : <MdLogin size={24} />}
               {isAuthenticated && (
                 <span
                   aria-label="Sesion activa"
-                  className="absolute right-1 top-1 h-3 w-3 rounded-full border-2 border-pink-50 bg-emerald-500"
+                  className="absolute right-1 top-1 h-3 w-3 rounded-full border-2 border-brand-50 bg-emerald-500"
                 />
               )}
               <span className="sr-only">
@@ -215,7 +215,7 @@ export default function Navbar() {
 
           <div
             className={`hidden min-w-0 items-center justify-center gap-2 overflow-hidden pr-4 lg:flex xl:gap-3 xl:pr-6 ${
-              hasDesktopActions ? "border-r border-pink-200" : ""
+              hasDesktopActions ? "border-r border-brand-200" : ""
             }`}
           >
             {desktopNavLinks.map((link) => (
@@ -224,8 +224,8 @@ export default function Navbar() {
                 href={link.href}
                 className={`flex min-w-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-2 text-sm font-semibold transition-colors xl:gap-2 xl:px-3 xl:text-base ${
                   isActivePath(link.href)
-                    ? "bg-pink-100 text-pink-700"
-                    : "text-gray-700 hover:bg-pink-100 hover:text-pink-600"
+                    ? "bg-brand-100 text-brand-800"
+                    : "text-gray-700 hover:bg-brand-100 hover:text-brand-700"
                 }`}
               >
                 <span className="shrink-0 text-lg xl:text-xl">{link.icon}</span>
@@ -242,13 +242,13 @@ export default function Navbar() {
                   title="Favoritos"
                   className={`relative inline-flex h-9 items-center gap-1.5 rounded-lg border px-2.5 text-sm font-medium transition-colors ${
                     isActivePath("/favorites")
-                      ? "border-pink-200 bg-pink-100 text-pink-700"
-                      : "border-pink-200 bg-white/70 text-gray-700 hover:bg-pink-100 hover:text-pink-700"
+                      ? "border-brand-200 bg-brand-100 text-brand-700"
+                      : "border-brand-200 bg-white/70 text-gray-700 hover:bg-brand-100 hover:text-brand-700"
                   }`}
                 >
                   <MdFavorite
                     size={20}
-                    className="shrink-0 text-pink-500"
+                    className="shrink-0 text-brand-500"
                   />
                   <span>Favoritos</span>
                   {displayFav > 0 && (
@@ -263,17 +263,17 @@ export default function Navbar() {
                   title="Carrito"
                   className={`relative inline-flex h-9 items-center gap-1.5 rounded-lg border px-2.5 text-sm font-medium transition-colors ${
                     isActivePath("/cart")
-                      ? "border-sky-200 bg-sky-100 text-sky-700"
-                      : "border-sky-200 bg-white/70 text-gray-700 hover:bg-sky-100 hover:text-sky-700"
+                      ? "border-brand-200 bg-brand-100 text-brand-700"
+                      : "border-brand-200 bg-white/70 text-gray-700 hover:bg-brand-100 hover:text-brand-700"
                   }`}
                 >
                   <MdShoppingCart
                     size={20}
-                    className="shrink-0 text-sky-500"
+                    className="shrink-0 text-brand-500"
                   />
                   <span>Carrito</span>
                   {displayCart > 0 && (
-                    <span className="absolute -right-2 -top-2 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-pink-500 px-1.5 text-xs text-white">
+                    <span className="absolute -right-2 -top-2 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-brand-500 px-1.5 text-xs text-white">
                       {displayCart}
                     </span>
                   )}
@@ -303,21 +303,21 @@ export default function Navbar() {
       </nav>
 
       {!isDashboardPath && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-pink-200 bg-white shadow-lg lg:hidden">
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-brand-200 bg-white shadow-lg lg:hidden">
           <div className="flex justify-around items-center py-2 px-2">
             <Link
               href="/"
               className={`flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 transition-colors ${
                 isActivePath("/")
-                  ? "text-pink-600"
-                  : "text-gray-600 hover:text-pink-500"
+                  ? "text-brand-700"
+                  : "text-gray-600 hover:text-brand-600"
               }`}
             >
               <div
                 className={`rounded-full p-2 transition-colors ${
                   isActivePath("/")
-                    ? "bg-pink-100 text-pink-600"
-                    : "hover:bg-pink-100"
+                    ? "bg-brand-100 text-brand-700"
+                    : "hover:bg-brand-100"
                 }`}
               >
                 <MdHome size={20} />
@@ -335,15 +335,15 @@ export default function Navbar() {
             href="/products"
             className={`flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 transition-colors ${
               isActivePath("/products")
-                ? "text-pink-600"
-                : "text-gray-600 hover:text-pink-500"
+                ? "text-brand-700"
+                : "text-gray-600 hover:text-brand-600"
             }`}
           >
             <div
               className={`rounded-full p-2 transition-colors ${
                 isActivePath("/products")
-                  ? "bg-pink-100 text-pink-600"
-                  : "hover:bg-pink-100"
+                  ? "bg-brand-100 text-brand-700"
+                  : "hover:bg-brand-100"
               }`}
             >
               <MdStore size={20} />
@@ -363,15 +363,15 @@ export default function Navbar() {
                 href="/favorites"
                 className={`relative flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 transition-colors ${
                   isActivePath("/favorites")
-                    ? "text-pink-600"
-                    : "text-gray-600 hover:text-pink-500"
+                    ? "text-brand-600"
+                    : "text-gray-600 hover:text-brand-500"
                 }`}
               >
                 <div
                   className={`relative rounded-full p-2 transition-colors ${
                     isActivePath("/favorites")
-                      ? "bg-pink-100 text-pink-600"
-                      : "hover:bg-pink-100"
+                      ? "bg-brand-100 text-brand-600"
+                      : "hover:bg-brand-100"
                   }`}
                 >
                   <MdFavorite size={20} />
@@ -394,20 +394,20 @@ export default function Navbar() {
                 href="/cart"
                 className={`relative flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 transition-colors ${
                   isActivePath("/cart")
-                    ? "text-pink-600"
-                    : "text-gray-600 hover:text-pink-500"
+                    ? "text-brand-700"
+                    : "text-gray-600 hover:text-brand-600"
                 }`}
               >
                 <div
                   className={`relative rounded-full p-2 transition-colors ${
                     isActivePath("/cart")
-                      ? "bg-pink-100 text-pink-600"
-                      : "hover:bg-pink-100"
+                      ? "bg-brand-100 text-brand-700"
+                      : "hover:bg-brand-100"
                   }`}
                 >
                   <MdShoppingCart size={20} />
                   {displayCart > 0 && (
-                    <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-pink-500 text-xs text-white">
+                    <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-brand-500 text-xs text-white">
                       {displayCart > 9 ? "9+" : displayCart}
                     </span>
                   )}
@@ -429,15 +429,15 @@ export default function Navbar() {
                 href="/dashboard/orders"
                 className={`relative flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 transition-colors ${
                   isActivePath("/dashboard/orders")
-                    ? "text-pink-600"
-                    : "text-gray-600 hover:text-pink-500"
+                    ? "text-brand-700"
+                    : "text-gray-600 hover:text-brand-600"
                 }`}
               >
                 <div
                   className={`relative rounded-full p-2 transition-colors ${
                     isActivePath("/dashboard/orders")
-                      ? "bg-pink-100 text-pink-600"
-                      : "hover:bg-pink-100"
+                      ? "bg-brand-100 text-brand-700"
+                      : "hover:bg-brand-100"
                   }`}
                 >
                   <MdReceiptLong size={20} />
@@ -462,15 +462,15 @@ export default function Navbar() {
                 href="/dashboard/products"
                 className={`flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 transition-colors ${
                   isActivePath("/dashboard/products")
-                    ? "text-pink-600"
-                    : "text-gray-600 hover:text-pink-500"
+                    ? "text-brand-700"
+                    : "text-gray-600 hover:text-brand-600"
                 }`}
               >
                 <div
                   className={`rounded-full p-2 transition-colors ${
                     isActivePath("/dashboard/products")
-                      ? "bg-pink-100 text-pink-600"
-                      : "hover:bg-pink-100"
+                      ? "bg-brand-100 text-brand-700"
+                      : "hover:bg-brand-100"
                   }`}
                 >
                   <MdBarChart size={20} />
@@ -493,15 +493,15 @@ export default function Navbar() {
               href="/orders"
               className={`flex min-w-0 flex-1 flex-col items-center rounded-lg px-1 py-2 transition-colors ${
                 isActivePath("/orders")
-                  ? "text-pink-600"
-                  : "text-gray-600 hover:text-pink-500"
+                  ? "text-brand-700"
+                  : "text-gray-600 hover:text-brand-600"
               }`}
             >
               <div
                 className={`rounded-full p-2 transition-colors ${
                   isActivePath("/orders")
-                    ? "bg-pink-100 text-pink-600"
-                    : "hover:bg-pink-100"
+                    ? "bg-brand-100 text-brand-700"
+                    : "hover:bg-brand-100"
                 }`}
               >
                 <MdReceiptLong size={20} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Product,
   ProductAvailability,
@@ -24,31 +24,42 @@ export default function Cards({ initialProducts = [] }: CardsProps) {
   const { addProductToCart } = useCartActions();
   const { toggleProductFavorite } = useFavoriteActions();
 
-  const loadProducts = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const response = await listProducts({
-        page: 1,
-        limit: 20,
-        availability: ProductAvailability.DISPONIBLE,
-      });
-      setProductos(response.items ?? []);
-    } catch (err) {
-      reportClientError("Error cargando productos:", err);
-      setError("Error al cargar los productos");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loadProducts = useCallback(
+    async (showLoader = false, showError = false) => {
+      try {
+        if (showLoader) {
+          setLoading(true);
+        }
+        setError(null);
+        const response = await listProducts({
+          page: 1,
+          limit: 20,
+          availability: ProductAvailability.DISPONIBLE,
+        });
+        setProductos(response.items ?? []);
+      } catch (err) {
+        reportClientError("Error cargando productos:", err);
+        if (showError) {
+          setError("Error al cargar los productos");
+        }
+      } finally {
+        setLoading(false);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
-    loadProducts();
+    if (initialProducts.length === 0) {
+      void loadProducts(true, true);
+    }
 
-    const interval = setInterval(() => loadProducts(), 30000);
+    const interval = setInterval(() => {
+      void loadProducts(false);
+    }, 120000);
 
     const handleFocus = () => {
-      loadProducts();
+      void loadProducts(false);
     };
 
     window.addEventListener("focus", handleFocus);
@@ -57,7 +68,7 @@ export default function Cards({ initialProducts = [] }: CardsProps) {
       clearInterval(interval);
       window.removeEventListener("focus", handleFocus);
     };
-  }, []);
+  }, [initialProducts.length, loadProducts]);
 
   if (loading) {
     return (
@@ -76,8 +87,8 @@ export default function Cards({ initialProducts = [] }: CardsProps) {
         <div className="max-w-md mx-auto px-4">
           <p className="text-red-600 text-sm sm:text-base mb-4">{error}</p>
           <button
-            onClick={() => loadProducts()}
-            className="w-full sm:w-auto px-4 py-2 sm:px-6 sm:py-3 bg-blue-600 text-white text-sm sm:text-base rounded-lg hover:bg-blue-700 transition-colors"
+            onClick={() => loadProducts(true, true)}
+            className="w-full sm:w-auto px-4 py-2 sm:px-6 sm:py-3 bg-brand-600 text-white text-sm sm:text-base rounded-lg hover:bg-brand-700 transition-colors"
           >
             Reintentar
           </button>
@@ -104,10 +115,10 @@ export default function Cards({ initialProducts = [] }: CardsProps) {
       variants.find((v) => (v.stock || 0) > 0) || variants[0];
     const variantName = getVariantName(selectedVariant);
     void addProductToCart({
-        product: producto,
-        quantity: 1,
-        selectedSize: variantName || undefined,
-      });
+      product: producto,
+      quantity: 1,
+      selectedSize: variantName || undefined,
+    });
   };
 
   const handleFavorite = (id: string) => {
@@ -136,7 +147,7 @@ export default function Cards({ initialProducts = [] }: CardsProps) {
       <div className="flex justify-center sm:justify-start">
         <Link
           href="/products"
-          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow hover:bg-blue-700 sm:w-auto sm:px-6 sm:text-base"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-3 text-sm font-semibold text-white shadow hover:bg-brand-700 sm:w-auto sm:px-6 sm:text-base"
           aria-label="Ver todos los productos"
         >
           Ver todos

@@ -160,7 +160,7 @@ export default function OrderDetailPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500 mx-auto"></div>
           <p className="mt-4 text-gray-600">Cargando pedido...</p>
         </div>
       </div>
@@ -245,7 +245,7 @@ export default function OrderDetailPage() {
             </div>
             <div>
               <p className="text-sm text-gray-500">Total</p>
-              <p className="text-2xl font-bold text-blue-600">
+              <p className="text-2xl font-bold text-brand-600">
                 {formatCurrency(order.totalAmount)}
               </p>
             </div>
@@ -380,7 +380,7 @@ export default function OrderDetailPage() {
                   </p>
                   <Link
                     href={`/products/${item.productId}`}
-                    className="inline-flex items-center gap-1 text-sm font-medium text-pink-600 hover:text-pink-700"
+                    className="inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:text-brand-800"
                   >
                     Ver producto
                     <MdOpenInNew size={16} />

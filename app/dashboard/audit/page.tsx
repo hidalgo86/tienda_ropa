@@ -189,7 +189,7 @@ const badgeClass = (action: string): string => {
     normalizedAction.includes("paid") ||
     normalizedAction.includes("changed")
   ) {
-    return "bg-blue-50 text-blue-700";
+    return "bg-brand-50 text-brand-700";
   }
 
   if (

@@ -120,7 +120,7 @@ const ProductListAdmin: React.FC<ProductListAdminProps> = ({
                       <div className="min-w-0">
                         <Link
                           href={`/dashboard/products/${product.id}`}
-                          className="line-clamp-1 font-semibold text-slate-900 transition hover:text-pink-600"
+                          className="line-clamp-1 font-semibold text-slate-900 transition hover:text-brand-700"
                         >
                           {product.name}
                         </Link>
@@ -210,7 +210,7 @@ const ProductListAdmin: React.FC<ProductListAdminProps> = ({
                           type="button"
                           onClick={() => onRestore(product.id)}
                           disabled={isBusy}
-                          className="rounded-lg border border-blue-200 px-3 py-2 text-xs font-medium text-blue-700 transition hover:bg-blue-50 disabled:opacity-60"
+                          className="rounded-lg border border-brand-200 px-3 py-2 text-xs font-medium text-brand-700 transition hover:bg-brand-50 disabled:opacity-60"
                         >
                           Restaurar
                         </button>
@@ -249,7 +249,7 @@ const ProductListAdmin: React.FC<ProductListAdminProps> = ({
                   <div className="flex items-start justify-between gap-3">
                     <Link
                       href={`/dashboard/products/${product.id}`}
-                      className="line-clamp-2 font-semibold text-slate-900 transition hover:text-pink-600"
+                      className="line-clamp-2 font-semibold text-slate-900 transition hover:text-brand-700"
                     >
                       {product.name}
                     </Link>
@@ -349,7 +349,7 @@ const ProductListAdmin: React.FC<ProductListAdminProps> = ({
                     type="button"
                     onClick={() => onRestore(product.id)}
                     disabled={isBusy}
-                    className="rounded-lg border border-blue-200 px-3 py-2 text-xs font-medium text-blue-700 transition hover:bg-blue-50 disabled:opacity-60"
+                    className="rounded-lg border border-brand-200 px-3 py-2 text-xs font-medium text-brand-700 transition hover:bg-brand-50 disabled:opacity-60"
                   >
                     Restaurar
                   </button>

@@ -324,7 +324,7 @@ export default function ProductDetailClient({
       <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-wrap items-center justify-between gap-2">
           <button
-            className="flex items-center gap-2 text-gray-600 hover:text-pink-500 transition-colors"
+            className="flex items-center gap-2 text-gray-600 hover:text-brand-600 transition-colors"
             onClick={() =>
               isAdminMode ? router.push("/dashboard/products") : router.back()
             }
@@ -385,7 +385,7 @@ export default function ProductDetailClient({
                         onClick={() => setSelectedImageIndex(idx)}
                         className={`relative w-16 h-16 rounded-md overflow-hidden border-2 shrink-0 ${
                           isSelected
-                            ? "border-pink-500"
+                            ? "border-brand-500"
                             : "border-gray-200 hover:border-gray-300"
                         }`}
                         aria-label={`Ver imagen ${idx + 1}`}
@@ -453,7 +453,7 @@ export default function ProductDetailClient({
                   {producto.name}
                 </h1>
                 <div className="flex items-center gap-4 mb-4">
-                  <span className="text-3xl font-bold text-pink-600">
+                  <span className="text-3xl font-bold text-brand-700">
                     ${Number(displayPrice || 0).toFixed(2)}
                   </span>
                   {isAdminMode && displayStatus && (
@@ -562,9 +562,9 @@ export default function ProductDetailClient({
                           disabled={!hasStock}
                           className={`p-3 border rounded-lg text-sm font-medium transition-colors ${
                             isSelected && hasStock
-                              ? "border-pink-500 bg-pink-50 text-pink-700"
+                              ? "border-brand-500 bg-brand-50 text-brand-800"
                               : hasStock
-                                ? "border-gray-300 hover:border-pink-400 hover:bg-pink-50"
+                                ? "border-gray-300 hover:border-brand-400 hover:bg-brand-50"
                                 : "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed"
                           }`}
                         >
@@ -590,7 +590,7 @@ export default function ProductDetailClient({
                           {formatVariantLabel(selectedSize)}
                         </span>{" "}
                         - Precio:{" "}
-                        <span className="font-medium text-pink-600">
+                        <span className="font-medium text-brand-700">
                           ${Number(currentVariant.price).toFixed(2)}
                         </span>
                       </div>

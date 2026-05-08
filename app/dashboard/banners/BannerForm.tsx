@@ -100,7 +100,7 @@ export default function BannerForm({
                 type="button"
                 aria-label="Tomar foto con camara"
                 title="Camara"
-                className="group relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-blue-600 shadow backdrop-blur transition hover:bg-white hover:text-blue-700"
+                className="group relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-brand-600 shadow backdrop-blur transition hover:bg-white hover:text-brand-700"
                 onClick={openCamera}
               >
                 <span className="pointer-events-none absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus:opacity-100">

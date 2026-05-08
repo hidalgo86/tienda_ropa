@@ -211,7 +211,7 @@ function DashboardLayoutContent({
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
         <div className="text-center">
-          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-pink-500" />
+          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-brand-500" />
           <p className="mt-4 text-sm font-medium text-gray-600">
             Preparando dashboard...
           </p>

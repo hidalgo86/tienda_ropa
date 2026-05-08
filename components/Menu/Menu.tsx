@@ -15,8 +15,7 @@ export default function Home() {
 
   return (
     <div
-      style={{ backgroundColor: "#C39AFA" }}
-      className="hidden sm:flex justify-center gap-x-26 pr-10 pl-10 sm:pr-20 sm:pl-20 xl:pr-30 xl:pl-30"
+      className="hidden justify-center gap-x-26 bg-brand-300 pr-10 pl-10 sm:flex sm:pr-20 sm:pl-20 xl:pr-30 xl:pl-30"
     >
       {imagenes.map((img, idx) => (
         <div
@@ -33,24 +32,18 @@ export default function Home() {
         </div>
       ))}
       <div
-        className="flex items-center rounded-lg px-3 py-2 mt-5 mb-5 justify-center search-container bg-[#8AEAFB] hover:bg-[#E6F7FF]"
+        className="mt-5 mb-5 flex items-center justify-center rounded-lg bg-white/80 px-3 py-2 hover:bg-brand-50"
         style={{ minWidth: 180 }}
       >
-        <FaSearch size={22} className="mr-2 search-icon" />
+        <FaSearch
+          size={22}
+          className="mr-2 text-gray-700 transition-colors"
+        />
         <input
           type="text"
           placeholder="Buscar"
           className="bg-transparent outline-none text-gray-700 placeholder-gray-400 w-full"
         />
-        <style jsx>{`
-          .search-icon {
-            color: #333;
-            transition: color 0.2s;
-          }
-          .search-container:hover .search-icon {
-            color: #0074d9;
-          }
-        `}</style>
       </div>
     </div>
   );

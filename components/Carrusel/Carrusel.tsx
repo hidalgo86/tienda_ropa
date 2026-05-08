@@ -73,7 +73,7 @@ export default function Carrusel() {
         <div
           className="w-full
                       h-[200px] min-[420px]:h-[240px] sm:h-[280px] lg:h-[400px] xl:h-[480px]
-                      bg-pink-50"
+                      bg-brand-50"
         />
       </div>
     );
@@ -101,7 +101,7 @@ export default function Carrusel() {
       <div
         className="w-full 
                       h-[200px] min-[420px]:h-[240px] sm:h-[280px] lg:h-[400px] xl:h-[480px] 
-                      bg-pink-50 flex items-center justify-center relative"
+                      bg-brand-50 flex items-center justify-center relative"
       >
         {currentImage.href ? (
           <a
@@ -147,7 +147,7 @@ export default function Carrusel() {
               {currentImage.href && currentImage.ctaLabel && (
                 <a
                   href={currentImage.href}
-                  className="mt-4 inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-gray-900 transition-colors hover:bg-pink-100 sm:px-5 sm:py-2.5 sm:text-base"
+                  className="mt-4 inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-gray-900 transition-colors hover:bg-brand-100 sm:px-5 sm:py-2.5 sm:text-base"
                 >
                   {currentImage.ctaLabel}
                 </a>
@@ -165,7 +165,7 @@ export default function Carrusel() {
                      left-2 sm:left-4 lg:left-6 
                      -translate-y-1/2 
                      hidden min-[420px]:inline-flex
-                     bg-pink-200 hover:bg-pink-300 active:bg-pink-400
+                     bg-brand-200 hover:bg-brand-300 active:bg-brand-400
                      text-gray-700 
                      rounded-full 
                      p-1.5 sm:p-2 lg:p-3
@@ -184,7 +184,7 @@ export default function Carrusel() {
                      right-2 sm:right-4 lg:right-6 
                      -translate-y-1/2 
                      hidden min-[420px]:inline-flex
-                     bg-pink-200 hover:bg-pink-300 active:bg-pink-400
+                     bg-brand-200 hover:bg-brand-300 active:bg-brand-400
                      text-gray-700 
                      rounded-full 
                      p-1.5 sm:p-2 lg:p-3
@@ -212,8 +212,8 @@ export default function Carrusel() {
                   rounded-full transition-all duration-300
                   ${
                     idx === actual
-                      ? "bg-pink-500 scale-110"
-                      : "bg-pink-200 hover:bg-pink-300"
+                      ? "bg-brand-500 scale-110"
+                      : "bg-brand-200 hover:bg-brand-300"
                   }
                 `}
                 aria-label={`Ir a imagen ${idx + 1}`}

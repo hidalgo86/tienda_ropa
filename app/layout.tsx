@@ -13,11 +13,11 @@ export const metadata: Metadata = {
     template: "%s | Chikitoslandia",
   },
   description:
-    "Tienda online de ropa, juguetes y articulos para bebes y ninos.",
+    "Tienda online de ropa, juguetes y artículos para bebés y niños.",
   openGraph: {
     title: "Chikitoslandia",
     description:
-      "Ropa, juguetes y articulos para bebes y ninos en una tienda online pensada para la familia.",
+      "Ropa, juguetes y artículos para bebés y niños en una tienda online pensada para la familia.",
     url: "/",
     siteName: "Chikitoslandia",
     images: [
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
         url: "/chikitoslandia-og.png",
         width: 1730,
         height: 909,
-        alt: "Chikitoslandia tienda online para bebes",
+        alt: "Chikitoslandia tienda online para bebés",
       },
     ],
     locale: "es_ES",
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Chikitoslandia",
     description:
-      "Ropa, juguetes y articulos para bebes y ninos en una tienda online pensada para la familia.",
+      "Ropa, juguetes y artículos para bebés y niños en una tienda online pensada para la familia.",
     images: ["/chikitoslandia-og.png"],
   },
   other: {

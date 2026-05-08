@@ -19,7 +19,7 @@ const SidebarDesktop: React.FC<SidebarDesktopProps> = ({
           href={item.href}
           className={`flex flex-col items-center w-full p-2 lg:p-3 rounded-lg transition-all duration-200 ${
             activeOption === item.alt
-              ? "bg-blue-100 text-blue-600 font-semibold shadow-sm"
+              ? "bg-brand-100 text-brand-700 font-semibold shadow-sm"
               : "hover:bg-gray-100 text-gray-700 hover:shadow-sm"
           }`}
         >

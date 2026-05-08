@@ -274,7 +274,7 @@ export default function DashboardBannersPage() {
                 onDrop={() => void handleDrop(banner.id)}
                 className={`rounded-2xl border bg-white p-4 shadow-sm transition ${
                   isDragging
-                    ? "border-pink-300 opacity-70"
+                    ? "border-brand-300 opacity-70"
                     : "border-slate-200 hover:border-slate-300"
                 }`}
               >

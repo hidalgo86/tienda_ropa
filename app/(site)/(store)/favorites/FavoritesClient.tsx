@@ -121,7 +121,7 @@ export default function FavoritesClient() {
               </p>
               <Link
                 href="/products"
-                className="inline-block px-6 py-3 bg-pink-500 text-white rounded-lg hover:bg-pink-600 transition-colors font-medium"
+                className="inline-block px-6 py-3 bg-brand-500 text-white rounded-lg hover:bg-brand-600 transition-colors font-medium"
               >
                 Explorar productos
               </Link>
@@ -129,9 +129,9 @@ export default function FavoritesClient() {
           </div>
         ) : (
           <div className="space-y-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="bg-brand-50 border border-brand-200 rounded-lg p-4">
               <div className="flex items-start gap-3">
-                <div className="text-blue-500 mt-0.5">
+                <div className="text-brand-500 mt-0.5">
                   <svg
                     className="w-5 h-5"
                     fill="currentColor"
@@ -145,12 +145,12 @@ export default function FavoritesClient() {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-sm font-medium text-blue-900 mb-1">
+                  <h3 className="text-sm font-medium text-brand-900 mb-1">
                     {isAuthenticated
                       ? "Favoritos sincronizados con tu cuenta"
                       : "Guardado en memoria local"}
                   </h3>
-                  <p className="text-sm text-blue-700">
+                  <p className="text-sm text-brand-700">
                     {isAuthenticated
                       ? "Tus favoritos ya estan vinculados a tu usuario y se conservaran cuando vuelvas a iniciar sesion."
                       : "Tus favoritos se guardan en este dispositivo. Cuando inicies sesion, se sincronizaran con tu cuenta."}

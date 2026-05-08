@@ -38,7 +38,7 @@ const readParam = (searchParams: URLSearchParams | null, ...keys: string[]) => {
 };
 
 const fieldClassName =
-  "w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-pink-300 focus:ring-4 focus:ring-pink-100 disabled:bg-gray-50 disabled:text-gray-400";
+  "w-full rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 outline-none transition focus:border-brand-300 focus:ring-4 focus:ring-brand-100 disabled:bg-gray-50 disabled:text-gray-400";
 
 export default function Filtros({ onFilterApply }: ProductFiltersProps) {
   const router = useRouter();
@@ -142,7 +142,7 @@ export default function Filtros({ onFilterApply }: ProductFiltersProps) {
               Ajusta categoria, talla y precio.
             </p>
           </div>
-          <div className="rounded-full border border-pink-100 bg-pink-50 px-3 py-1 text-xs font-medium text-pink-700">
+          <div className="rounded-full border border-brand-100 bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700">
             {activeCount} activos
           </div>
         </div>
@@ -285,7 +285,7 @@ export default function Filtros({ onFilterApply }: ProductFiltersProps) {
         <div className="space-y-3 border-t border-gray-100 pt-4">
           <button
             type="submit"
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-pink-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-pink-600 focus:outline-none focus:ring-4 focus:ring-pink-100"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 focus:outline-none focus:ring-4 focus:ring-brand-100"
             disabled={isSearching}
           >
             {isSearching ? (

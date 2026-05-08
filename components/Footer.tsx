@@ -22,12 +22,12 @@ const serviceItems = [
   {
     Icon: MdLocalShipping,
     title: "Entrega",
-    text: "Coordinacion sujeta a disponibilidad.",
+    text: "Coordinación sujeta a disponibilidad.",
   },
   {
     Icon: MdPayment,
     title: "Pago",
-    text: "Confirmacion antes de preparar tu pedido.",
+    text: "Confirmación antes de preparar tu pedido.",
   },
   {
     Icon: MdSupportAgent,
@@ -39,7 +39,7 @@ const serviceItems = [
 export default function Footer() {
   return (
     <footer
-      className="border-t border-pink-200 bg-pink-50 
+      className="border-t border-brand-200 bg-brand-50 
                        mt-6 sm:mt-10 lg:mt-16 
                        mb-20 sm:mb-24 lg:mb-0"
     >
@@ -64,7 +64,7 @@ export default function Footer() {
             className="max-w-xs text-center text-xs text-gray-600 
                         sm:max-w-none sm:text-left sm:text-sm lg:text-base"
           >
-            ChikitosLandia. Ropa tierna y comoda para los mas pequenos de la
+            ChikitosLandia. Ropa tierna y cómoda para los más pequeños de la
             casa.
           </p>
         </div>
@@ -81,7 +81,7 @@ export default function Footer() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="transition-colors hover:text-pink-600"
+                className="transition-colors hover:text-brand-700"
               >
                 {link.label}
               </Link>
@@ -99,7 +99,7 @@ export default function Footer() {
           <div className="space-y-3">
             {serviceItems.map(({ Icon, title, text }) => (
               <div key={title} className="flex max-w-xs gap-3 text-left">
-                <div className="mt-0.5 rounded-xl bg-pink-100 p-2 text-pink-600">
+                <div className="mt-0.5 rounded-xl bg-brand-100 p-2 text-brand-700">
                   <Icon size={18} />
                 </div>
                 <div>
@@ -118,7 +118,7 @@ export default function Footer() {
           >
             Siguenos
           </h3>
-          <div className="flex gap-3 text-pink-500 sm:gap-4 lg:gap-6">
+          <div className="flex gap-3 text-brand-600 sm:gap-4 lg:gap-6">
             {socialLinks.map(({ href, label, Icon }) => (
               <Link
                 key={href}
@@ -126,9 +126,9 @@ export default function Footer() {
                 target="_blank"
                 rel="noreferrer"
                 aria-label={label}
-                className="rounded-full p-2 transition-all duration-200 hover:bg-pink-100 sm:p-1"
+                className="rounded-full p-2 transition-all duration-200 hover:bg-brand-100 sm:p-1"
               >
-                <Icon className="size-5 transition-colors hover:text-pink-700 lg:size-6" />
+                <Icon className="size-5 transition-colors hover:text-brand-800 lg:size-6" />
               </Link>
             ))}
           </div>
@@ -136,7 +136,7 @@ export default function Footer() {
       </div>
 
       <div
-        className="border-t border-pink-200 bg-pink-100 py-3 text-center text-xs text-gray-600
+        className="border-t border-brand-200 bg-brand-100 py-3 text-center text-xs text-gray-600
                       sm:py-4 sm:text-sm lg:py-5 lg:text-base"
       >
         <p>

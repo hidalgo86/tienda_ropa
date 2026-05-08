@@ -409,7 +409,7 @@ const EditProductContent: React.FC = () => {
       <button
         type="button"
         onClick={() => router.push(returnTo)}
-        className="flex items-center gap-2 text-gray-600 hover:text-pink-500 transition-colors mb-4"
+        className="flex items-center gap-2 text-gray-600 hover:text-brand-600 transition-colors mb-4"
       >
         <span aria-hidden="true">&lt;</span>
         <span className="text-sm font-medium">Volver</span>
@@ -473,7 +473,7 @@ const EditProductContent: React.FC = () => {
               type="button"
               aria-label="Tomar foto"
               title="Tomar foto"
-              className="group relative rounded-full bg-white/90 p-2 text-blue-600 shadow backdrop-blur transition hover:bg-white hover:text-blue-700"
+              className="group relative rounded-full bg-white/90 p-2 text-brand-600 shadow backdrop-blur transition hover:bg-white hover:text-brand-700"
               onClick={openCamera}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -925,7 +925,7 @@ const EditProductContent: React.FC = () => {
 
         <button
           type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded"
+          className="bg-brand-600 text-white px-4 py-2 rounded"
         >
           Guardar cambios
         </button>

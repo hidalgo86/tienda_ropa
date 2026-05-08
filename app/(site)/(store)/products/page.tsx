@@ -5,14 +5,14 @@ import ProductsClient from "./ProductsClient";
 export const metadata: Metadata = {
   title: "Productos",
   description:
-    "Explora ropa, juguetes y articulos para bebes y ninos en Chikitoslandia.",
+    "Explora ropa, juguetes y artículos para bebés y niños en Chikitoslandia.",
   alternates: {
     canonical: "/products",
   },
   openGraph: {
     title: "Productos | Chikitoslandia",
     description:
-      "Explora ropa, juguetes y articulos para bebes y ninos en Chikitoslandia.",
+      "Explora ropa, juguetes y artículos para bebés y niños en Chikitoslandia.",
     url: "/products",
     type: "website",
   },
