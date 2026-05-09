@@ -9,6 +9,7 @@ interface ClientCardsProps {
   title?: string;
   description?: string;
   ctaLabel?: string;
+  ctaHref?: string;
   limit?: number;
   sortBy?: ProductSortBy;
 }
@@ -18,6 +19,7 @@ export default function ClientCards({
   title,
   description,
   ctaLabel,
+  ctaHref,
   limit,
   sortBy,
 }: ClientCardsProps) {
@@ -27,6 +29,7 @@ export default function ClientCards({
       title={title}
       description={description}
       ctaLabel={ctaLabel}
+      ctaHref={ctaHref}
       limit={limit}
       sortBy={sortBy}
     />

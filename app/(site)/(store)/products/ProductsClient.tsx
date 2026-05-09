@@ -39,6 +39,18 @@ const parseSortBy = (value: string): ProductSortBy | undefined =>
     ? (value as ProductSortBy)
     : undefined;
 
+const categoryIdBySlug: Record<string, string | undefined> = {
+  ropa: process.env.NEXT_PUBLIC_CATEGORY_ID_ROPA,
+  juguete: process.env.NEXT_PUBLIC_CATEGORY_ID_JUGUETE,
+  accesorio: process.env.NEXT_PUBLIC_CATEGORY_ID_ACCESORIO,
+  alimentacion: process.env.NEXT_PUBLIC_CATEGORY_ID_ALIMENTACION,
+};
+
+const resolveCategoryId = (categoryId: string, category: string) => {
+  if (categoryId) return categoryId;
+  return categoryIdBySlug[category.trim().toLowerCase()]?.trim() || "";
+};
+
 export default async function ProductsClient({
   searchParams,
 }: {
@@ -57,6 +69,7 @@ export default async function ProductsClient({
   const parsedGenre = parseGenre(readSingleParam(params, "genre", "genero"));
   const categoryId = readSingleParam(params, "categoryId");
   const category = readSingleParam(params, "category");
+  const resolvedCategoryId = resolveCategoryId(categoryId, category);
   const sizeParam = readSingleParam(params, "size", "talla");
   const sizes = sizeParam
     ? [String(sizeParam).trim().toUpperCase() as Size].filter(
@@ -74,8 +87,7 @@ export default async function ProductsClient({
         limit: 20,
         availability: ProductAvailability.DISPONIBLE,
         name: search || undefined,
-        categoryId: categoryId || undefined,
-        category: category || undefined,
+        categoryId: resolvedCategoryId || undefined,
         genre: parsedGenre ?? undefined,
         sizes,
         minPrice,

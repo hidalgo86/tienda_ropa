@@ -28,32 +28,46 @@ export const metadata: Metadata = {
   },
 };
 
+const categoryIdBySlug = {
+  ropa: process.env.NEXT_PUBLIC_CATEGORY_ID_ROPA,
+  juguete: process.env.NEXT_PUBLIC_CATEGORY_ID_JUGUETE,
+  accesorio: process.env.NEXT_PUBLIC_CATEGORY_ID_ACCESORIO,
+  alimentacion: process.env.NEXT_PUBLIC_CATEGORY_ID_ALIMENTACION,
+};
+
+const getCategoryHref = (slug: keyof typeof categoryIdBySlug) => {
+  const categoryId = categoryIdBySlug[slug]?.trim();
+  return categoryId
+    ? `/products?categoryId=${encodeURIComponent(categoryId)}`
+    : `/products?category=${slug}`;
+};
+
 const categoryLinks = [
   {
     label: "Ropa",
     description: "Prendas comodas para bebes, ninos y ninas.",
-    href: "/products?category=ropa",
+    href: getCategoryHref("ropa"),
     Icon: MdChildCare,
     accent: "bg-rose-50 text-rose-700 border-rose-100",
   },
   {
     label: "Juguetes",
     description: "Ideas para regalar, aprender y jugar.",
-    href: "/products?category=juguete",
+    href: getCategoryHref("juguete"),
     Icon: MdToys,
     accent: "bg-sky-50 text-sky-700 border-sky-100",
   },
   {
     label: "Accesorios",
     description: "Detalles utiles para el dia a dia.",
-    href: "/products?category=accesorio",
+    href: getCategoryHref("accesorio"),
     Icon: MdFavorite,
     accent: "bg-violet-50 text-violet-700 border-violet-100",
   },
   {
     label: "Alimentacion",
     description: "Articulos pensados para comer mejor.",
-    href: "/products?category=alimentacion",
+    href: getCategoryHref("alimentacion"),
     Icon: MdRestaurant,
     accent: "bg-emerald-50 text-emerald-700 border-emerald-100",
   },
@@ -188,6 +202,7 @@ export default async function Home() {
             title="Novedades"
             description="Los ultimos productos agregados a la tienda."
             ctaLabel="Ver novedades"
+            ctaHref={`/products?sortBy=${ProductSortBy.NEWEST}`}
             sortBy={ProductSortBy.NEWEST}
           />
         </section>
@@ -198,6 +213,7 @@ export default async function Home() {
             title="Favoritos de la tienda"
             description="Productos que vale la pena mirar antes de decidir."
             ctaLabel="Ver todos"
+            ctaHref="/products"
             sortBy={ProductSortBy.MOST_FAVORITED}
           />
         </section>

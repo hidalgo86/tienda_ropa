@@ -19,6 +19,7 @@ interface CardsProps {
   title?: string;
   description?: string;
   ctaLabel?: string;
+  ctaHref?: string;
   limit?: number;
   sortBy?: ProductSortBy;
 }
@@ -28,6 +29,7 @@ export default function Cards({
   title = "Nuestros Productos",
   description = "Descubre nuestra coleccion de ropa para bebes",
   ctaLabel = "Ver todos",
+  ctaHref = "/products",
   limit = 4,
   sortBy,
 }: CardsProps) {
@@ -161,7 +163,7 @@ export default function Cards({
 
       <div className="flex justify-center sm:justify-start">
         <Link
-          href="/products"
+          href={ctaHref}
           className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-3 text-sm font-semibold text-white shadow transition hover:bg-brand-700 sm:w-auto sm:px-6 sm:text-base"
           aria-label="Ver todos los productos"
         >

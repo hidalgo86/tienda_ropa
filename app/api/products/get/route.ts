@@ -42,7 +42,6 @@ const buildProductsQueryInput = (
     filters: {
       name: filters.name,
       categoryId: filters.categoryId,
-      category: filters.category,
       genre: toGraphqlGenre(filters.genre),
       variantNames: filters.variantNames,
       minPrice: filters.minPrice,
