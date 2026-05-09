@@ -130,9 +130,9 @@ export default function Carrusel() {
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 70vw"
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-black/10" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-black/10" />
         {(currentImage.title || currentImage.subtitle || currentImage.ctaLabel) && (
-          <div className="absolute inset-x-0 bottom-0 z-10 p-4 sm:p-6 lg:p-10">
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 p-4 sm:p-6 lg:p-10">
             <div className="max-w-2xl text-white">
               {currentImage.title && (
                 <p className="text-xl font-bold leading-tight sm:text-3xl lg:text-5xl">
@@ -147,7 +147,7 @@ export default function Carrusel() {
               {currentImage.href && currentImage.ctaLabel && (
                 <a
                   href={currentImage.href}
-                  className="mt-4 inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-gray-900 transition-colors hover:bg-brand-100 sm:px-5 sm:py-2.5 sm:text-base"
+                  className="pointer-events-auto mt-4 inline-flex rounded-full bg-white px-4 py-2 text-sm font-semibold text-gray-900 transition-colors hover:bg-brand-100 sm:px-5 sm:py-2.5 sm:text-base"
                 >
                   {currentImage.ctaLabel}
                 </a>
