@@ -6,6 +6,7 @@ import { MdTune } from "react-icons/md";
 import {
   ProductAvailability,
   Product,
+  ProductSortBy,
   Size,
   allowedSizes,
   parseGenre,
@@ -13,6 +14,7 @@ import {
 import FiltrosMobileButton from "./FiltrosMobileButton";
 import { listProducts } from "@/services/products";
 import ProductSearchBar from "./ProductSearchBar";
+import ProductSortSelect from "./ProductSortSelect";
 import { getRequestBaseUrl } from "@/lib/requestBaseUrl";
 
 const readSingleParam = (
@@ -32,6 +34,11 @@ const parseOptionalNumber = (value: string) => {
   return Number.isFinite(parsed) ? parsed : undefined;
 };
 
+const parseSortBy = (value: string): ProductSortBy | undefined =>
+  Object.values(ProductSortBy).includes(value as ProductSortBy)
+    ? (value as ProductSortBy)
+    : undefined;
+
 export default async function ProductsClient({
   searchParams,
 }: {
@@ -40,6 +47,7 @@ export default async function ProductsClient({
   const params = await searchParams;
   const page = Number(params?.page) || 1;
   const search = readSingleParam(params, "search");
+  const sortBy = parseSortBy(readSingleParam(params, "sortBy"));
   const minPrice = parseOptionalNumber(
     readSingleParam(params, "minPrice", "precioMin"),
   );
@@ -72,6 +80,7 @@ export default async function ProductsClient({
         sizes,
         minPrice,
         maxPrice,
+        sortBy,
       },
       { baseUrl, cache: "no-store" },
     );
@@ -120,7 +129,7 @@ export default async function ProductsClient({
                 </p>
               </div>
 
-              <div className="flex w-full flex-col gap-3 xl:max-w-2xl">
+              <div className="flex w-full flex-col gap-3 xl:max-w-3xl">
                 <ProductSearchBar initialSearch={search} />
                 <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
                   <span className="rounded-full bg-slate-100 px-3 py-1 font-medium text-slate-700">
@@ -140,6 +149,10 @@ export default async function ProductsClient({
                 </div>
               </div>
             </div>
+          </div>
+
+          <div className="mb-5 flex justify-end rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+              <ProductSortSelect currentSort={sortBy} />
           </div>
 
           {noProducts ? (

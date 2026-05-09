@@ -1,9 +1,13 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { getProductById } from "@/services/products";
+import { getProductById, listProducts } from "@/services/products";
 import type { ProductPageProps } from "@/types/ui/products";
 import ProductDetailClient from "./ProductDetailClient";
+import {
+  ProductAvailability,
+  ProductSortBy,
+} from "@/types/domain/products";
 import {
   absoluteUrl,
   getProductDescription,
@@ -85,10 +89,32 @@ export default async function ProductPage({ params }: ProductPageProps) {
   if (!id) return notFound();
 
   try {
+    const baseUrl = await getRequestBaseUrl();
     const producto = await getProductById(id, {
-      baseUrl: await getRequestBaseUrl(),
+      baseUrl,
       cache: "no-store",
     });
+    const relatedProducts = await listProducts(
+      {
+        page: 1,
+        limit: 5,
+        availability: ProductAvailability.DISPONIBLE,
+        categoryId: producto.categoryId || undefined,
+        category: producto.categoryId
+          ? undefined
+          : producto.category
+            ? String(producto.category)
+            : undefined,
+        sortBy: ProductSortBy.NEWEST,
+      },
+      { baseUrl, cache: "no-store" },
+    )
+      .then((response) =>
+        (response.items ?? [])
+          .filter((item) => item.id !== producto.id)
+          .slice(0, 4),
+      )
+      .catch(() => []);
     const nonce = (await headers()).get("x-nonce") ?? undefined;
     const price = getProductPrice(producto);
     const productSchema = {
@@ -124,7 +150,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: safeJsonLd(productSchema) }}
         />
-        <ProductDetailClient producto={producto} />
+        <ProductDetailClient
+          producto={producto}
+          relatedProducts={relatedProducts}
+        />
       </>
     );
   } catch (error) {

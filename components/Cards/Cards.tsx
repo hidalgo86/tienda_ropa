@@ -1,23 +1,36 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import {
   Product,
   ProductAvailability,
+  ProductSortBy,
   getVariantName,
 } from "@/types/domain/products";
 import ProductListPublic from "@/components/products/ProductListPublic";
 import { listProducts } from "@/services/products";
-import Link from "next/link";
 import { useCartActions } from "@/lib/useCartActions";
 import { useFavoriteActions } from "@/lib/useFavoriteActions";
 import { reportClientError } from "@/lib/errorUtils";
 
 interface CardsProps {
   initialProducts?: Product[];
+  title?: string;
+  description?: string;
+  ctaLabel?: string;
+  limit?: number;
+  sortBy?: ProductSortBy;
 }
 
-export default function Cards({ initialProducts = [] }: CardsProps) {
+export default function Cards({
+  initialProducts = [],
+  title = "Nuestros Productos",
+  description = "Descubre nuestra coleccion de ropa para bebes",
+  ctaLabel = "Ver todos",
+  limit = 4,
+  sortBy,
+}: CardsProps) {
   const [productos, setProductos] = useState<Product[]>(initialProducts);
   const [loading, setLoading] = useState(initialProducts.length === 0);
   const [error, setError] = useState<string | null>(null);
@@ -33,8 +46,9 @@ export default function Cards({ initialProducts = [] }: CardsProps) {
         setError(null);
         const response = await listProducts({
           page: 1,
-          limit: 20,
+          limit,
           availability: ProductAvailability.DISPONIBLE,
+          sortBy,
         });
         setProductos(response.items ?? []);
       } catch (err) {
@@ -46,7 +60,7 @@ export default function Cards({ initialProducts = [] }: CardsProps) {
         setLoading(false);
       }
     },
-    [],
+    [limit, sortBy],
   );
 
   useEffect(() => {
@@ -72,9 +86,9 @@ export default function Cards({ initialProducts = [] }: CardsProps) {
 
   if (loading) {
     return (
-      <div className="text-center py-6 sm:py-10 lg:py-12">
-        <div className="inline-block animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 lg:h-10 lg:w-10 border-b-2 border-gray-900"></div>
-        <p className="mt-2 text-sm sm:text-base text-gray-600">
+      <div className="py-6 text-center sm:py-10 lg:py-12">
+        <div className="inline-block h-6 w-6 animate-spin rounded-full border-b-2 border-gray-900 sm:h-8 sm:w-8 lg:h-10 lg:w-10" />
+        <p className="mt-2 text-sm text-gray-600 sm:text-base">
           Cargando productos...
         </p>
       </div>
@@ -83,12 +97,13 @@ export default function Cards({ initialProducts = [] }: CardsProps) {
 
   if (error) {
     return (
-      <div className="text-center py-6 sm:py-10 lg:py-12">
-        <div className="max-w-md mx-auto px-4">
-          <p className="text-red-600 text-sm sm:text-base mb-4">{error}</p>
+      <div className="py-6 text-center sm:py-10 lg:py-12">
+        <div className="mx-auto max-w-md px-4">
+          <p className="mb-4 text-sm text-red-600 sm:text-base">{error}</p>
           <button
+            type="button"
             onClick={() => loadProducts(true, true)}
-            className="w-full sm:w-auto px-4 py-2 sm:px-6 sm:py-3 bg-brand-600 text-white text-sm sm:text-base rounded-lg hover:bg-brand-700 transition-colors"
+            className="w-full rounded-lg bg-brand-600 px-4 py-2 text-sm text-white transition-colors hover:bg-brand-700 sm:w-auto sm:px-6 sm:py-3 sm:text-base"
           >
             Reintentar
           </button>
@@ -99,8 +114,8 @@ export default function Cards({ initialProducts = [] }: CardsProps) {
 
   if (productos.length === 0) {
     return (
-      <div className="text-center py-6 sm:py-10 lg:py-12">
-        <p className="text-gray-500 text-sm sm:text-base">
+      <div className="py-6 text-center sm:py-10 lg:py-12">
+        <p className="text-sm text-gray-500 sm:text-base">
           No hay productos para mostrar.
         </p>
       </div>
@@ -131,15 +146,15 @@ export default function Cards({ initialProducts = [] }: CardsProps) {
     <div className="space-y-5 sm:space-y-6 lg:space-y-8">
       <div className="mx-auto max-w-2xl text-center sm:max-w-none sm:text-left">
         <h2 className="text-xl font-bold text-gray-900 sm:text-2xl lg:text-3xl">
-          Nuestros Productos
+          {title}
         </h2>
         <p className="mt-2 text-sm text-gray-600 sm:text-base lg:text-lg">
-          Descubre nuestra colección de ropa para bebés
+          {description}
         </p>
       </div>
 
       <ProductListPublic
-        products={productos.slice(0, 4)}
+        products={productos.slice(0, limit)}
         onAddToCart={handleAddToCart}
         onFavorite={handleFavorite}
       />
@@ -147,10 +162,10 @@ export default function Cards({ initialProducts = [] }: CardsProps) {
       <div className="flex justify-center sm:justify-start">
         <Link
           href="/products"
-          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-3 text-sm font-semibold text-white shadow hover:bg-brand-700 sm:w-auto sm:px-6 sm:text-base"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-3 text-sm font-semibold text-white shadow transition hover:bg-brand-700 sm:w-auto sm:px-6 sm:text-base"
           aria-label="Ver todos los productos"
         >
-          Ver todos
+          {ctaLabel}
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <path
               d="M5 12h14M12 5l7 7-7 7"

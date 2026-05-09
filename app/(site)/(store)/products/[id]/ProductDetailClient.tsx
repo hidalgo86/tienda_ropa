@@ -16,6 +16,7 @@ import {
   legacyProductCategoryOptions,
 } from "@/types/domain/products";
 import type { ProductDetailClientProps } from "@/types/ui/products";
+import ProductListPublic from "@/components/products/ProductListPublic";
 import { useCategories } from "@/services/categories/useCategories";
 import { RootState } from "@/store";
 import { useCartActions } from "@/lib/useCartActions";
@@ -48,6 +49,7 @@ const sizePattern = /^(RN|M3|M6|M9|M12|M18|M24|T2|T3|T4|T5|T6|T7|T8|T9|T10|T12)$
 export default function ProductDetailClient({
   producto,
   mode = "public",
+  relatedProducts = [],
 }: ProductDetailClientProps) {
   const router = useRouter();
   const [selectedSize, setSelectedSize] = useState<string>("");
@@ -250,6 +252,29 @@ export default function ProductDetailClient({
 
   const handleFavoriteToggle = () => {
     void toggleProductFavorite(producto);
+  };
+
+  const handleRelatedAddToCart = (productId: string) => {
+    const relatedProduct = relatedProducts.find((item) => item.id === productId);
+    if (!relatedProduct) return;
+
+    const relatedVariants = relatedProduct.variants || [];
+    const selectedVariant =
+      relatedVariants.find((variant) => (variant.stock || 0) > 0) ||
+      relatedVariants[0];
+    const variantName = getVariantName(selectedVariant);
+
+    void addProductToCart({
+      product: relatedProduct,
+      quantity: 1,
+      selectedSize: variantName || undefined,
+    });
+  };
+
+  const handleRelatedFavorite = (productId: string) => {
+    const relatedProduct = relatedProducts.find((item) => item.id === productId);
+    if (!relatedProduct) return;
+    void toggleProductFavorite(relatedProduct);
   };
 
   const handleShare = async () => {
@@ -457,7 +482,37 @@ export default function ProductDetailClient({
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {!isAdminUser && (
+        <div className="fixed inset-x-0 bottom-[76px] z-40 border-t border-slate-200 bg-white/95 px-4 py-3 shadow-[0_-8px_24px_rgba(15,23,42,0.12)] backdrop-blur lg:hidden">
+          <div className="mx-auto flex max-w-7xl items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium text-slate-500">Total</p>
+              <p className="truncate text-lg font-bold text-brand-700">
+                ${Number(displayPrice || 0).toFixed(2)}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleBuyNow}
+              disabled={
+                isBuyingNow ||
+                !PAYMENTS_ENABLED ||
+                (isRopa && !selectedSize) ||
+                availableStock === 0
+              }
+              className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg bg-gray-900 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {!PAYMENTS_ENABLED
+                ? "No disponible"
+                : isBuyingNow
+                  ? "Preparando..."
+                  : "Comprar"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="max-w-7xl mx-auto px-4 py-8 pb-40 sm:px-6 sm:pb-40 lg:px-8 lg:pb-8">
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
           <div
             className={`grid grid-cols-1 gap-8 p-5 sm:p-6 lg:p-8 ${
@@ -877,6 +932,25 @@ export default function ProductDetailClient({
             </div>
           </div>
         </div>
+
+        {!isAdminMode && relatedProducts.length > 0 && (
+          <section className="mt-8 rounded-lg bg-white p-5 shadow-lg sm:p-6 lg:mt-10 lg:p-8">
+            <div className="mb-5">
+              <h2 className="text-xl font-bold text-gray-900 sm:text-2xl">
+                Tambien te puede gustar
+              </h2>
+              <p className="mt-2 text-sm text-gray-600 sm:text-base">
+                Productos similares para seguir explorando sin volver al
+                catalogo.
+              </p>
+            </div>
+            <ProductListPublic
+              products={relatedProducts}
+              onAddToCart={handleRelatedAddToCart}
+              onFavorite={handleRelatedFavorite}
+            />
+          </section>
+        )}
       </div>
     </div>
   );

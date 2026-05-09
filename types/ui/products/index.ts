@@ -44,6 +44,7 @@ export interface ProductListAdminProps {
 export interface ProductDetailClientProps {
   producto: Product;
   mode?: "public" | "admin";
+  relatedProducts?: Product[];
 }
 
 export interface SidebarItem {
