@@ -31,6 +31,9 @@ import {
   MdTrendingUp,
   MdVisibility,
   MdSearch,
+  MdClose,
+  MdChevronLeft,
+  MdChevronRight,
 } from "react-icons/md";
 import {
   PAYMENTS_ENABLED,
@@ -49,6 +52,7 @@ export default function ProductDetailClient({
   const router = useRouter();
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [isBuyingNow, setIsBuyingNow] = useState(false);
   const [showAddedToCart, setShowAddedToCart] = useState(false);
@@ -74,6 +78,12 @@ export default function ProductDetailClient({
       height: isAdminMode ? 1000 : 1500,
       crop: "limit",
     }) || selectedImage.url;
+  const viewerImageUrl =
+    getOptimizedCloudinaryUrl(selectedImage.url, {
+      width: 1800,
+      height: 2200,
+      crop: "limit",
+    }) || selectedImage.url;
 
   const isFavorite = useSelector((state: RootState) =>
     state.favorites.items.some((item) => item.id === producto.id),
@@ -82,6 +92,7 @@ export default function ProductDetailClient({
 
   useEffect(() => {
     setSelectedImageIndex(0);
+    setIsImageViewerOpen(false);
     if (isRopa && producto.variants && producto.variants.length > 0) {
       const firstAvailableSize =
         getVariantName(producto.variants.find((v) => (v.stock || 0) > 0)) ||
@@ -92,6 +103,34 @@ export default function ProductDetailClient({
     }
     setSelectedSize("");
   }, [isRopa, producto.id, producto.variants]);
+
+  useEffect(() => {
+    if (!isImageViewerOpen) return undefined;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsImageViewerOpen(false);
+      }
+
+      if (event.key === "ArrowLeft") {
+        setSelectedImageIndex((prev) =>
+          prev === 0 ? images.length - 1 : prev - 1,
+        );
+      }
+
+      if (event.key === "ArrowRight") {
+        setSelectedImageIndex((prev) => (prev + 1) % images.length);
+      }
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [images.length, isImageViewerOpen]);
 
   const variants = producto.variants || [];
   const currentVariant = isRopa
@@ -319,8 +358,79 @@ export default function ProductDetailClient({
     setQuantity(Math.min(availableStock, quantity + 1));
   };
 
+  const showPreviousImage = () => {
+    setSelectedImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
+  };
+
+  const showNextImage = () => {
+    setSelectedImageIndex((prev) => (prev + 1) % images.length);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {isImageViewerOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Imagen ampliada de ${producto.name || "producto"}`}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-3 sm:p-6"
+          onClick={() => setIsImageViewerOpen(false)}
+        >
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              setIsImageViewerOpen(false);
+            }}
+            className="absolute right-3 top-3 z-20 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-gray-900 shadow-lg transition hover:bg-white sm:right-5 sm:top-5"
+            aria-label="Cerrar imagen ampliada"
+          >
+            <MdClose size={24} />
+          </button>
+
+          {images.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  showPreviousImage();
+                }}
+                className="absolute left-3 top-1/2 z-20 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-gray-900 shadow-lg transition hover:bg-white sm:left-5"
+                aria-label="Ver imagen anterior"
+              >
+                <MdChevronLeft size={28} />
+              </button>
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  showNextImage();
+                }}
+                className="absolute right-3 top-1/2 z-20 inline-flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-gray-900 shadow-lg transition hover:bg-white sm:right-5"
+                aria-label="Ver imagen siguiente"
+              >
+                <MdChevronRight size={28} />
+              </button>
+            </>
+          )}
+
+          <div
+            className="relative h-full max-h-[92dvh] w-full max-w-6xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <Image
+              src={viewerImageUrl}
+              alt={producto.name || "Producto"}
+              fill
+              className="object-contain"
+              sizes="100vw"
+              priority
+            />
+          </div>
+        </div>
+      )}
+
       <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-wrap items-center justify-between gap-2">
           <button
@@ -364,14 +474,21 @@ export default function ProductDetailClient({
                     : "aspect-[4/5] min-h-[420px] lg:min-h-[620px]"
                 }`}
               >
-                <Image
-                  src={selectedImageUrl}
-                  alt={producto.name || "Producto"}
-                  width={900}
-                  height={1125}
-                  className="object-contain max-w-full max-h-full"
-                  priority
-                />
+                <button
+                  type="button"
+                  onClick={() => setIsImageViewerOpen(true)}
+                  className="relative flex h-full w-full cursor-zoom-in items-center justify-center"
+                  aria-label="Ampliar imagen del producto"
+                >
+                  <Image
+                    src={selectedImageUrl}
+                    alt={producto.name || "Producto"}
+                    width={900}
+                    height={1125}
+                    className="object-contain max-w-full max-h-full"
+                    priority
+                  />
+                </button>
               </div>
 
               {images.length > 1 && (
