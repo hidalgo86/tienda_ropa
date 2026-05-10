@@ -9,8 +9,15 @@ import { useCartActions } from "@/lib/useCartActions";
 import { useFavoriteActions } from "@/lib/useFavoriteActions";
 import { getStoredAuthToken, isStoredAdminUser } from "@/services/users";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import EmptyStateRecommendations from "@/components/products/EmptyStateRecommendations";
 
-export default function FavoritesClient() {
+interface FavoritesClientProps {
+  popularProducts?: Product[];
+}
+
+export default function FavoritesClient({
+  popularProducts = [],
+}: FavoritesClientProps) {
   const { addProductToCart } = useCartActions();
   const { favoriteItems, toggleProductFavorite, clearAllFavorites } =
     useFavoriteActions();
@@ -125,6 +132,7 @@ export default function FavoritesClient() {
               >
                 Explorar productos
               </Link>
+              <EmptyStateRecommendations products={popularProducts} />
             </div>
           </div>
         ) : (

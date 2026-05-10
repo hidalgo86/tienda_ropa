@@ -13,8 +13,14 @@ import {
 } from "@/lib/commerceConfig";
 import { getOptimizedCloudinaryUrl } from "@/lib/cloudinaryImages";
 import ConfirmDialog from "@/components/ConfirmDialog";
+import EmptyStateRecommendations from "@/components/products/EmptyStateRecommendations";
+import type { Product } from "@/types/domain/products";
 
-export default function CartClient() {
+interface CartClientProps {
+  popularProducts?: Product[];
+}
+
+export default function CartClient({ popularProducts = [] }: CartClientProps) {
   const { cart, changeCartItemQuantity, removeCartItem, clearAllCart } =
     useCartActions();
   const { items, totalItems, totalPrice } = cart;
@@ -150,6 +156,7 @@ export default function CartClient() {
               >
                 Explorar productos
               </Link>
+              <EmptyStateRecommendations products={popularProducts} />
             </div>
           </div>
         ) : (

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Carrusel from "../../../components/Carrusel/Carrusel";
 import ClientCards from "../../../components/ClientCards";
+import RecentlyViewedProducts from "@/components/products/RecentlyViewedProducts";
 import { listProducts } from "@/services/products";
 import {
   ProductAvailability,
@@ -206,6 +207,8 @@ export default async function Home() {
             sortBy={ProductSortBy.NEWEST}
           />
         </section>
+
+        <RecentlyViewedProducts />
 
         <section className="mb-8 mt-8 sm:mb-12 sm:mt-12 lg:mb-16 lg:mt-16">
           <ClientCards

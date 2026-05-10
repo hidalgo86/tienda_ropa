@@ -45,6 +45,7 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmittingProof, setIsSubmittingProof] = useState(false);
   const [createdOrder, setCreatedOrder] = useState<Order | null>(null);
+  const [requiresAuth, setRequiresAuth] = useState(false);
   const [paymentReceiptNumber, setPaymentReceiptNumber] = useState("");
   const [paymentProofFile, setPaymentProofFile] = useState<File | null>(null);
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "delivery">(
@@ -65,7 +66,8 @@ export default function CheckoutPage() {
     const token = getStoredAuthToken();
 
     if (!token) {
-      router.replace("/login?redirect=%2Fcheckout");
+      setRequiresAuth(true);
+      setIsLoadingUser(false);
       return;
     }
 
@@ -79,7 +81,7 @@ export default function CheckoutPage() {
             ? error.message
             : "No se pudo cargar tu cuenta";
         toast.error(message);
-        router.replace("/account");
+        setRequiresAuth(true);
       } finally {
         setIsLoadingUser(false);
       }
@@ -225,6 +227,105 @@ export default function CheckoutPage() {
                 Seguir explorando
               </Link>
             </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (requiresAuth) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="mx-auto max-w-5xl px-4 py-10">
+          <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+            <section className="rounded-2xl bg-white p-6 shadow-lg sm:p-8">
+              <MdShoppingCart className="text-brand-600" size={48} />
+              <h1 className="mt-4 text-2xl font-bold text-gray-900 sm:text-3xl">
+                Guarda tu pedido antes de continuar
+              </h1>
+              <p className="mt-3 text-gray-600">
+                Inicia sesion o crea una cuenta para reservar el stock, guardar
+                tu carrito y ver el estado del pedido cuando vuelvas.
+              </p>
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/login?redirect=%2Fcheckout"
+                  className="inline-flex justify-center rounded-lg bg-gray-900 px-6 py-3 font-semibold text-white transition hover:bg-black"
+                >
+                  Iniciar sesion
+                </Link>
+                <Link
+                  href="/register?redirect=%2Fcheckout"
+                  className="inline-flex justify-center rounded-lg border border-gray-300 px-6 py-3 font-semibold text-gray-700 transition hover:bg-gray-50"
+                >
+                  Crear cuenta
+                </Link>
+              </div>
+
+              <Link
+                href="/cart"
+                className="mt-4 inline-flex text-sm font-medium text-brand-700 hover:text-brand-800"
+              >
+                Volver al carrito
+              </Link>
+            </section>
+
+            <aside className="rounded-2xl bg-white p-6 shadow-lg">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Tu carrito te espera
+              </h2>
+              <div className="mt-5 space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">
+                    Productos ({cart.totalItems})
+                  </span>
+                  <span className="font-medium text-gray-900">
+                    {formatCurrency(cart.totalPrice)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Entrega</span>
+                  <span className="font-medium text-green-600">
+                    Retiro en tienda
+                  </span>
+                </div>
+                <div className="border-t border-gray-200 pt-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-gray-900">Total</span>
+                    <span className="text-2xl font-bold text-brand-600">
+                      {formatCurrency(cart.totalPrice)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {cart.items.length > 0 ? (
+                <div className="mt-5 max-h-64 space-y-3 overflow-y-auto pr-1">
+                  {cart.items.map((item) => (
+                    <div
+                      key={`${item.id}-${item.selectedSize ?? ""}-${item.selectedColor ?? ""}`}
+                      className="rounded-lg border border-gray-100 bg-gray-50 p-3"
+                    >
+                      <p className="line-clamp-1 font-medium text-gray-900">
+                        {item.name}
+                      </p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        Cantidad: {item.quantity}
+                        {item.selectedSize
+                          ? ` - Variante: ${item.selectedSize}`
+                          : ""}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-5 rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600">
+                  Tu carrito esta vacio. Puedes volver a productos y elegir algo
+                  antes de iniciar sesion.
+                </div>
+              )}
+            </aside>
           </div>
         </div>
       </div>

@@ -17,6 +17,7 @@ import {
 } from "@/types/domain/products";
 import type { ProductDetailClientProps } from "@/types/ui/products";
 import ProductListPublic from "@/components/products/ProductListPublic";
+import AddedToCartPanel from "@/components/products/AddedToCartPanel";
 import { useCategories } from "@/services/categories/useCategories";
 import { RootState } from "@/store";
 import { useCartActions } from "@/lib/useCartActions";
@@ -43,6 +44,7 @@ import {
 import { toast } from "sonner";
 import { isStoredAdminUser } from "@/services/users";
 import { getOptimizedCloudinaryUrl } from "@/lib/cloudinaryImages";
+import { saveRecentlyViewedProduct } from "@/lib/recentlyViewedProducts";
 
 const sizePattern = /^(RN|M3|M6|M9|M12|M18|M24|T2|T3|T4|T5|T6|T7|T8|T9|T10|T12)$/i;
 
@@ -57,7 +59,7 @@ export default function ProductDetailClient({
   const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [isBuyingNow, setIsBuyingNow] = useState(false);
-  const [showAddedToCart, setShowAddedToCart] = useState(false);
+  const [isAddedPanelOpen, setIsAddedPanelOpen] = useState(false);
   const [showShareCopied, setShowShareCopied] = useState(false);
   const isAdminMode = mode === "admin";
   const isAdminUser = isAdminMode || isStoredAdminUser();
@@ -105,6 +107,12 @@ export default function ProductDetailClient({
     }
     setSelectedSize("");
   }, [isRopa, producto.id, producto.variants]);
+
+  useEffect(() => {
+    if (!isAdminMode) {
+      saveRecentlyViewedProduct(producto);
+    }
+  }, [isAdminMode, producto]);
 
   useEffect(() => {
     if (!isImageViewerOpen) return undefined;
@@ -246,8 +254,7 @@ export default function ProductDetailClient({
       });
     }
 
-    setShowAddedToCart(true);
-    setTimeout(() => setShowAddedToCart(false), 2000);
+    setIsAddedPanelOpen(true);
   };
 
   const handleFavoriteToggle = () => {
@@ -897,19 +904,6 @@ export default function ProductDetailClient({
                     )}
                   </div>
 
-                  {showAddedToCart && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 animate-pulse">
-                      <div className="flex items-center gap-2 text-green-800">
-                        <MdShoppingCart size={20} />
-                        <span className="font-medium">
-                          {currentCartItem
-                            ? "Producto ya esta en el carrito"
-                            : "Producto agregado al carrito"}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-
                   {showShareCopied && (
                     <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm font-medium text-slate-700">
                       Enlace copiado
@@ -952,6 +946,15 @@ export default function ProductDetailClient({
           </section>
         )}
       </div>
+
+      {!isAdminUser && (
+        <AddedToCartPanel
+          open={isAddedPanelOpen}
+          product={producto}
+          relatedProducts={relatedProducts}
+          onClose={() => setIsAddedPanelOpen(false)}
+        />
+      )}
     </div>
   );
 }

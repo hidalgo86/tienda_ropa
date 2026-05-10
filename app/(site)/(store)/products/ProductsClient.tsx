@@ -13,6 +13,7 @@ import {
 } from "@/types/domain/products";
 import FiltrosMobileButton from "./FiltrosMobileButton";
 import { listProducts } from "@/services/products";
+import { listCategories } from "@/services/categories";
 import ProductSearchBar from "./ProductSearchBar";
 import ProductSortSelect from "./ProductSortSelect";
 import { getRequestBaseUrl } from "@/lib/requestBaseUrl";
@@ -46,9 +47,37 @@ const categoryIdBySlug: Record<string, string | undefined> = {
   alimentacion: process.env.NEXT_PUBLIC_CATEGORY_ID_ALIMENTACION,
 };
 
-const resolveCategoryId = (categoryId: string, category: string) => {
+const normalizeCategoryLookupValue = (value: string): string =>
+  value
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+const resolveCategoryId = async (
+  categoryId: string,
+  category: string,
+  baseUrl: string,
+) => {
   if (categoryId) return categoryId;
-  return categoryIdBySlug[category.trim().toLowerCase()]?.trim() || "";
+  if (!category) return "";
+
+  const normalizedCategory = normalizeCategoryLookupValue(category);
+  const configuredCategoryId = categoryIdBySlug[normalizedCategory]?.trim();
+  if (configuredCategoryId) return configuredCategoryId;
+
+  try {
+    const categories = await listCategories({ baseUrl, cache: "no-store" });
+    return (
+      categories.find(
+        (item) =>
+          normalizeCategoryLookupValue(item.slug) === normalizedCategory ||
+          normalizeCategoryLookupValue(item.name) === normalizedCategory,
+      )?.id || ""
+    );
+  } catch {
+    return "";
+  }
 };
 
 export default async function ProductsClient({
@@ -69,7 +98,6 @@ export default async function ProductsClient({
   const parsedGenre = parseGenre(readSingleParam(params, "genre", "genero"));
   const categoryId = readSingleParam(params, "categoryId");
   const category = readSingleParam(params, "category");
-  const resolvedCategoryId = resolveCategoryId(categoryId, category);
   const sizeParam = readSingleParam(params, "size", "talla");
   const sizes = sizeParam
     ? [String(sizeParam).trim().toUpperCase() as Size].filter(
@@ -78,24 +106,37 @@ export default async function ProductsClient({
     : undefined;
 
   const baseUrl = await getRequestBaseUrl();
+  const resolvedCategoryId = await resolveCategoryId(
+    categoryId,
+    category,
+    baseUrl,
+  );
+  const hasUnresolvedCategoryFilter = Boolean(category && !resolvedCategoryId);
 
   let data;
   try {
-    data = await listProducts(
-      {
-        page,
-        limit: 20,
-        availability: ProductAvailability.DISPONIBLE,
-        name: search || undefined,
-        categoryId: resolvedCategoryId || undefined,
-        genre: parsedGenre ?? undefined,
-        sizes,
-        minPrice,
-        maxPrice,
-        sortBy,
-      },
-      { baseUrl, cache: "no-store" },
-    );
+    data = hasUnresolvedCategoryFilter
+      ? {
+          items: [],
+          total: 0,
+          page,
+          totalPages: 1,
+        }
+      : await listProducts(
+          {
+            page,
+            limit: 20,
+            availability: ProductAvailability.DISPONIBLE,
+            name: search || undefined,
+            categoryId: resolvedCategoryId || undefined,
+            genre: parsedGenre ?? undefined,
+            sizes,
+            minPrice,
+            maxPrice,
+            sortBy,
+          },
+          { baseUrl, cache: "no-store" },
+        );
   } catch {
     return notFound();
   }
