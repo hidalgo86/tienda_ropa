@@ -152,7 +152,7 @@ export default function Carrusel() {
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 80vw, 70vw"
           />
         )}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/70 via-black/30 to-black/10" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/45 via-black/15 to-transparent" />
         {(currentImage.title || currentImage.subtitle || currentImage.ctaLabel) && (
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 p-4 sm:p-6 lg:p-10">
             <div className="max-w-2xl text-white">
