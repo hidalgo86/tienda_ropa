@@ -156,6 +156,30 @@ const EditProductContent: React.FC = () => {
     setError(null);
   };
 
+  const moveExistingImage = (index: number, direction: -1 | 1) => {
+    setForm((prev) => {
+      const images = [...(prev.images || [])];
+      const targetIndex = index + direction;
+
+      if (
+        index < 0 ||
+        index >= images.length ||
+        targetIndex < 0 ||
+        targetIndex >= images.length
+      ) {
+        return prev;
+      }
+
+      [images[index], images[targetIndex]] = [
+        images[targetIndex],
+        images[index],
+      ];
+
+      return { ...prev, images };
+    });
+    setError(null);
+  };
+
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
@@ -558,14 +582,42 @@ const EditProductContent: React.FC = () => {
             </p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {(form.images || []).map((image, idx) => (
-                <div key={`${image.publicId}-${idx}`} className="relative">
+                <div
+                  key={`${image.publicId}-${idx}`}
+                  className="relative rounded border bg-white p-1"
+                >
                   <Image
                     src={image.url}
                     alt={`Imagen actual ${idx + 1}`}
                     width={96}
                     height={96}
-                    className="w-24 h-24 object-cover rounded border"
+                    className="mx-auto h-24 w-24 rounded object-cover"
                   />
+                  <div className="mt-1 grid grid-cols-3 gap-1">
+                    <button
+                      type="button"
+                      className="rounded bg-gray-100 px-2 py-1 text-sm font-semibold text-gray-700 disabled:opacity-40"
+                      onClick={() => moveExistingImage(idx, -1)}
+                      disabled={idx === 0}
+                      aria-label={`Mover imagen ${idx + 1} hacia la izquierda`}
+                      title="Mover antes"
+                    >
+                      &lt;
+                    </button>
+                    <span className="flex items-center justify-center rounded bg-gray-50 px-1 text-xs font-medium text-gray-600">
+                      {idx + 1}
+                    </span>
+                    <button
+                      type="button"
+                      className="rounded bg-gray-100 px-2 py-1 text-sm font-semibold text-gray-700 disabled:opacity-40"
+                      onClick={() => moveExistingImage(idx, 1)}
+                      disabled={idx === currentImagesCount - 1}
+                      aria-label={`Mover imagen ${idx + 1} hacia la derecha`}
+                      title="Mover despues"
+                    >
+                      &gt;
+                    </button>
+                  </div>
                   <button
                     type="button"
                     className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 text-xs"
