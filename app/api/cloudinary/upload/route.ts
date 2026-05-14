@@ -14,6 +14,7 @@ const ALLOWED_IMAGE_TYPES = new Set([
   "image/webp",
 ]);
 const ALLOWED_FOLDERS = new Set(["products", "banners", "payment-proofs"]);
+const DELETABLE_ADMIN_FOLDERS = new Set(["products", "banners"]);
 
 const meQuery = `
   query Me {
@@ -142,6 +143,27 @@ const uploadBufferToCloudinary = async (
     stream.end(buffer);
   });
 
+const parseDeletablePublicId = (value: unknown): string => {
+  if (typeof value !== "string") {
+    throw new UserApiRouteError("Debes indicar la imagen a eliminar", 400);
+  }
+
+  const publicId = value.trim();
+  const folder = publicId.split("/")[0];
+
+  if (
+    !publicId ||
+    publicId.includes("..") ||
+    publicId.startsWith("/") ||
+    !folder ||
+    !DELETABLE_ADMIN_FOLDERS.has(folder)
+  ) {
+    throw new UserApiRouteError("Imagen no valida para eliminar", 400);
+  }
+
+  return publicId;
+};
+
 export async function POST(req: NextRequest) {
   try {
     const { CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET } =
@@ -210,6 +232,49 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error: "Error subiendo imagen",
+      },
+      { status: error instanceof UserApiRouteError ? error.status : 500 },
+    );
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const { CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET } =
+      process.env;
+    if (
+      !CLOUDINARY_CLOUD_NAME ||
+      !CLOUDINARY_API_KEY ||
+      !CLOUDINARY_API_SECRET
+    ) {
+      return NextResponse.json(
+        { error: "Faltan credenciales de Cloudinary en variables de entorno" },
+        { status: 500 },
+      );
+    }
+
+    await assertAdminUser(req);
+
+    const body = (await req.json().catch(() => null)) as {
+      publicId?: unknown;
+    } | null;
+    const publicId = parseDeletablePublicId(body?.publicId);
+    const result = await cloudinary.uploader.destroy(publicId, {
+      resource_type: "image",
+    });
+
+    if (result.result !== "ok" && result.result !== "not found") {
+      return NextResponse.json(
+        { error: "No se pudo eliminar la imagen" },
+        { status: 502 },
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error: unknown) {
+    return NextResponse.json(
+      {
+        error: "Error eliminando imagen",
       },
       { status: error instanceof UserApiRouteError ? error.status : 500 },
     );

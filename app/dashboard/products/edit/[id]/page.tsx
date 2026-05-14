@@ -23,6 +23,7 @@ import type {
 } from "@/types/ui/products";
 import { PRODUCT_FORM_MAX_IMAGES } from "@/types/ui/products";
 import {
+  deleteProductImage,
   getProductById,
   updateProduct,
   uploadProductImage,
@@ -239,6 +240,7 @@ const EditProductContent: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    let uploadedImages: Product["images"] = [];
     try {
       const resolvedCategoryId = String(
         form.categoryId ?? product?.categoryId ?? "",
@@ -249,7 +251,7 @@ const EditProductContent: React.FC = () => {
 
       let nextImages = form.images;
       if (selectedFiles.length > 0) {
-        const uploadedImages = await Promise.all(
+        uploadedImages = await Promise.all(
           selectedFiles.map((file) => uploadProductImage(file)),
         );
 
@@ -363,9 +365,29 @@ const EditProductContent: React.FC = () => {
         payload.price = nextPrice;
       }
 
+      const nextImagePublicIds = new Set(
+        nextImages.map((image) => image.publicId),
+      );
+      const removedImages = (product?.images || []).filter(
+        (image) => !nextImagePublicIds.has(image.publicId),
+      );
+
       await updateProduct(id, payload);
+
+      if (removedImages.length > 0) {
+        await Promise.allSettled(
+          removedImages.map((image) => deleteProductImage(image.publicId)),
+        );
+      }
+
       router.push(returnTo);
     } catch (err) {
+      if (uploadedImages.length > 0) {
+        await Promise.allSettled(
+          uploadedImages.map((image) => deleteProductImage(image.publicId)),
+        );
+      }
+
       setError(
         err instanceof Error
           ? err.message

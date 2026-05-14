@@ -293,6 +293,28 @@ export const uploadProductImage = async (
   }, "Error subiendo imagen", options);
 };
 
+export const deleteProductImage = async (
+  publicId: string,
+  options: ApiOptions = {},
+): Promise<void> => {
+  return fetchWithAuthRetry(async () => {
+    const response = await fetch(
+      buildApiUrl("/api/cloudinary/upload", options.baseUrl),
+      {
+        method: "DELETE",
+        headers: buildHeaders(options, true),
+        body: JSON.stringify({ publicId }),
+        signal: options.signal,
+      },
+    );
+
+    await parseResponseOrThrow<{ success: boolean }>(
+      response,
+      "Error eliminando imagen",
+    );
+  }, "Error eliminando imagen", options);
+};
+
 export const updateProduct = async (
   id: string,
   input: Partial<UploadProduct>,
