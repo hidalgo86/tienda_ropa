@@ -45,6 +45,35 @@ const deleteMutation = `
   }
 `;
 
+const isAuthErrorMessage = (message: string): boolean => {
+  const normalized = message.trim().toLowerCase();
+  return (
+    normalized.includes("unauthorized") ||
+    normalized.includes("no autenticado") ||
+    normalized.includes("debes iniciar sesion") ||
+    normalized.includes("debes iniciar sesión") ||
+    normalized.includes("token") ||
+    normalized.includes("jwt") ||
+    normalized.includes("sesion") ||
+    normalized.includes("sesión")
+  );
+};
+
+const getGraphqlError = (
+  response: Response,
+  payload: { errors?: Array<{ message?: string }> },
+  fallback: string,
+): { message: string; status: number } => {
+  const message = payload.errors?.[0]?.message || fallback;
+  const status = response.ok
+    ? isAuthErrorMessage(message)
+      ? 401
+      : 400
+    : response.status || 500;
+
+  return { message, status };
+};
+
 export async function PATCH(
   req: NextRequest,
   context: { params: Promise<{ id: string }> },
@@ -76,9 +105,12 @@ export async function PATCH(
     const payload = await response.json();
 
     if (!response.ok || payload.errors) {
-      throw new Error(
-        payload.errors?.[0]?.message || "Error al actualizar banner",
+      const error = getGraphqlError(
+        response,
+        payload,
+        "Error al actualizar banner",
       );
+      return NextResponse.json({ error: error.message }, { status: error.status });
     }
 
     return NextResponse.json(payload.data?.updateBanner);
@@ -123,9 +155,12 @@ export async function DELETE(
     const payload = await response.json();
 
     if (!response.ok || payload.errors) {
-      throw new Error(
-        payload.errors?.[0]?.message || "Error al eliminar banner",
+      const error = getGraphqlError(
+        response,
+        payload,
+        "Error al eliminar banner",
       );
+      return NextResponse.json({ error: error.message }, { status: error.status });
     }
 
     return NextResponse.json(payload.data?.deleteBanner);

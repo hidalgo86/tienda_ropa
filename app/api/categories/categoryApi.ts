@@ -30,6 +30,20 @@ const getGraphqlErrorMessage = (errors?: GraphqlError[]): string =>
   errors?.find((error) => error.message?.trim())?.message?.trim() ||
   "Error del backend";
 
+const isAuthGraphqlError = (message: string): boolean => {
+  const normalized = message.trim().toLowerCase();
+  return (
+    normalized.includes("unauthorized") ||
+    normalized.includes("no autenticado") ||
+    normalized.includes("debes iniciar sesion") ||
+    normalized.includes("debes iniciar sesión") ||
+    normalized.includes("token") ||
+    normalized.includes("jwt") ||
+    normalized.includes("sesion") ||
+    normalized.includes("sesión")
+  );
+};
+
 const buildHeaders = (request?: NextRequest): HeadersInit => {
   const headers: HeadersInit = { "Content-Type": "application/json" };
   const authorization = getBackendAuthorization(request);
@@ -79,10 +93,14 @@ export const executeCategoryGraphql = async <
   const payload = (await response.json()) as GraphqlResponse<TData>;
 
   if (!response.ok || payload.errors?.length) {
-    throw new CategoryApiError(
-      getGraphqlErrorMessage(payload.errors),
-      response.ok ? 400 : response.status || 500,
-    );
+    const message = getGraphqlErrorMessage(payload.errors);
+    const status = response.ok
+      ? isAuthGraphqlError(message)
+        ? 401
+        : 400
+      : response.status || 500;
+
+    throw new CategoryApiError(message, status);
   }
 
   if (!payload.data) {

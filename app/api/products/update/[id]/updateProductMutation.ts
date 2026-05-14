@@ -14,6 +14,20 @@ const getGraphqlErrorMessage = (errors?: GraphqlError[]): string => {
   return message || "Error del backend";
 };
 
+const isAuthGraphqlError = (message: string): boolean => {
+  const normalized = message.trim().toLowerCase();
+  return (
+    normalized.includes("unauthorized") ||
+    normalized.includes("no autenticado") ||
+    normalized.includes("debes iniciar sesion") ||
+    normalized.includes("debes iniciar sesión") ||
+    normalized.includes("token") ||
+    normalized.includes("jwt") ||
+    normalized.includes("sesion") ||
+    normalized.includes("sesión")
+  );
+};
+
 export const updateProductInBackend = async (
   id: string,
   input: UpdateProductGraphqlInput,
@@ -65,9 +79,16 @@ export const updateProductInBackend = async (
   const backendData =
     (await backendRes.json()) as UpdateProductMutationResponse;
   if (!backendRes.ok || backendData.errors) {
+    const message = getGraphqlErrorMessage(backendData.errors);
+    const status = backendRes.ok
+      ? isAuthGraphqlError(message)
+        ? 401
+        : 400
+      : backendRes.status || 500;
+
     throw new UpdateProductRouteError(
-      getGraphqlErrorMessage(backendData.errors),
-      backendRes.status || 500,
+      message,
+      status,
     );
   }
 
@@ -132,9 +153,16 @@ const mutateProductStateInBackend = async (
   };
 
   if (!backendRes.ok || backendData.errors) {
+    const message = getGraphqlErrorMessage(backendData.errors);
+    const status = backendRes.ok
+      ? isAuthGraphqlError(message)
+        ? 401
+        : 400
+      : backendRes.status || 500;
+
     throw new UpdateProductRouteError(
-      getGraphqlErrorMessage(backendData.errors),
-      backendRes.status || 500,
+      message,
+      status,
     );
   }
 

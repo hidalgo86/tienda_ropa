@@ -45,6 +45,35 @@ const mutation = `
   }
 `;
 
+const isAuthErrorMessage = (message: string): boolean => {
+  const normalized = message.trim().toLowerCase();
+  return (
+    normalized.includes("unauthorized") ||
+    normalized.includes("no autenticado") ||
+    normalized.includes("debes iniciar sesion") ||
+    normalized.includes("debes iniciar sesión") ||
+    normalized.includes("token") ||
+    normalized.includes("jwt") ||
+    normalized.includes("sesion") ||
+    normalized.includes("sesión")
+  );
+};
+
+const getGraphqlError = (
+  response: Response,
+  payload: { errors?: Array<{ message?: string }> },
+  fallback: string,
+): { message: string; status: number } => {
+  const message = payload.errors?.[0]?.message || fallback;
+  const status = response.ok
+    ? isAuthErrorMessage(message)
+      ? 401
+      : 400
+    : response.status || 500;
+
+  return { message, status };
+};
+
 export async function GET(req: NextRequest) {
   const apiUrl = process.env.API_URL?.trim();
 
@@ -68,7 +97,8 @@ export async function GET(req: NextRequest) {
     const payload = await response.json();
 
     if (!response.ok || payload.errors) {
-      throw new Error(payload.errors?.[0]?.message || "Error al cargar banners");
+      const error = getGraphqlError(response, payload, "Error al cargar banners");
+      return NextResponse.json({ error: error.message }, { status: error.status });
     }
 
     return NextResponse.json(payload.data?.adminBanners ?? []);
@@ -110,7 +140,8 @@ export async function POST(req: NextRequest) {
     const payload = await response.json();
 
     if (!response.ok || payload.errors) {
-      throw new Error(payload.errors?.[0]?.message || "Error al crear banner");
+      const error = getGraphqlError(response, payload, "Error al crear banner");
+      return NextResponse.json({ error: error.message }, { status: error.status });
     }
 
     return NextResponse.json(payload.data?.createBanner);
