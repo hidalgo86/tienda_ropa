@@ -9,6 +9,7 @@ export interface AuditLog {
   entityId?: string | null;
   entityLabel?: string | null;
   ip?: string | null;
+  metadata?: Record<string, unknown> | null;
   createdAt: string;
 }
 

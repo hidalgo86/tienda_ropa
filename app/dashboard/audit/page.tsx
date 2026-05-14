@@ -96,6 +96,7 @@ const actionLabel = (action: string): string => {
     order_payment_reverted: "Pago revertido",
     order_cancelled: "Pedido cancelado",
     product_created: "Producto creado",
+    product_updated: "Producto actualizado",
     product_price_changed: "Precio modificado",
     product_stock_changed: "Stock modificado",
     login: "Inicio de sesion",
@@ -141,6 +142,7 @@ const moduleLabel = (log: AuditLog): string => {
     order_payment_reverted: "Pedidos",
     order_cancelled: "Pedidos",
     product_created: "Productos",
+    product_updated: "Productos",
     product_price_changed: "Productos",
     product_stock_changed: "Productos",
     login: "Autenticacion",
@@ -166,6 +168,69 @@ const moduleLabel = (log: AuditLog): string => {
   };
 
   return modules[log.entityType] ?? modules[log.action] ?? (log.entityType || "-");
+};
+
+const fieldLabel = (field: string): string => {
+  const labels: Record<string, string> = {
+    name: "nombre",
+    categoryId: "categoria",
+    description: "descripcion",
+    brand: "marca",
+    thumbnail: "imagen principal",
+    genre: "genero",
+    images: "imagenes",
+    variants: "variantes",
+    stock: "stock",
+    price: "precio",
+    state: "estado",
+  };
+
+  return labels[field] ?? field;
+};
+
+const formatAuditValue = (value: unknown): string => {
+  if (value === null || value === undefined) return "vacio";
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  if (typeof value === "string") return value || "vacio";
+
+  if (typeof value === "object" && "count" in value) {
+    const count = Number((value as { count?: unknown }).count);
+    return Number.isFinite(count) ? `${count}` : "varios";
+  }
+
+  return "modificado";
+};
+
+const formatFieldChange = (
+  field: string,
+  change: unknown,
+): string => {
+  if (!change || typeof change !== "object") return fieldLabel(field);
+
+  const record = change as { before?: unknown; after?: unknown };
+  return `${fieldLabel(field)}: ${formatAuditValue(record.before)} -> ${formatAuditValue(record.after)}`;
+};
+
+const auditDetails = (log: AuditLog): string | null => {
+  const changedFields = log.metadata?.changedFields;
+  const changes =
+    log.metadata?.changes && typeof log.metadata.changes === "object"
+      ? (log.metadata.changes as Record<string, unknown>)
+      : null;
+
+  if (!Array.isArray(changedFields) || changedFields.length === 0) {
+    return null;
+  }
+
+  const fields = changedFields
+    .filter((field): field is string => typeof field === "string")
+    .map((field) =>
+      changes?.[field] ? formatFieldChange(field, changes[field]) : fieldLabel(field),
+    );
+
+  return fields.length ? `Cambios: ${fields.join(", ")}` : null;
 };
 
 const badgeClass = (action: string): string => {
@@ -439,6 +504,11 @@ export default function DashboardAuditPage() {
                             {compactId(log.entityId)}
                           </div>
                         )}
+                        {auditDetails(log) && (
+                          <div className="mt-2 text-xs font-medium text-slate-600">
+                            {auditDetails(log)}
+                          </div>
+                        )}
                       </td>
                       <td className="px-4 py-4">
                         <div className="font-medium text-slate-900">
@@ -475,6 +545,11 @@ export default function DashboardAuditPage() {
                       {shouldShowEntityId(log) && (
                         <p className="mt-1 font-mono text-xs text-slate-500">
                           {compactId(log.entityId)}
+                        </p>
+                      )}
+                      {auditDetails(log) && (
+                        <p className="mt-2 text-xs font-medium text-slate-600">
+                          {auditDetails(log)}
                         </p>
                       )}
                     </div>

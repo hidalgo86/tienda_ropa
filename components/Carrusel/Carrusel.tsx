@@ -6,10 +6,14 @@ import { listPublicBanners } from "@/services/banners";
 import type { Banner } from "@/types/domain/banners";
 import { getOptimizedCloudinaryUrl } from "@/lib/cloudinaryImages";
 
+const AUTOPLAY_DELAY_MS = 3000;
+const MANUAL_PAUSE_MS = 8000;
+
 export default function Carrusel() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [actual, setActual] = useState(0);
+  const [manualPauseVersion, setManualPauseVersion] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -53,12 +57,15 @@ export default function Carrusel() {
       return undefined;
     }
 
-    const timer = setInterval(() => {
+    const waitTime =
+      manualPauseVersion > 0 ? MANUAL_PAUSE_MS : AUTOPLAY_DELAY_MS;
+    const timer = window.setTimeout(() => {
       setActual((prev) => (prev + 1) % totalImagenes);
-    }, 3000);
+      setManualPauseVersion(0);
+    }, waitTime);
 
-    return () => clearInterval(timer);
-  }, [hasMultipleImages, totalImagenes]);
+    return () => window.clearTimeout(timer);
+  }, [actual, hasMultipleImages, manualPauseVersion, totalImagenes]);
 
   if (!isLoaded) {
     return (
@@ -85,9 +92,24 @@ export default function Carrusel() {
 
   const currentImage = imagenes[actual];
 
-  const siguiente = () => setActual((prev) => (prev + 1) % totalImagenes);
-  const anterior = () =>
+  const pauseAfterManualNavigation = () => {
+    setManualPauseVersion((version) => version + 1);
+  };
+
+  const siguiente = () => {
+    pauseAfterManualNavigation();
+    setActual((prev) => (prev + 1) % totalImagenes);
+  };
+
+  const anterior = () => {
+    pauseAfterManualNavigation();
     setActual((prev) => (prev - 1 + totalImagenes) % totalImagenes);
+  };
+
+  const goToImage = (index: number) => {
+    pauseAfterManualNavigation();
+    setActual(index);
+  };
 
   return (
     <div
@@ -206,7 +228,7 @@ export default function Carrusel() {
             {imagenes.map((_, idx) => (
               <button
                 key={idx}
-                onClick={() => setActual(idx)}
+                onClick={() => goToImage(idx)}
                 className={`
                   w-2 h-2 sm:w-3 sm:h-3 lg:w-4 lg:h-4 
                   rounded-full transition-all duration-300

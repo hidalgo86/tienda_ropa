@@ -17,6 +17,7 @@ const auditLogsQuery = `
         entityId
         entityLabel
         ip
+        metadata
         createdAt
       }
       total
