@@ -102,11 +102,21 @@ const parseResponseOrThrow = async <T>(
       data && (data.error || data.message),
       fallbackErrorMessage,
     );
-    throw new Error(message);
+    throw new ApiResponseError(message, response.status);
   }
 
   return data as T;
 };
+
+class ApiResponseError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = "ApiResponseError";
+  }
+}
 
 const buildHeaders = (
   options: ApiOptions,
@@ -150,13 +160,15 @@ const fetchWithAuthRetry = async <T>(
       error instanceof Error
         ? error.message.toLowerCase()
         : fallbackErrorMessage.toLowerCase();
+    const status = error instanceof ApiResponseError ? error.status : null;
 
     const canRefreshSession =
       !options.token || options.token === COOKIE_SESSION_MARKER;
 
     const shouldRetry =
       canRefreshSession &&
-      (message.includes("token") ||
+      (status === 401 ||
+        message.includes("token") ||
         message.includes("jwt") ||
         message.includes("unauthorized") ||
         message.includes("unauthoriz") ||

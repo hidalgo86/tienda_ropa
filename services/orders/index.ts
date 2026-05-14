@@ -149,11 +149,21 @@ const parseResponseOrThrow = async <T>(response: Response): Promise<T> => {
     const errorMsg = hasError(data)
       ? data.error
       : "No se pudo completar la compra";
-    throw new Error(errorMsg);
+    throw new ApiResponseError(errorMsg, response.status);
   }
 
   return data as T;
 };
+
+class ApiResponseError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = "ApiResponseError";
+  }
+}
 
 const asRecord = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" ? (value as Record<string, unknown>) : {};
@@ -267,12 +277,14 @@ const fetchWithAuthRetry = async <T>(
     return await requestFactory(token);
   } catch (error) {
     const message = error instanceof Error ? error.message.toLowerCase() : "";
+    const status = error instanceof ApiResponseError ? error.status : null;
     const canRefreshSession =
       !options.token || options.token === COOKIE_SESSION_MARKER;
 
     const shouldRetry =
       canRefreshSession &&
-      (message.includes("token") ||
+      (status === 401 ||
+        message.includes("token") ||
         message.includes("jwt") ||
         message.includes("unauthorized") ||
         message.includes("unauthoriz") ||

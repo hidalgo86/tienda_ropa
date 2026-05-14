@@ -70,15 +70,26 @@ const parseCategoryResponse = async (
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(
+    throw new ApiResponseError(
       typeof data?.error === "string" && data.error.trim()
         ? data.error
         : fallbackMessage,
+      response.status,
     );
   }
 
   return data as Category;
 };
+
+class ApiResponseError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = "ApiResponseError";
+  }
+}
 
 const storeRefreshedTokens = () => {
   if (typeof window === "undefined") return;
@@ -100,11 +111,13 @@ const fetchWithAuthRetry = async <T>(
     return await requestFactory();
   } catch (error) {
     const message = error instanceof Error ? error.message.toLowerCase() : "";
+    const status = error instanceof ApiResponseError ? error.status : null;
     const canRefreshSession =
       !options.token || options.token === COOKIE_SESSION_MARKER;
     const shouldRetry =
       canRefreshSession &&
-      (message.includes("token") ||
+      (status === 401 ||
+        message.includes("token") ||
         message.includes("jwt") ||
         message.includes("unauthorized") ||
         message.includes("unauthoriz") ||

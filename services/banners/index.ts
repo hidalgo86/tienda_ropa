@@ -73,15 +73,26 @@ const parseResponseOrThrow = async <T>(
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new Error(
+    throw new ApiResponseError(
       typeof data?.error === "string" && data.error.trim()
         ? data.error
         : fallbackErrorMessage,
+      response.status,
     );
   }
 
   return data as T;
 };
+
+class ApiResponseError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
+    super(message);
+    this.name = "ApiResponseError";
+  }
+}
 
 const normalizeBanner = (raw: RawBanner): Banner => ({
   id: normalizeIdentifier(raw.id) || normalizeIdentifier(raw._id),
@@ -142,13 +153,15 @@ const fetchWithAuthRetry = async <T>(
       error instanceof Error
         ? error.message.toLowerCase()
         : fallbackErrorMessage.toLowerCase();
+    const status = error instanceof ApiResponseError ? error.status : null;
 
     const canRefreshSession =
       !options.token || options.token === COOKIE_SESSION_MARKER;
 
     const shouldRetry =
       canRefreshSession &&
-      (message.includes("token") ||
+      (status === 401 ||
+        message.includes("token") ||
         message.includes("jwt") ||
         message.includes("unauthorized") ||
         message.includes("sesion"));
