@@ -65,8 +65,11 @@ const fetchWithAuthRetry = async <T>(
     return await requestFactory(token);
   } catch (error) {
     const message = error instanceof Error ? error.message.toLowerCase() : "";
+    const canRefreshSession =
+      !options.token || options.token === COOKIE_SESSION_MARKER;
+
     const shouldRetry =
-      !options.token &&
+      canRefreshSession &&
       (message.includes("token") ||
         message.includes("jwt") ||
         message.includes("unauthorized") ||

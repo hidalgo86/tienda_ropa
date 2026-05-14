@@ -1,5 +1,9 @@
 import type { Product } from "@/types/domain/products";
-import { COOKIE_SESSION_MARKER, getStoredAuthToken } from "@/services/users";
+import {
+  COOKIE_SESSION_MARKER,
+  getStoredAuthToken,
+  refreshSession,
+} from "@/services/users";
 
 interface FavoriteApiOptions {
   token?: string | null;
@@ -53,61 +57,103 @@ const parseResponseOrThrow = async <T>(response: Response): Promise<T> => {
 const ensureProductsArray = (value: unknown): Product[] =>
   Array.isArray(value) ? (value as Product[]) : [];
 
+const storeRefreshedTokens = () => {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem("refreshToken");
+  window.dispatchEvent(new Event("auth:session-changed"));
+};
+
+const fetchWithAuthRetry = async <T>(
+  requestFactory: (token: string) => Promise<T>,
+  options: FavoriteApiOptions = {},
+): Promise<T> => {
+  const token = resolveToken(options.token);
+
+  try {
+    return await requestFactory(token);
+  } catch (error) {
+    const message = error instanceof Error ? error.message.toLowerCase() : "";
+    const canRefreshSession =
+      !options.token || options.token === COOKIE_SESSION_MARKER;
+    const shouldRetry =
+      canRefreshSession &&
+      (message.includes("token") ||
+        message.includes("jwt") ||
+        message.includes("unauthorized") ||
+        message.includes("unauthoriz") ||
+        message.includes("debes iniciar sesion") ||
+        message.includes("sesion"));
+
+    if (!shouldRetry) {
+      throw error;
+    }
+
+    const refreshedTokens = await refreshSession();
+    storeRefreshedTokens();
+
+    return requestFactory(refreshedTokens.access_token);
+  }
+};
+
 export const listFavoriteProducts = async (
   options: FavoriteApiOptions = {},
 ): Promise<Product[]> => {
-  const token = resolveToken(options.token);
-  const response = await fetch("/api/favorites", {
-    headers: buildHeaders(token),
-    cache: "no-store",
-    signal: options.signal,
-  });
+  return fetchWithAuthRetry(async (token) => {
+    const response = await fetch("/api/favorites", {
+      headers: buildHeaders(token),
+      cache: "no-store",
+      signal: options.signal,
+    });
 
-  const data = await parseResponseOrThrow<unknown>(response);
-  return ensureProductsArray(data);
+    const data = await parseResponseOrThrow<unknown>(response);
+    return ensureProductsArray(data);
+  }, options);
 };
 
 export const addFavoriteProduct = async (
   productId: string,
   options: FavoriteApiOptions = {},
 ): Promise<Product[]> => {
-  const token = resolveToken(options.token);
-  const response = await fetch("/api/favorites/add", {
-    method: "POST",
-    headers: buildHeaders(token),
-    body: JSON.stringify({ productId }),
-    signal: options.signal,
-  });
+  return fetchWithAuthRetry(async (token) => {
+    const response = await fetch("/api/favorites/add", {
+      method: "POST",
+      headers: buildHeaders(token),
+      body: JSON.stringify({ productId }),
+      signal: options.signal,
+    });
 
-  const data = await parseResponseOrThrow<unknown>(response);
-  return ensureProductsArray(data);
+    const data = await parseResponseOrThrow<unknown>(response);
+    return ensureProductsArray(data);
+  }, options);
 };
 
 export const removeFavoriteProduct = async (
   productId: string,
   options: FavoriteApiOptions = {},
 ): Promise<Product[]> => {
-  const token = resolveToken(options.token);
-  const response = await fetch("/api/favorites/remove", {
-    method: "POST",
-    headers: buildHeaders(token),
-    body: JSON.stringify({ productId }),
-    signal: options.signal,
-  });
+  return fetchWithAuthRetry(async (token) => {
+    const response = await fetch("/api/favorites/remove", {
+      method: "POST",
+      headers: buildHeaders(token),
+      body: JSON.stringify({ productId }),
+      signal: options.signal,
+    });
 
-  const data = await parseResponseOrThrow<unknown>(response);
-  return ensureProductsArray(data);
+    const data = await parseResponseOrThrow<unknown>(response);
+    return ensureProductsArray(data);
+  }, options);
 };
 
 export const clearFavoriteProducts = async (
   options: FavoriteApiOptions = {},
 ): Promise<void> => {
-  const token = resolveToken(options.token);
-  const response = await fetch("/api/favorites", {
-    method: "DELETE",
-    headers: buildHeaders(token),
-    signal: options.signal,
-  });
+  return fetchWithAuthRetry(async (token) => {
+    const response = await fetch("/api/favorites", {
+      method: "DELETE",
+      headers: buildHeaders(token),
+      signal: options.signal,
+    });
 
-  await parseResponseOrThrow<{ success: boolean }>(response);
+    await parseResponseOrThrow<{ success: boolean }>(response);
+  }, options);
 };

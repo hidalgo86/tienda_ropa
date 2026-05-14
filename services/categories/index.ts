@@ -1,5 +1,9 @@
 import type { Category } from "@/types/domain/products";
-import { COOKIE_SESSION_MARKER, getStoredAuthToken } from "@/services/users";
+import {
+  COOKIE_SESSION_MARKER,
+  getStoredAuthToken,
+  refreshSession,
+} from "@/services/users";
 
 interface ApiOptions {
   baseUrl?: string;
@@ -76,18 +80,62 @@ const parseCategoryResponse = async (
   return data as Category;
 };
 
+const storeRefreshedTokens = () => {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem("refreshToken");
+  window.dispatchEvent(new Event("auth:session-changed"));
+};
+
+const fetchWithAuthRetry = async <T>(
+  requestFactory: () => Promise<T>,
+  options: ApiOptions = {},
+): Promise<T> => {
+  const token = options.token ?? getStoredAuthToken();
+
+  if (!token) {
+    throw new Error("No hay sesion activa");
+  }
+
+  try {
+    return await requestFactory();
+  } catch (error) {
+    const message = error instanceof Error ? error.message.toLowerCase() : "";
+    const canRefreshSession =
+      !options.token || options.token === COOKIE_SESSION_MARKER;
+    const shouldRetry =
+      canRefreshSession &&
+      (message.includes("token") ||
+        message.includes("jwt") ||
+        message.includes("unauthorized") ||
+        message.includes("unauthoriz") ||
+        message.includes("debes iniciar sesion") ||
+        message.includes("sesion"));
+
+    if (!shouldRetry) {
+      throw error;
+    }
+
+    await refreshSession();
+    storeRefreshedTokens();
+
+    return requestFactory();
+  }
+};
+
 export const createCategory = async (
   input: CategoryInput,
   options: ApiOptions = {},
 ): Promise<Category> => {
-  const response = await fetch(buildApiUrl("/api/categories", options.baseUrl), {
-    method: "POST",
-    headers: buildHeaders(options, true),
-    body: JSON.stringify(input),
-    signal: options.signal,
-  });
+  return fetchWithAuthRetry(async () => {
+    const response = await fetch(buildApiUrl("/api/categories", options.baseUrl), {
+      method: "POST",
+      headers: buildHeaders(options, true),
+      body: JSON.stringify(input),
+      signal: options.signal,
+    });
 
-  return parseCategoryResponse(response, "Error al crear categoria");
+    return parseCategoryResponse(response, "Error al crear categoria");
+  }, options);
 };
 
 export const updateCategory = async (
@@ -95,31 +143,35 @@ export const updateCategory = async (
   input: Partial<CategoryInput>,
   options: ApiOptions = {},
 ): Promise<Category> => {
-  const response = await fetch(
-    buildApiUrl(`/api/categories/${id}`, options.baseUrl),
-    {
-      method: "PATCH",
-      headers: buildHeaders(options, true),
-      body: JSON.stringify(input),
-      signal: options.signal,
-    },
-  );
+  return fetchWithAuthRetry(async () => {
+    const response = await fetch(
+      buildApiUrl(`/api/categories/${id}`, options.baseUrl),
+      {
+        method: "PATCH",
+        headers: buildHeaders(options, true),
+        body: JSON.stringify(input),
+        signal: options.signal,
+      },
+    );
 
-  return parseCategoryResponse(response, "Error al actualizar categoria");
+    return parseCategoryResponse(response, "Error al actualizar categoria");
+  }, options);
 };
 
 export const deleteCategory = async (
   id: string,
   options: ApiOptions = {},
 ): Promise<Category> => {
-  const response = await fetch(
-    buildApiUrl(`/api/categories/${id}`, options.baseUrl),
-    {
-      method: "DELETE",
-      headers: buildHeaders(options),
-      signal: options.signal,
-    },
-  );
+  return fetchWithAuthRetry(async () => {
+    const response = await fetch(
+      buildApiUrl(`/api/categories/${id}`, options.baseUrl),
+      {
+        method: "DELETE",
+        headers: buildHeaders(options),
+        signal: options.signal,
+      },
+    );
 
-  return parseCategoryResponse(response, "Error al eliminar categoria");
+    return parseCategoryResponse(response, "Error al eliminar categoria");
+  }, options);
 };

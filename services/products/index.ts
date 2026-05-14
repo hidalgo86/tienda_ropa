@@ -151,8 +151,11 @@ const fetchWithAuthRetry = async <T>(
         ? error.message.toLowerCase()
         : fallbackErrorMessage.toLowerCase();
 
+    const canRefreshSession =
+      !options.token || options.token === COOKIE_SESSION_MARKER;
+
     const shouldRetry =
-      !options.token &&
+      canRefreshSession &&
       (message.includes("token") ||
         message.includes("jwt") ||
         message.includes("unauthorized") ||
@@ -260,20 +263,22 @@ export const uploadProductImage = async (
   file: File,
   options: ApiOptions = {},
 ): Promise<ProductImage> => {
-  const uploadFormData = new FormData();
-  uploadFormData.append("file", file);
-  uploadFormData.append("folder", "products");
+  return fetchWithAuthRetry(async () => {
+    const uploadFormData = new FormData();
+    uploadFormData.append("file", file);
+    uploadFormData.append("folder", "products");
 
-  const response = await fetch(
-    buildApiUrl("/api/cloudinary/upload", options.baseUrl),
-    {
-      method: "POST",
-      body: uploadFormData,
-      signal: options.signal,
-    },
-  );
+    const response = await fetch(
+      buildApiUrl("/api/cloudinary/upload", options.baseUrl),
+      {
+        method: "POST",
+        body: uploadFormData,
+        signal: options.signal,
+      },
+    );
 
-  return parseResponseOrThrow<ProductImage>(response, "Error subiendo imagen");
+    return parseResponseOrThrow<ProductImage>(response, "Error subiendo imagen");
+  }, "Error subiendo imagen", options);
 };
 
 export const updateProduct = async (

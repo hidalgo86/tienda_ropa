@@ -143,8 +143,11 @@ const fetchWithAuthRetry = async <T>(
         ? error.message.toLowerCase()
         : fallbackErrorMessage.toLowerCase();
 
+    const canRefreshSession =
+      !options.token || options.token === COOKIE_SESSION_MARKER;
+
     const shouldRetry =
-      !options.token &&
+      canRefreshSession &&
       (message.includes("token") ||
         message.includes("jwt") ||
         message.includes("unauthorized") ||
@@ -282,21 +285,23 @@ export const uploadBannerImage = async (
   file: File,
   options: ApiOptions = {},
 ): Promise<{ url: string; publicId: string }> => {
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("folder", "banners");
+  return fetchWithAuthRetry(async () => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", "banners");
 
-  const response = await fetch(
-    buildApiUrl("/api/cloudinary/upload", options.baseUrl),
-    {
-      method: "POST",
-      body: formData,
-      signal: options.signal,
-    },
-  );
+    const response = await fetch(
+      buildApiUrl("/api/cloudinary/upload", options.baseUrl),
+      {
+        method: "POST",
+        body: formData,
+        signal: options.signal,
+      },
+    );
 
-  return parseResponseOrThrow<{ url: string; publicId: string }>(
-    response,
-    "Error al subir imagen del banner",
-  );
+    return parseResponseOrThrow<{ url: string; publicId: string }>(
+      response,
+      "Error al subir imagen del banner",
+    );
+  }, "Error al subir imagen del banner", options);
 };

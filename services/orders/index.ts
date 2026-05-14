@@ -267,8 +267,11 @@ const fetchWithAuthRetry = async <T>(
     return await requestFactory(token);
   } catch (error) {
     const message = error instanceof Error ? error.message.toLowerCase() : "";
+    const canRefreshSession =
+      !options.token || options.token === COOKIE_SESSION_MARKER;
+
     const shouldRetry =
-      !options.token &&
+      canRefreshSession &&
       (message.includes("token") ||
         message.includes("jwt") ||
         message.includes("unauthorized") ||
@@ -362,19 +365,21 @@ export const uploadPaymentProofImage = async (
   file: File,
   options: OrderApiOptions = {},
 ): Promise<{ url: string; publicId: string }> => {
-  const uploadFile = await compressPaymentProofImage(file);
-  const formData = new FormData();
-  formData.append("file", uploadFile);
-  formData.append("folder", "payment-proofs");
-  formData.append("orderId", orderId);
+  return fetchWithAuthRetry(async () => {
+    const uploadFile = await compressPaymentProofImage(file);
+    const formData = new FormData();
+    formData.append("file", uploadFile);
+    formData.append("folder", "payment-proofs");
+    formData.append("orderId", orderId);
 
-  const response = await fetch("/api/cloudinary/upload", {
-    method: "POST",
-    body: formData,
-    signal: options.signal,
-  });
+    const response = await fetch("/api/cloudinary/upload", {
+      method: "POST",
+      body: formData,
+      signal: options.signal,
+    });
 
-  return parseResponseOrThrow<{ url: string; publicId: string }>(response);
+    return parseResponseOrThrow<{ url: string; publicId: string }>(response);
+  }, options);
 };
 
 export const submitPaymentProof = async (

@@ -1,5 +1,9 @@
 import type { CartItem } from "@/store/slices/cartSlice";
-import { COOKIE_SESSION_MARKER, getStoredAuthToken } from "@/services/users";
+import {
+  COOKIE_SESSION_MARKER,
+  getStoredAuthToken,
+  refreshSession,
+} from "@/services/users";
 
 interface CartApiOptions {
   token?: string | null;
@@ -53,49 +57,90 @@ const parseResponseOrThrow = async <T>(response: Response): Promise<T> => {
 const ensureCartItemsArray = (value: unknown): CartItem[] =>
   Array.isArray(value) ? (value as CartItem[]) : [];
 
+const storeRefreshedTokens = () => {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem("refreshToken");
+  window.dispatchEvent(new Event("auth:session-changed"));
+};
+
+const fetchWithAuthRetry = async <T>(
+  requestFactory: (token: string) => Promise<T>,
+  options: CartApiOptions = {},
+): Promise<T> => {
+  const token = resolveToken(options.token);
+
+  try {
+    return await requestFactory(token);
+  } catch (error) {
+    const message = error instanceof Error ? error.message.toLowerCase() : "";
+    const canRefreshSession =
+      !options.token || options.token === COOKIE_SESSION_MARKER;
+    const shouldRetry =
+      canRefreshSession &&
+      (message.includes("token") ||
+        message.includes("jwt") ||
+        message.includes("unauthorized") ||
+        message.includes("unauthoriz") ||
+        message.includes("debes iniciar sesion") ||
+        message.includes("sesion"));
+
+    if (!shouldRetry) {
+      throw error;
+    }
+
+    const refreshedTokens = await refreshSession();
+    storeRefreshedTokens();
+
+    return requestFactory(refreshedTokens.access_token);
+  }
+};
+
 let replaceRemoteCartQueue = Promise.resolve();
 
 export const listCartItems = async (
   options: CartApiOptions = {},
 ): Promise<CartItem[]> => {
-  const token = resolveToken(options.token);
-  const response = await fetch("/api/cart", {
-    headers: buildHeaders(token),
-    cache: "no-store",
-    signal: options.signal,
-  });
+  return fetchWithAuthRetry(async (token) => {
+    const response = await fetch("/api/cart", {
+      headers: buildHeaders(token),
+      cache: "no-store",
+      signal: options.signal,
+    });
 
-  const data = await parseResponseOrThrow<unknown>(response);
-  return ensureCartItemsArray(data);
+    const data = await parseResponseOrThrow<unknown>(response);
+    return ensureCartItemsArray(data);
+  }, options);
 };
 
 export const upsertCartItem = async (
   input: { productId: string; quantity: number; variantName?: string },
   options: CartApiOptions = {},
 ): Promise<CartItem[]> => {
-  const token = resolveToken(options.token);
-  const response = await fetch("/api/cart/items", {
-    method: "POST",
-    headers: buildHeaders(token),
-    body: JSON.stringify(input),
-    signal: options.signal,
-  });
+  return fetchWithAuthRetry(async (token) => {
+    const response = await fetch("/api/cart/items", {
+      method: "POST",
+      headers: buildHeaders(token),
+      body: JSON.stringify(input),
+      signal: options.signal,
+    });
 
-  const data = await parseResponseOrThrow<unknown>(response);
-  return ensureCartItemsArray(data);
+    const data = await parseResponseOrThrow<unknown>(response);
+    return ensureCartItemsArray(data);
+  }, options);
 };
 
 export const clearRemoteCart = async (
   options: CartApiOptions = {},
 ): Promise<void> => {
-  const token = resolveToken(options.token);
-  const response = await fetch("/api/cart", {
-    method: "DELETE",
-    headers: buildHeaders(token),
-    signal: options.signal,
-  });
+  return fetchWithAuthRetry(async (token) => {
+    const response = await fetch("/api/cart", {
+      method: "DELETE",
+      headers: buildHeaders(token),
+      signal: options.signal,
+    });
 
-  await parseResponseOrThrow<{ success: boolean }>(response);
+    await parseResponseOrThrow<{ success: boolean }>(response);
+  }, options);
 };
 
 export const replaceRemoteCart = async (

@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 export const ACCESS_COOKIE_NAME = "access_token";
 export const REFRESH_COOKIE_NAME = "refresh_token";
 
-export const ACCESS_COOKIE_MAX_AGE = 15 * 60;
+export const ACCESS_COOKIE_MAX_AGE = 5 * 60;
 export const REFRESH_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 
 const cookieOptions = {
