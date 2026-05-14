@@ -206,6 +206,36 @@ export default function DashboardBannersPage() {
     await persistBannerOrder(nextBanners, previousBanners);
   };
 
+  const moveBanner = async (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+
+    if (
+      isReordering ||
+      targetIndex < 0 ||
+      targetIndex >= banners.length ||
+      !hasValidBannerId(banners[index]?.id) ||
+      !hasValidBannerId(banners[targetIndex]?.id)
+    ) {
+      return;
+    }
+
+    const previousBanners = banners;
+    const nextBanners = [...banners];
+
+    [nextBanners[index], nextBanners[targetIndex]] = [
+      nextBanners[targetIndex],
+      nextBanners[index],
+    ];
+
+    await persistBannerOrder(
+      nextBanners.map((banner, nextIndex) => ({
+        ...banner,
+        order: nextIndex + 1,
+      })),
+      previousBanners,
+    );
+  };
+
   return (
     <div className="space-y-6">
       <ConfirmDialog
@@ -229,7 +259,7 @@ export default function DashboardBannersPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Carrusel</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Arrastra cada banner para moverlo arriba o abajo.
+            Arrastra cada banner o usa las flechas para cambiar el orden.
           </p>
         </div>
 
@@ -316,6 +346,36 @@ export default function DashboardBannersPage() {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                    <button
+                      type="button"
+                      onClick={() => void moveBanner(index, -1)}
+                      disabled={
+                        index === 0 ||
+                        isBusy ||
+                        !hasValidId ||
+                        isReordering
+                      }
+                      className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-40"
+                      aria-label={`Subir banner ${banner.title}`}
+                      title="Subir"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void moveBanner(index, 1)}
+                      disabled={
+                        index === banners.length - 1 ||
+                        isBusy ||
+                        !hasValidId ||
+                        isReordering
+                      }
+                      className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-40"
+                      aria-label={`Bajar banner ${banner.title}`}
+                      title="Bajar"
+                    >
+                      ↓
+                    </button>
                     <Link
                       href={hasValidId ? `/dashboard/banners/${banner.id}` : "#"}
                       aria-disabled={!hasValidId}
